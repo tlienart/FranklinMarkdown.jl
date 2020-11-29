@@ -1,4 +1,13 @@
 name = "FranklinMarkdown"
 uuid = "783aa78c-9e0e-4e4d-a087-0213156c1e3b"
-authors = ["Thibaut Lienart <ltib@me.com>"]
+authors = ["Thibaut Lienart <tlienart@me.com>"]
 version = "0.1.0"
+
+[deps]
+CommonMark = "a80b9123-70ca-4bc0-993e-6e3bcb318db6"
+
+[compat]
+julia = "1.3"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
