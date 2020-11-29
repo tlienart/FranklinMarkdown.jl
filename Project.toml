@@ -1,0 +1,4 @@
+name = "FranklinMarkdown"
+uuid = "783aa78c-9e0e-4e4d-a087-0213156c1e3b"
+authors = ["Thibaut Lienart <ltib@me.com>"]
+version = "0.1.0"
