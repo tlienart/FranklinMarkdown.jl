@@ -1,3 +1,12 @@
-using Test
+using Test, FranklinParser, OrderedCollections
+const FP = FranklinParser
 
-@test true
+@testset "utils" begin
+    include("utils/strings.jl")
+    include("utils/types.jl")
+    include("utils/regex.jl")
+end
+
+@testset "tokens" begin
+    include("tokens/tokenize.jl")
+end
