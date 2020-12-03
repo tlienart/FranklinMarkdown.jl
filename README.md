@@ -9,6 +9,7 @@ provide a few key functions like
 
 * get all tokens and all blocks
   * [x] markdown tokenization
+  * [ ] find markdown definitions (needs indented lines)
   * [ ] markdown blocks with tree structure and warnings rather than error for failure (send signal no update)
   * [ ] html tokenization
   * [ ] html blocks
@@ -16,7 +17,7 @@ provide a few key functions like
   * [ ] resolve as much as possible to CM-MD
   * [ ] placeholder for lxcom, code, raw html, hfun
 * get intermediate output (html/latex) using CM
-* finalize output
+* return intermediate output + auxiliary information for Franklin to use in `convert` function
 
 ## Note
 
