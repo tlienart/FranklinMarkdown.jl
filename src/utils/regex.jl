@@ -1,13 +1,13 @@
 """
 LX_COMMAND_PAT
 
-Allowed latex command name (without `\\`).
+Allowed latex command name.
 
 ## Examples:
-* com
-* ab1_cd*
+* \\com
+* \\ab1_cd*
 """
-const LX_COMMAND_PAT = r"^\p{L}[\p{L}_0-9]*\*?$"
+const LX_COMMAND_PAT = r"^\\\p{L}[\p{L}_0-9]*\*?$"
 
 """
 HTML_ENTITY_PAT
@@ -22,6 +22,13 @@ Ref: https://dev.w3.org/html5/html-author/charref.
 * &#8851;
 """
 const HTML_ENTITY_PAT = r"&(?:[a-zA-Z]+[0-9]{0,2}|#[0-9]{1,6}|#x[0-9a-f]{1,6});"
+
+"""
+CODE_LANG*_PAT
+"""
+const CODE_LANG3_PAT = r"```\p{L}[\p{L}0-9-]*"
+const CODE_LANG4_PAT = r"````\p{L}[\p{L}0-9-]*"
+const CODE_LANG5_PAT = r"`````\p{L}[\p{L}0-9-]*"
 
 # """
 # LX_NARG_PAT

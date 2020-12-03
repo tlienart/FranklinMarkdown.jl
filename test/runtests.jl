@@ -9,4 +9,5 @@ end
 
 @testset "tokens" begin
     include("tokens/tokenize.jl")
+    include("tokens/markdown.jl")
 end

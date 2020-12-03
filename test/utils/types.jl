@@ -17,6 +17,8 @@ end
     @test FP.from(sch) == 4
     @test FP.to(sch) == 4
     @test sch.html == "&#42;"
+    sch = FP.SpecialChar("foo")
+    @test sch.html == ""
 end
 
 @testset "Block" begin

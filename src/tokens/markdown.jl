@@ -50,18 +50,18 @@ const MD_N_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         greedy_match(is_emoji) => :CAND_EMOJI,
         ],
     '\\' => [ # -- special characters, see `find_special_chars` in ocblocks
-        forward_match("\\\\")       => :CHAR_LINEBREAK,   # --> <br/>
-        forward_match("\\", (' ',)) => :CHAR_BACKSPACE,   # --> &#92;
-        forward_match("\\*")        => :CHAR_ASTERISK,    # --> &#42;
-        forward_match("\\_")        => :CHAR_UNDERSCORE,  # --> &#95;
-        forward_match("\\`")        => :CHAR_BACKTICK,    # --> &#96;
-        forward_match("\\@")        => :CHAR_ATSIGN,      # --> &#64;
+        forward_match("\\\\") => :CHAR_LINEBREAK,   # --> <br/>
+        forward_match("\\", SPACE_CHAR) => :CHAR_BACKSPACE,   # --> &#92;
+        forward_match("\\*")  => :CHAR_ASTERISK,    # --> &#42;
+        forward_match("\\_")  => :CHAR_UNDERSCORE,  # --> &#95;
+        forward_match("\\`")  => :CHAR_BACKTICK,    # --> &#96;
+        forward_match("\\@")  => :CHAR_ATSIGN,      # --> &#64;
         # -- maths
-        forward_match("\\{")        => :INACTIVE,         # See note [^1]
-        forward_match("\\}")        => :INACTIVE,         # See note [^1]
-        forward_match("\\\$")       => :INACTIVE,         # See note [^1]
-        forward_match("\\[")        => :MATH_C_OPEN,      # \[ ...
-        forward_match("\\]")        => :MATH_C_CLOSE,     #    ... \]
+        forward_match("\\{")  => :INACTIVE,         # See note [^1]
+        forward_match("\\}")  => :INACTIVE,         # See note [^1]
+        forward_match("\\\$") => :INACTIVE,         # See note [^1]
+        forward_match("\\[")  => :MATH_C_OPEN,      # \[ ...
+        forward_match("\\]")  => :MATH_C_CLOSE,     #    ... \]
         # -- latex
         forward_match("\\newenvironment", ('{',))   => :LX_NEWENVIRONMENT,
         forward_match("\\newcommand", ('{',))       => :LX_NEWCOMMAND,
@@ -99,12 +99,12 @@ const MD_N_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("``", ('`',), false) => :CODE_DOUBLE, # ``⎵*
         # 3+ can be named
         forward_match("```",  SPACE_CHAR) => :CODE_TRIPLE, # ```⎵*
-        forward_match("```!", SPACE_CHAR) => :CODE_TRIPLE!,# ```!⎵*
-        greedy_match(is_language(3))      => :CODE_LANG3,  # ```lang*
         forward_match("`"^4,  SPACE_CHAR) => :CODE_QUAD,   # ````⎵*
-        greedy_match(is_language(4))      => :CODE_LANG4,  # ````lang*
         forward_match("`"^5,  SPACE_CHAR) => :CODE_PENTA,  # `````⎵*
-        greedy_match(is_language(5))      => :CODE_LANG5,  # `````lang*
+        forward_match("```!", SPACE_CHAR) => :CODE_TRIPLE!,# ```!⎵*
+        greedy_match(is_lang(3), val_lang3) => :CODE_LANG3,  # ```lang*
+        greedy_match(is_lang(4), val_lang4) => :CODE_LANG4,  # ````lang*
+        greedy_match(is_lang(5), val_lang5) => :CODE_LANG5,  # `````lang*
         ],
     '*' => [
         greedy_match(is_hr3) => :HORIZONTAL_RULE,

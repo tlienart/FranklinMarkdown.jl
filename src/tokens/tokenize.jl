@@ -49,28 +49,24 @@ or not),
 """
 function forward_match(refstring::String, next_char::NTuple{K,Char} where K = (),
                        is_followed=true)::TokenFinder
-    # number of code units from the start character
-    steps = prevind(refstring, lastindex(refstring))
-
-    # if next_char is empty, don't check the next character (no offset)
-    isempty(next_char) && return (steps, false, (s,_) -> (s == refstring), true)
-
-    # otherwise include next char for verification (--> offset is true)
-    steps     = lastindex(refstring)
-    ok_at_eos = (!is_followed || EOS ∈ next_char)
+    steps      = lastindex(refstring)
+    check_next = !isempty(next_char)
+    steps      = ifelse(check_next, steps, prevind(refstring, steps))
+    ok_at_eos  = !check_next || !is_followed || EOS ∈ next_char
 
     λ(s, at_eos) = begin
         if at_eos
-            # if at_eos then there's no extra char in `s`; compare as is with refstring
             flag  = (s == refstring)
             flag &= ok_at_eos
+        elseif !check_next
+            flag  = (s == refstring)
         else
-            # if not at eos, then `s` has an extra char, chop and compare
             flag  = (chop(s) == refstring)
             flag &= !xor(is_followed, s[end] ∈ next_char)
         end
+        flag
     end
-    return (steps, true, λ, ok_at_eos)
+    return (steps, check_next, λ, ok_at_eos)
 end
 
 """
@@ -117,7 +113,7 @@ valid latex-like command name. Triggering char is a first `\\`.
 """
 function is_lx_command(i::Int, c::Char)
     i == 1 && return is_letter_or(c)
-    is_letter_or(c, '_', '*')
+    is_letter_or(c, ('_', '*'))
 end
 
 val_lx_command = validator(LX_COMMAND_PAT)
@@ -129,7 +125,7 @@ In combination with `greedy_match`, checks to see if we have something that look
 a sequence of 3, 4 or 5 backticks followed by a valid combination of letter defining a
 language. Triggering char is a first backtick.
 """
-function is_language(j)
+function is_lang(j)
     λ(i::Int, c::Char) = begin
         i < j  && return c == '`'         # ` followed by `` forms the opening ```
         i == j && return is_letter_or(c)
@@ -137,6 +133,10 @@ function is_language(j)
     end
     return λ
 end
+
+val_lang3 = validator(CODE_LANG3_PAT)
+val_lang4 = validator(CODE_LANG4_PAT)
+val_lang5 = validator(CODE_LANG5_PAT)
 
 """
 $(SIGNATURES)
@@ -250,11 +250,11 @@ function tokenize(s::AS,
                     tail_idx = nextind(s, head_idx, steps)
                     # is there space for the fixed pattern? otherwise skip
                     at_eos = false
-                    if ν && tail_idx == nextind(s, end_idx)
+                    if ν && (tail_idx == nextind(s, end_idx))
                         tail_idx = end_idx
                         at_eos = true
                     end
-                    tail_idx > end_idx && continue
+                    (tail_idx > end_idx) && continue
 
                     # if there is space, consider the substring and verify whether it matches
                     candidate = subs(s, head_idx, tail_idx)
@@ -264,7 +264,7 @@ function tokenize(s::AS,
                         head_idx = prevind(s, tail_idx, back_one)
                         token = Token(case, chop(candidate, tail=back_one))
                         push!(tokens, token)
-                        # once a token is identified, no need to check other cases.
+                        # once a token is identified, no need to check other cases (go to while)
                         break
                     end
                 # rule-based match: greedy catch until fail
@@ -279,7 +279,7 @@ function tokenize(s::AS,
                     while λ(nchars, probe_char)
                         tail_idx   = probe_idx
                         probe_idx  = nextind(s, probe_idx)
-                        probe_idx  > end_idx && break
+                        (probe_idx > end_idx) && break
                         probe_char = s[probe_idx]
                         nchars    += 1
                     end

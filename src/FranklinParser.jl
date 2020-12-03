@@ -22,4 +22,6 @@ include("utils/regex.jl")
 include("tokens/tokenize.jl")
 include("tokens/markdown.jl")
 
+md_tokenizer = s -> tokenize(s, MD_1_TOKENS, MD_N_TOKENS)
+
 end

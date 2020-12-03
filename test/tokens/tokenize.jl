@@ -11,7 +11,7 @@ end
     r = (s, o, λ, ν) = FP.forward_match("abc")
     @test s == 2 == length("abc") - 1
     @test r isa FP.TokenFinder
-    @test λ("abc", nothing)
+    @test λ("abc", false)
     @test !o  # no check of next char
     @test ν   # no check of next char so ok at EOS
 
@@ -55,8 +55,8 @@ end
     @test !FP.is_div_open(2, '*')
 end
 
-@testset "is_language" begin
-    r = (s, o, λ, ν) = FP.greedy_match(FP.is_language(3))
+@testset "is_lang" begin
+    r = (s, o, λ, ν) = FP.greedy_match(FP.is_lang(3))
     @test r isa FP.TokenFinder
     @test s == 0
     @test !o
