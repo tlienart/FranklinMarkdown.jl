@@ -3,7 +3,27 @@
 [![CI Actions Status](https://github.com/tlienart/FranklinMarkdown.jl/workflows/CI/badge.svg)](https://github.com/tlienart/FranklinMarkdown.jl/actions)
 [![codecov](https://codecov.io/gh/tlienart/FranklinParser.jl/branch/main/graph/badge.svg?token=mNry6r2aIn)](https://codecov.io/gh/tlienart/FranklinParser.jl)
 
-## WIP
+## Workflow
+
+provide a few key functions like
+
+* get all tokens and all blocks
+  * [x] markdown tokenization
+  * [ ] markdown blocks with tree structure and warnings rather than error for failure (send signal no update)
+  * [ ] html tokenization
+  * [ ] html blocks
+* get intermediate markdown representation
+  * [ ] resolve as much as possible to CM-MD
+  * [ ] placeholder for lxcom, code, raw html, hfun
+* get intermediate output (html/latex) using CM
+* finalize output
+
+## Note
+
+if successful could also consider extracting the code evaluation as a module like `FranklinCodeEvaluation.jl`
+
+
+## Notes on changes
 
 * [x] AbstractBlock -> Span
 * [x] Token
