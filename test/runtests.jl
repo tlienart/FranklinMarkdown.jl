@@ -1,6 +1,8 @@
 using Test, FranklinParser, OrderedCollections
 const FP = FranklinParser
 
+include("testutils.jl")
+
 @testset "utils" begin
     include("utils/strings.jl")
     include("utils/types.jl")

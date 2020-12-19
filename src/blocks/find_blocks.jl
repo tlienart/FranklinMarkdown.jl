@@ -1,10 +1,9 @@
-# NOTE:
-# * go over list in order of templates
-# * disable all tokens within a block (iterative passes)
-# *
-#
-# * go over tokens gradually,
+"""
+$(SIGNATURES)
 
+Given a list of tokens and a dictionary of block templates, find  all  blocks matching
+templates. The blocks are sorted by order of appearance and inner blocks are weeded out.
+"""
 function find_blocks(
             tokens::Vector{Token},
             templates::LittleDict{Symbol, BlockTemplate}
@@ -19,12 +18,14 @@ function find_blocks(
     @inbounds for i in eachindex(tokens)
         is_active[i] || continue
         opening = tokens[i].name
+
         opening in template_keys || continue
 
         template = templates[opening]
         closing = template.closing
         nesting = template.nesting
 
+        # Find the closing token
         closing_index = nothing
         open_depth = 1
         for j in i+1:n_tokens
@@ -49,7 +50,8 @@ function find_blocks(
         # deactivate all tokens in the span of the block
         is_active[i:closing_index] .= false
 
-        push!(blocks, Block(template.name, tokens[i] => tokens[closing_index]))
+        new_block = Block(template.name, tokens[i] => tokens[closing_index])
+        push!(blocks, new_block)
     end
     sort!(blocks, by=from)
     remove_inner!(blocks)

@@ -10,15 +10,6 @@ const MD_1_TOKENS = LittleDict{Char, Symbol}(
     '\n' => :LINE_RETURN,
     )
 
-
-"""
-MD_1_TOKENS_LX
-
-Subset of `MD_1C_TOKENS` with only the latex tokens (for parsing in a math environment).
-"""
-const MD_1_TOKENS_LX = filter(p -> p.first ∈ ('{', '}'), MD_1_TOKENS)
-
-
 """
 MD_N_TOKENS
 
@@ -35,7 +26,7 @@ const MD_N_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         greedy_match(is_hr1) => :HORIZONTAL_RULE
         ],
     '+' => [
-        forward_match("+++", ('\n',)) => :MD_DEF_TOML
+        forward_match("+++", ('\n',)) => :MD_DEF_BLOCK
         ],
     '~' => [
         forward_match("~~~") => :RAW_HTML
@@ -115,8 +106,89 @@ const MD_N_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
 marking it as a potential open brace, same for the close brace.
 [2] similar to @def except that it must be at the start of the line. =#
 
-md_tokenizer = s -> find_tokens(s, MD_1_TOKENS, MD_N_TOKENS)
+"""
+MD_1_TOKENS_MATH
 
+Redueced subset of `MD_1C_TOKENS` when parsing in a math environment.
+"""
+const MD_1_TOKENS_MATH = filter(p -> p.first ∈ ('{', '}'), MD_1_TOKENS)
+
+"""
+MD_N_TOKENS_MATH
+
+Reduced subset of `MD_N_TOKENS` specifically when parsing in a math environment.
+"""
+const MD_N_TOKENS_MATH = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
+    '\\' => [
+        forward_match("\\{")  => :INACTIVE,
+        forward_match("\\}")  => :INACTIVE,
+        greedy_match(is_lx_command, val_lx_command) => :LX_COMMAND
+        ]
+    )
+
+
+"""
+$SIGNATURES
+
+Find specific tokens and check whether they should be adjusted, for instance double
+braces will have been captured individually and need to be merged.
+
+Rules:
+* {,{ => {{ and },} => }} (double brace)
+* \\n,\\s => \\n\\s (newline indent)
+"""
+function adjust!(tokens::Vector{Token})
+    n_tokens = length(tokens)
+    remove = Int[]
+    iszero(n_tokens) && return
+    parent = parent_string(tokens[1])
+    lastidx = lastindex(parent)
+    for i in eachindex(tokens)
+        token = tokens[i]
+        # { => {{ and } => }}
+        for (case, res) in zip((:LXB_OPEN, :LXB_CLOSE), (:DBB_OPEN, :DBB_CLOSE))
+            if (token.name == case) && (i < n_tokens)
+                next_token = tokens[i+1]
+                (to(token) == from(next_token) - 1) || continue
+                if next_token.name == case
+                    push!(remove, i+1)
+                    tokens[i] = Token(res, subs(parent, from(token), to(next_token)))
+                end
+            end
+        end
+        # \n => \n\t and \n => \n⎵
+        if (token.name == :LINE_RETURN)
+            # look at the next character if it exists
+            nxtidx = nextind(parent, to(token))
+            nxtidx < lastidx || continue
+            nxtchar = parent[nxtidx]
+            if nxtchar in (' ', '\t')
+                tokens[i] = Token(:LINE_RETURN_INDENT, token.ss)
+            end
+        end
+    end
+    deleteat!(tokens, remove)
+    return
+end
+
+
+"""
+LINE_RETURNS
+
+All tokens that indicate the end of a line.
+"""
+const LINE_RETURNS = (:LINE_RETURN, :LINE_RETURN_INDENT, :EOS)
+
+
+function md_tokenizer(s::AS)
+    tokens = find_tokens(s, MD_1_TOKENS, MD_N_TOKENS)
+    adjust!(tokens)
+    return tokens
+end
+
+function md_math_tokenizer(s::AS)
+    return find_tokens(s, MD_1_TOKENS_MATH, MD_N_TOKENS_MATH)
+end
 
 #
 # """

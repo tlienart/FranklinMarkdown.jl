@@ -136,5 +136,5 @@ end
     @test :COMMENT_OPEN in names
     @test :COMMENT_CLOSE in names
     @test :HORIZONTAL_RULE in names
-    @test :MD_DEF_TOML in names
+    @test :MD_DEF_BLOCK in names
 end

@@ -13,16 +13,25 @@ WIP
 
 * get all tokens and all blocks
   * [x] markdown tokenization
-  * [ ] find markdown definitions (needs indented lines)
-  * [ ] markdown blocks with tree structure and warnings rather than error for failure (send signal no update)
+    * [x] posthoc tokenization for `{{`, `}}` `LR_INDENT` etc
+    * [x] add validator for emoji, footnote (e.g. `abc]:]:`)
+  * [x] find markdown definitions (needs indented lines)
+  * [ ] markdown blocks
+    * [x] basic
+    * [ ] double brace blocks, headers, ...
   * [ ] html tokenization
   * [ ] html blocks
+  * [ ] latex-like elements
+* [ ] context of errors / warnings (would be caught)
 * get intermediate markdown representation
   * [ ] resolve as much as possible to CM-MD
   * [ ] placeholder for lxcom, code, raw html, hfun
 * get intermediate output (html/latex) using CM
 * return intermediate output + auxiliary information for Franklin to use in `convert` function
 
+**Warning**
+
+* [ ] what if user writes a line with `## abc ## def`; the second block should be ignored (this should be done at the re-processing of the content of the first block, should deactivate finding extra headers in it)
 
 ## Workflow
 
@@ -39,6 +48,8 @@ if successful could also consider extracting the code evaluation as a module lik
 * [x] Token
 * [x] `str` -> `parent_str`
 * [ ] from, to
+* [ ] indented code blocks are explicitly not allowed
+* [ ] indentation in a `@def` is any line that starts with a space
 
 ## Check
 

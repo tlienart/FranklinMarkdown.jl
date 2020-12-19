@@ -63,10 +63,11 @@ Check if it looks like an emoji indicator `:...` note that it does not take the 
 """
 is_emoji(i::Int, c::Char) = is_alphanum_or(c, ('+','_','-'))
 
+
 """
 $(SIGNATURES)
 
-Check if it looks like `\\[\\^[\\p{L}0-9]+\\]:`.
+Check if it looks like `\\[\\^[\\p{L}0-9]+\\]:?`.
 """
 function is_footnote(i::Int, c::Char)
     i == 1 && return c == '^'

@@ -19,8 +19,8 @@
 end
 
 @testset "MD_1_TOKENS_LX" begin
-    @test '{' in keys(FP.MD_1_TOKENS_LX)
-    @test '}' in keys(FP.MD_1_TOKENS_LX)
+    @test '{' in keys(FP.MD_1_TOKENS_MATH)
+    @test '}' in keys(FP.MD_1_TOKENS_MATH)
 end
 
 @testset "MD_N_TOKENS" begin
@@ -33,7 +33,7 @@ end
     """
     tokens = FP.find_tokens(s, FP.MD_1_TOKENS, FP.MD_N_TOKENS)
     @test length(tokens) == 3 # 1 +++ 2 \n 3 EOS
-    @test tokens[1].name == :MD_DEF_TOML
+    @test tokens[1].name == :MD_DEF_BLOCK
     tokens = """~~~ a""" |> FP.md_tokenizer
     @test tokens[1].name == :RAW_HTML
     tokens = """[^1]: [^ab]""" |> FP.md_tokenizer
@@ -122,4 +122,16 @@ end
     tokens = raw"````hello `````foo" |> FP.md_tokenizer
     @test tokens[1].name == :CODE_LANG4
     @test tokens[2].name == :CODE_LANG5
+end
+
+@testset "adjustments" begin
+    t = """
+        abc
+            def
+        {{abc}}
+        """ |> FP.md_tokenizer
+    @test t[1].name == :LINE_RETURN_INDENT
+    @test t[2].name == :LINE_RETURN
+    @test t[3].name == :DBB_OPEN
+    @test t[4].name == :DBB_CLOSE
 end

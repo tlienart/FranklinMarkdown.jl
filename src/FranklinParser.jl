@@ -18,6 +18,7 @@ cm_parser = CM.enable!(CM.disable!(CM.Parser(), CM.IndentedCodeBlockRule()), Ski
 include("utils/strings.jl")
 include("utils/types.jl")
 include("utils/regex.jl")
+include("utils/errors.jl")
 
 include("tokens/utils.jl")
 include("tokens/find_tokens.jl")
