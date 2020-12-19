@@ -38,7 +38,7 @@ const MD_N_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("+++", ('\n',)) => :MD_DEF_TOML
         ],
     '~' => [
-        forward_match("~~~") => :ESCAPE
+        forward_match("~~~") => :RAW_HTML
         ],
     '[' => [
         greedy_match(is_footnote) => :FOOTNOTE_REF, # [^...](:)? defs will be separated after
@@ -109,11 +109,14 @@ const MD_N_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
     '*' => [
         greedy_match(is_hr3) => :HORIZONTAL_RULE,
         ]
-    ) # end dict
+    )  # end dict
 #= NOTE
 [1] capturing \{ here will force the head to move after it thereby not
 marking it as a potential open brace, same for the close brace.
 [2] similar to @def except that it must be at the start of the line. =#
+
+md_tokenizer = s -> find_tokens(s, MD_1_TOKENS, MD_N_TOKENS)
+
 
 #
 # """

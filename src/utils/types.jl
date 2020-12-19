@@ -3,13 +3,13 @@ $(TYPEDEF)
 
 SubString of the parent String with a specific meaning for Franklin. All subtypes of `AbstractBlock` must have an `ss` field corresponding to the substring associated to
 the block.
-See also [`Token`](@ref), [`OCBlock`](@ref).
 """
 abstract type AbstractSpan end
 
 from(s::AbstractSpan)          = from(s.ss)
 to(s::AbstractSpan)            = to(s.ss)
 parent_string(s::AbstractSpan) = parent_string(s.ss)
+
 
 """
 $(TYPEDEF)
@@ -28,6 +28,7 @@ to(t::Token) = ifelse(t.name == :EOS, from(t), to(t.ss))
 
 is_eos(t::Token) = t.name == :EOS
 
+
 """
 $(TYPEDEF)
 
@@ -40,6 +41,7 @@ struct SpecialChar <: AbstractSpan
     html::String
 end
 SpecialChar(ss) = SpecialChar(ss, "")
+
 
 """
 $(TYPEDEF)
@@ -60,6 +62,7 @@ function Block(n::Symbol, p::Pair{Token,Token})
     return Block(n, o, c, ss)
 end
 
+
 """
 $(SIGNATURES)
 
@@ -69,7 +72,7 @@ Note EOS is a special '0 length' case to  deal with the fact that a text can end
 token (which would then be an overlapping token and an EOS).
 """
 function content(b::Block)::SubString
-    s = parent_string(b.ss) # does not allocate
+    s = parent_string(b.ss)  # does not allocate
     t = from(b.close)
 
     idxo = nextind(s, to(b.open))
@@ -77,3 +80,21 @@ function content(b::Block)::SubString
 
     return subs(s, idxo, idxc)
 end
+
+
+"""
+$(TYPEDEF)
+
+Template for a block to find. A block goes from a token with a given `opening` name to
+one of several possible `closing` names. Blocks can allow or disallow nesting. For
+instance brace blocks can be nested `{.{.}.}` but not comments.
+"""
+struct BlockTemplate
+    name::Symbol
+    opening::Symbol
+    closing::NTuple{N, Symbol} where N
+    nesting::Bool
+end
+
+BlockTemplate(n, o, c::Symbol, ne) = BlockTemplate(n, o, (c,), ne)
+BlockTemplate(a...; nesting=false) = BlockTemplate(a..., nesting)

@@ -5,7 +5,7 @@
         { { } { }
         } <!--
         <!--"""
-    tokens = FP.tokenize(s, d1, dn)
+    tokens = FP.find_tokens(s, d1, dn)
     @test all(t -> t.name == :LXB_OPEN, tokens[[1, 2, 4]])
     @test all(t -> t.name == :LXB_CLOSE, tokens[[3, 5, 7]])
     @test tokens[6].name == :LINE_RETURN
@@ -25,17 +25,17 @@ end
 
 @testset "MD_N_TOKENS" begin
     s = """--> ----"""
-    tokens = FP.tokenize(s, FP.MD_1_TOKENS, FP.MD_N_TOKENS)
+    tokens = FP.find_tokens(s, FP.MD_1_TOKENS, FP.MD_N_TOKENS)
     @test tokens[1].name == :COMMENT_CLOSE
     @test tokens[2].name == :HORIZONTAL_RULE
     @test tokens[3].name == :EOS
     s = """+++ +++
     """
-    tokens = FP.tokenize(s, FP.MD_1_TOKENS, FP.MD_N_TOKENS)
+    tokens = FP.find_tokens(s, FP.MD_1_TOKENS, FP.MD_N_TOKENS)
     @test length(tokens) == 3 # 1 +++ 2 \n 3 EOS
     @test tokens[1].name == :MD_DEF_TOML
     tokens = """~~~ a""" |> FP.md_tokenizer
-    @test tokens[1].name == :ESCAPE
+    @test tokens[1].name == :RAW_HTML
     tokens = """[^1]: [^ab]""" |> FP.md_tokenizer
     @test tokens[1].name == :FOOTNOTE_REF
     @test tokens[2].name == :FOOTNOTE_REF

@@ -3,9 +3,13 @@
 [![CI Actions Status](https://github.com/tlienart/FranklinMarkdown.jl/workflows/CI/badge.svg)](https://github.com/tlienart/FranklinMarkdown.jl/actions)
 [![codecov](https://codecov.io/gh/tlienart/FranklinParser.jl/branch/main/graph/badge.svg?token=mNry6r2aIn)](https://codecov.io/gh/tlienart/FranklinParser.jl)
 
-## Workflow
+## Ovv Markdown
 
-provide a few key functions like
+* get tokens
+* form blocks (possibly via tree)
+* reduce blocks to their special parts (raw HTML input)
+
+WIP
 
 * get all tokens and all blocks
   * [x] markdown tokenization
@@ -18,6 +22,11 @@ provide a few key functions like
   * [ ] placeholder for lxcom, code, raw html, hfun
 * get intermediate output (html/latex) using CM
 * return intermediate output + auxiliary information for Franklin to use in `convert` function
+
+
+## Workflow
+
+provide a few key functions like
 
 ## Note
 
