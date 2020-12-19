@@ -112,13 +112,13 @@ end
 @testset "tokenize" begin
     # '{', '}', '\n'
     d1 = FP.MD_1_TOKENS
-    dn = filter(p->p.first in ('<', '-', '+'), FP.MD_N_TOKENS)
+    dn = filter(p -> p.first in ('<', '-', '+'), FP.MD_N_TOKENS)
 
     s = """
         A { B } C
         D } E { F
         """
-    tokens = FP.tokenize(s, d1, dn)
+    tokens = FP.find_tokens(s, d1, dn)
     names = [t.name for t in tokens]
     @test count(e -> e == :LXB_OPEN, names) == 2
     @test count(e -> e == :LXB_CLOSE, names) == 2
@@ -131,10 +131,10 @@ end
         ---
         and +++
         """
-    tokens = FP.tokenize(s, d1, dn)
+    tokens = FP.find_tokens(s, d1, dn)
     names = [t.name for t in tokens]
     @test :COMMENT_OPEN in names
     @test :COMMENT_CLOSE in names
     @test :HORIZONTAL_RULE in names
-    @test :MD_DEF_TOML in names
+    @test :MD_DEF_BLOCK in names
 end

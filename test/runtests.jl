@@ -1,6 +1,8 @@
 using Test, FranklinParser, OrderedCollections
 const FP = FranklinParser
 
+include("testutils.jl")
+
 @testset "utils" begin
     include("utils/strings.jl")
     include("utils/types.jl")
@@ -8,6 +10,10 @@ const FP = FranklinParser
 end
 
 @testset "tokens" begin
-    include("tokens/tokenize.jl")
-    include("tokens/markdown.jl")
+    include("tokens/find_tokens.jl")
+    include("tokens/markdown_tokens.jl")
+end
+
+@testset "blocks" begin
+    include("blocks/markdown_blocks.jl")
 end

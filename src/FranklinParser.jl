@@ -18,10 +18,15 @@ cm_parser = CM.enable!(CM.disable!(CM.Parser(), CM.IndentedCodeBlockRule()), Ski
 include("utils/strings.jl")
 include("utils/types.jl")
 include("utils/regex.jl")
+include("utils/errors.jl")
 
-include("tokens/tokenize.jl")
-include("tokens/markdown.jl")
+include("tokens/utils.jl")
+include("tokens/find_tokens.jl")
+include("tokens/markdown_utils.jl")
+include("tokens/markdown_tokens.jl")
 
-md_tokenizer = s -> tokenize(s, MD_1_TOKENS, MD_N_TOKENS)
+include("blocks/utils.jl")
+include("blocks/find_blocks.jl")
+include("blocks/markdown_blocks.jl")
 
 end
