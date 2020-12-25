@@ -15,13 +15,18 @@ WIP
   * [x] markdown tokenization
     * [x] posthoc tokenization for `{{`, `}}` `LR_INDENT` etc
     * [x] add validator for emoji, footnote (e.g. `abc]:]:`)
+    * [ ] check specific token are at start of line (`+++`, `###`, `@def`, hrules)
+    * [ ] validate emoji
+    * [ ] validate footnote
   * [x] find markdown definitions (needs indented lines)
   * [ ] markdown blocks
     * [x] basic
     * [ ] double brace blocks, headers, ...
+    * [ ] math parsing
   * [ ] html tokenization
   * [ ] html blocks
   * [ ] latex-like elements
+    * [ ] dedent definitions
 * [ ] context of errors / warnings (would be caught)
 * get intermediate markdown representation
   * [ ] resolve as much as possible to CM-MD
@@ -35,12 +40,21 @@ WIP
 
 ## Workflow
 
-provide a few key functions like
+* input MD, return output lowered MD + remaining special blocks to treat by Franklin (e.g. code)
 
-## Note
+In Franklin:
 
-if successful could also consider extracting the code evaluation as a module like `FranklinCodeEvaluation.jl`
-
+```julia
+import CommonMark
+const CM = CommonMark
+# ----------------------------------------
+# Disable the parsing of indented blocks
+# see https://github.com/MichaelHatherly/CommonMark.jl/issues/1#issuecomment-735990126)
+struct SkipIndented end
+block_rule(::SkipIndented) = CM.Rule((p, c) -> 0, 8, "")
+cm_parser = CM.enable!(CM.disable!(CM.Parser(), CM.IndentedCodeBlockRule()), SkipIndented())
+# ----------------------------------------
+```
 
 ## Notes on changes
 
@@ -62,3 +76,47 @@ if successful could also consider extracting the code evaluation as a module lik
 ### Tests
 
 * should be able to  parse ```` ```! ```` (seems like it's  failing in Franklin now)
+
+# RULES
+
+## CommonMark basics
+
+* Bold, Italic
+  * [ ] tests
+* Images
+  * [ ] tests (notes: check different types of links)
+* Tables
+  * [ ] tests (notes: check nesting with commands inside)
+
+## Franklin specials -- basics
+
+* Comments
+  * [ ] parsing
+  * [ ] processing
+  * [ ] tests
+* Raw HTML
+  * [ ] parsing
+  * [ ] processing
+  * [ ] tests
+* Headers
+  * [ ] parsing
+  * [ ] processing
+  * [ ] tests
+* Footnotes
+  * [ ] parsing
+  * [ ] processing
+  * [ ] tests
+* Entities
+  * [ ] parsing
+  * [ ] processing
+  * [ ] tests
+* Emojis
+  * [ ] parsing
+  * [ ] processing
+  * [ ] tests
+* Div blocks
+  * [ ] parsing
+  * [ ] processing
+  * [ ] tests
+
+## Franklin specials -- code blocks

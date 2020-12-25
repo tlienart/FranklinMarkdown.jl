@@ -1,6 +1,6 @@
 @testset "Not closed error"  begin
     s = "<!--"
-    @test_throws FP.BlockNotClosed FP.md_blockifier(s)
+    @test_throws FPE{FP.BlockNotClosed} FP.md_blockifier(s)
 end
 
 @testset "Comment - no nesting" begin

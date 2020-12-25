@@ -42,9 +42,9 @@ function find_blocks(
         end
 
         if isnothing(closing_index)
-            throw(BlockNotClosed("""
+            parser_exception(BlockNotClosed, """
                 An opening token '$(opening)' was found but not closed.
-                """))
+                """)
         end
 
         # deactivate all tokens in the span of the block
@@ -59,6 +59,11 @@ function find_blocks(
 end
 
 
+"""
+$SIGNATURES
+
+Remove blocks which are part of larger blocks.
+"""
 function remove_inner!(blocks::Vector{Block})
     isempty(blocks) && return
     n_blocks = length(blocks)

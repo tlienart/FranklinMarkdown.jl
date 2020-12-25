@@ -1,5 +1,6 @@
 using Test, FranklinParser, OrderedCollections
 const FP = FranklinParser
+const FPE = FP.FranklinParserException
 
 include("testutils.jl")
 
