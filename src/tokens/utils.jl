@@ -35,8 +35,12 @@ or not),
 3. a boolean function that can be applied on a sequence of character,
 4. an indicator of whether the pattern can be found at the end of the string.
 """
-function forward_match(refstring::String, next_char::NTuple{K,Char} where K = (),
-                       is_followed=true)::TokenFinder
+function forward_match(
+            refstring::String,
+            next_char::NTuple{K,Char} where K = (),
+            is_followed=true
+            )::TokenFinder
+
     steps      = lastindex(refstring)
     check_next = !isempty(next_char)
     steps      = ifelse(check_next, steps, prevind(refstring, steps))

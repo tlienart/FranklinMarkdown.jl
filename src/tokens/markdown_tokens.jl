@@ -86,16 +86,16 @@ const MD_N_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         greedy_match(is_hr2)   => :HORIZONTAL_RULE,
         ],
     '`' => [
-        forward_match("`",  ('`',), false) => :CODE_SINGLE, # `⎵
-        forward_match("``", ('`',), false) => :CODE_DOUBLE, # ``⎵*
+        forward_match("`",  ('`',), false)  => :CODE_SINGLE,  # `⎵
+        forward_match("``", ('`',), false)  => :CODE_DOUBLE,  # ``⎵*
         # 3+ can be named
-        forward_match("```",  SPACE_CHAR) => :CODE_TRIPLE, # ```⎵*
-        forward_match("`"^4,  SPACE_CHAR) => :CODE_QUAD,   # ````⎵*
-        forward_match("`"^5,  SPACE_CHAR) => :CODE_PENTA,  # `````⎵*
-        forward_match("```!", SPACE_CHAR) => :CODE_TRIPLE!,# ```!⎵*
-        greedy_match(is_lang(3), val_lang3) => :CODE_LANG3,  # ```lang*
-        greedy_match(is_lang(4), val_lang4) => :CODE_LANG4,  # ````lang*
-        greedy_match(is_lang(5), val_lang5) => :CODE_LANG5,  # `````lang*
+        forward_match("```",  SPACE_CHAR)   => :CODE_TRIPLE,  # ```⎵*
+        forward_match("`"^4,  SPACE_CHAR)   => :CODE_QUAD,    # ````⎵*
+        forward_match("`"^5,  SPACE_CHAR)   => :CODE_PENTA,   # `````⎵*
+        forward_match("```!", SPACE_CHAR)   => :CODE_TRIPLE!, # ```!⎵*
+        greedy_match(is_lang(3), val_lang3) => :CODE_LANG3,   # ```lang*
+        greedy_match(is_lang(4), val_lang4) => :CODE_LANG4,   # ````lang*
+        greedy_match(is_lang(5), val_lang5) => :CODE_LANG5,   # `````lang*
         ],
     '*' => [
         greedy_match(is_hr3) => :HORIZONTAL_RULE,
@@ -128,7 +128,7 @@ const MD_N_TOKENS_MATH = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
 
 
 """
-$SIGNATURES
+$(SIGNATURES)
 
 Find specific tokens and check whether they should be adjusted, for instance double
 braces will have been captured individually and need to be merged.

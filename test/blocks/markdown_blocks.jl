@@ -9,10 +9,12 @@ end
         """
     blocks = s |> FP.md_blockifier
     @test FP.content(blocks[1]) == "ABC"
+    @test isempty(blocks[1].inner_tokens)
     s = """
         <!--A<!--B-->
         """
     blocks = s |> FP.md_blockifier
+    @test blocks[1].inner_tokens[1].name == :COMMENT_OPEN
     @test FP.content(blocks[1]) == "A<!--B"
     s = """
         <!--A<!--B-->C-->

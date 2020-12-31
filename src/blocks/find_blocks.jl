@@ -1,17 +1,17 @@
 """
 $(SIGNATURES)
 
-Given a list of tokens and a dictionary of block templates, find  all  blocks matching
+Given a list of tokens and a dictionary of block templates, find all blocks matching
 templates. The blocks are sorted by order of appearance and inner blocks are weeded out.
 """
 function find_blocks(
-            tokens::Vector{Token},
+            tokens::AbstractVector{Token},
             templates::LittleDict{Symbol, BlockTemplate}
             )::Vector{Block}
 
     blocks = Block[]
     n_tokens = length(tokens)
-    isempty(n_tokens) && return blocks
+    iszero(n_tokens) && return blocks
     is_active = ones(Bool, n_tokens)
 
     template_keys = keys(templates)
@@ -47,11 +47,12 @@ function find_blocks(
                 """)
         end
 
+        tokens_in_span = @view tokens[i:closing_index]
+        new_block = Block(template.name, tokens_in_span)
+        push!(blocks, new_block)
+
         # deactivate all tokens in the span of the block
         is_active[i:closing_index] .= false
-
-        new_block = Block(template.name, tokens[i] => tokens[closing_index])
-        push!(blocks, new_block)
     end
     sort!(blocks, by=from)
     remove_inner!(blocks)
@@ -60,7 +61,7 @@ end
 
 
 """
-$SIGNATURES
+$(SIGNATURES)
 
 Remove blocks which are part of larger blocks.
 """

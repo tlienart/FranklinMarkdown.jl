@@ -63,7 +63,6 @@ Check if it looks like an emoji indicator `:...` note that it does not take the 
 """
 is_emoji(i::Int, c::Char) = is_alphanum_or(c, ('+','_','-'))
 
-
 """
 $(SIGNATURES)
 
@@ -76,21 +75,21 @@ function is_footnote(i::Int, c::Char)
 end
 
 """
-$SIGNATURES
+$(SIGNATURES)
 
 Check if it looks like `---+`.
 """
 is_hr1(::Int, c::Char) = (c == '-')
 
 """
-$SIGNATURES
+$(SIGNATURES)
 
 Check if it looks like `___+`.
 """
 is_hr2(::Int, c::Char) = (c == '_')
 
 """
-$SIGNATURES
+$(SIGNATURES)
 
 Check if it looks like `***+`.
 """

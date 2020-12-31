@@ -1,3 +1,4 @@
+# see utils/types/BlockTemplate
 const MD_BLOCKS = blocks_dict([
    BlockTemplate(:COMMENT,         :COMMENT_OPEN, :COMMENT_CLOSE),
    BlockTemplate(:RAW_HTML,        :RAW_HTML,     :RAW_HTML     ),

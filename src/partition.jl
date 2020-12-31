@@ -1,0 +1,42 @@
+function partition(
+        s::AS,
+        t::AbstractVector{Token},
+        tokenizer::Function,
+        blockifier::Function
+        )::Vector{TextOrBlock}
+
+    parts = TextOrBlock[]
+    isempty(s) && return parts
+    if isempty(t)
+        t = tokenizer(s)
+    end
+    if length(t) == 1   # only the EOS token
+        return [Text(SubString(s))]
+    end
+    blocks = blockifier(t)
+    isempty(blocks) && return [Text(SubString(s))]
+
+    # add Text at beginning if first block is not there
+    first_block = blocks[1]
+    last_block = blocks[end]
+    if from(s) < from(first_block)
+        push!(parts, Text(subs(s, from(s), previous_index(first_block))))
+    end
+    for i in 1:length(blocks)-1
+        bi   = blocks[i]
+        bip1 = blocks[i+1]
+        push!(parts, blocks[i])
+        inter = subs(s, next_index(bi), previous_index(bip1))
+        isempty(inter) || push!(parts, Text(inter))
+    end
+    push!(parts, last_block)
+    # add Text at the end if last block is not there
+    if to(s) > to(last_block)
+        push!(parts, Text(subs(s, next_index(last_block), to(s))))
+    end
+    return parts
+end
+
+function partition_md(s, t=EMPTY_TOKEN_VEC)
+    return partition(s, t, md_tokenizer, md_blockifier)
+end

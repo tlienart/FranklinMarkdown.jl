@@ -42,3 +42,7 @@ Returns an Int.
 """
 to(ss::SubString) = ss.offset + ss.ncodeunits
 to(s::String)     = lastindex(s)
+
+
+previous_index(o) = prevind(parent_string(o), from(o))
+next_index(o) = nextind(parent_string(o), to(o))

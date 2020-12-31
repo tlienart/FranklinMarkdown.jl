@@ -5,8 +5,8 @@ Convenience type to define how tokens should be found. It is a pair mapping a tu
 describing how to recognise the token and a symbol with the name of the token.
 """
 const TokenFinder = Tuple{
-        Int,        # steps
-        Bool,       # whether to check the next char or not
+        Int,        # steps (number of characters for a look ahead)
+        Bool,       # whether to check the following char or not
         Function,   # oracle indicating whether there's a match
         Union{Bool,Nothing,Function}} # whether it can be at EOS
 

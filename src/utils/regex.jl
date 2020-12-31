@@ -26,9 +26,9 @@ const HTML_ENTITY_PAT = r"&(?:[a-zA-Z]+[0-9]{0,2}|#[0-9]{1,6}|#x[0-9a-f]{1,6});"
 """
 CODE_LANG*_PAT
 """
-const CODE_LANG3_PAT = r"```\p{L}[\p{L}0-9-]*"
-const CODE_LANG4_PAT = r"````\p{L}[\p{L}0-9-]*"
-const CODE_LANG5_PAT = r"`````\p{L}[\p{L}0-9-]*"
+const CODE_LANG3_PAT = r"`{3}\p{L}[\p{L}0-9-]*"
+const CODE_LANG4_PAT = r"`{4}\p{L}[\p{L}0-9-]*"
+const CODE_LANG5_PAT = r"`{5}\p{L}[\p{L}0-9-]*"
 
 # """
 # LX_NARG_PAT

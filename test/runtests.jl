@@ -18,3 +18,7 @@ end
 @testset "blocks" begin
     include("blocks/markdown_blocks.jl")
 end
+
+@testset "partition" begin
+    include("partition/md_partition.jl")
+end

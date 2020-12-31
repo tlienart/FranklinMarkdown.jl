@@ -7,7 +7,8 @@
     @test FP.parent_string(s) === s
     @test t.name == :ab
     @test t.ss == "bc"
-    @test t.lno == 0
+    t = FP.Token(:EOS, FP.subs(s, lastindex(s)))
+    @test FP.is_eos(t)
 end
 
 @testset "SpecialChar" begin
@@ -31,4 +32,10 @@ end
     @test b.open === t1
     @test b.close === t2
     @test FP.content(b) == "bc"
+    @test isa(b, FP.AbstractSpan)
+
+    s = "abc def ghi"
+    t = FP.Text(FP.subs(s, 5:7))
+    @test isa(t, FP.AbstractSpan)
+    @test FP.content(t) == "def"
 end

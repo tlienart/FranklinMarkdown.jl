@@ -3,6 +3,8 @@ module FranklinParser
 using DocStringExtensions
 import OrderedCollections: LittleDict
 
+const SubVector{T} = SubArray{T, 1}
+
 include("utils/strings.jl")
 include("utils/types.jl")
 include("utils/regex.jl")
@@ -16,5 +18,7 @@ include("tokens/markdown_tokens.jl")
 include("blocks/utils.jl")
 include("blocks/find_blocks.jl")
 include("blocks/markdown_blocks.jl")
+
+include("partition.jl")
 
 end
