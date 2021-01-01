@@ -18,11 +18,6 @@
     @test length(tokens) == 11
 end
 
-@testset "MD_1_TOKENS_LX" begin
-    @test '{' in keys(FP.MD_1_TOKENS_MATH)
-    @test '}' in keys(FP.MD_1_TOKENS_MATH)
-end
-
 @testset "MD_N_TOKENS" begin
     s = """--> ----"""
     tokens = FP.find_tokens(s, FP.MD_1_TOKENS, FP.MD_N_TOKENS)

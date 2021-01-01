@@ -1,5 +1,5 @@
 # see utils/types/BlockTemplate
-const MD_BLOCKS = blocks_dict([
+const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
    BlockTemplate(:COMMENT,         :COMMENT_OPEN, :COMMENT_CLOSE),
    BlockTemplate(:RAW_HTML,        :RAW_HTML,     :RAW_HTML     ),
    BlockTemplate(:MD_DEF_BLOCK,    :MD_DEF_BLOCK, :MD_DEF_BLOCK ),

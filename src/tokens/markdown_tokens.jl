@@ -106,25 +106,25 @@ const MD_N_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
 marking it as a potential open brace, same for the close brace.
 [2] similar to @def except that it must be at the start of the line. =#
 
-"""
-MD_1_TOKENS_MATH
-
-Redueced subset of `MD_1C_TOKENS` when parsing in a math environment.
-"""
-const MD_1_TOKENS_MATH = filter(p -> p.first ∈ ('{', '}'), MD_1_TOKENS)
-
-"""
-MD_N_TOKENS_MATH
-
-Reduced subset of `MD_N_TOKENS` specifically when parsing in a math environment.
-"""
-const MD_N_TOKENS_MATH = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
-    '\\' => [
-        forward_match("\\{")  => :INACTIVE,
-        forward_match("\\}")  => :INACTIVE,
-        greedy_match(is_lx_command, val_lx_command) => :LX_COMMAND
-        ]
-    )
+# """
+# MD_1_TOKENS_MATH
+#
+# Reduced subset of `MD_1C_TOKENS` when parsing in a math environment.
+# """
+# const MD_1_TOKENS_MATH = filter(p -> p.first ∈ ('{', '}'), MD_1_TOKENS)
+#
+# """
+# MD_N_TOKENS_MATH
+#
+# Reduced subset of `MD_N_TOKENS` specifically when parsing in a math environment.
+# """
+# const MD_N_TOKENS_MATH = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
+#     '\\' => [
+#         forward_match("\\{")  => :INACTIVE,
+#         forward_match("\\}")  => :INACTIVE,
+#         greedy_match(is_lx_command, val_lx_command) => :LX_COMMAND
+#         ]
+#     )
 
 
 """
@@ -186,9 +186,9 @@ function md_tokenizer(s::AS)
     return tokens
 end
 
-function md_math_tokenizer(s::AS)
-    return find_tokens(s, MD_1_TOKENS_MATH, MD_N_TOKENS_MATH)
-end
+# function md_math_tokenizer(s::AS)
+#     return find_tokens(s, MD_1_TOKENS_MATH, MD_N_TOKENS_MATH)
+# end
 
 #
 # """

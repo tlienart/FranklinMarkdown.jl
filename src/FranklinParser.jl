@@ -15,7 +15,6 @@ include("tokens/find_tokens.jl")
 include("tokens/markdown_utils.jl")
 include("tokens/markdown_tokens.jl")
 
-include("blocks/utils.jl")
 include("blocks/find_blocks.jl")
 include("blocks/markdown_blocks.jl")
 
