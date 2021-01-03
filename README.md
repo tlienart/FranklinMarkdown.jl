@@ -3,26 +3,42 @@
 [![CI Actions Status](https://github.com/tlienart/FranklinMarkdown.jl/workflows/CI/badge.svg)](https://github.com/tlienart/FranklinMarkdown.jl/actions)
 [![codecov](https://codecov.io/gh/tlienart/FranklinParser.jl/branch/main/graph/badge.svg?token=mNry6r2aIn)](https://codecov.io/gh/tlienart/FranklinParser.jl)
 
-## Ovv Markdown
+## Workflow (MD)
 
-* get tokens
-* form blocks (possibly via tree)
-* reduce blocks to their special parts (raw HTML input)
+### Default init (original MD string -> first level partition)
+
+1. input text `s::String`
+1. call `default_md_partition(s)`
+1. obtain a partition of `s` formed of `Text` or `Block` elements
+
+1. input text `s` (either `String` or `SubString`)
+1. call `partition(s, t)` where `t` is optionally given as the vector of tokens for `s` if it had been obtained from a previous pass
+1. a partition of `s` is returned as a vector of `Text` or `Block` objects
+
+The recursion would happen upon treatment of `Block` objects where the `partition_md` can be called again.
+
+
+
+---------------------------------------
+
+## Work in progress
 
 WIP
 
 * get all tokens and all blocks
   * [x] markdown tokenization
     * [x] posthoc tokenization for `{{`, `}}` `LR_INDENT` etc
-    * [x] add validator for emoji, footnote (e.g. `abc]:]:`)
+    * [ ] add validator for emoji, footnote (e.g. `abc]:]:`)
+      * [ ] validate emoji
+      * [ ] validate footnote
     * [ ] check specific token are at start of line (`+++`, `###`, `@def`, hrules)
-    * [ ] validate emoji
-    * [ ] validate footnote
+    * [ ] mark empty lines between two indented lines as indented (see footnote definition, and https://www.markdownguide.org/extended-syntax/#footnotes)
   * [x] find markdown definitions (needs indented lines)
   * [ ] markdown blocks
     * [x] basic
     * [ ] double brace blocks, headers, ...
     * [ ] math parsing
+    * [ ] footnote definitions over multiple lines
   * [ ] html tokenization
   * [ ] html blocks
   * [ ] latex-like elements

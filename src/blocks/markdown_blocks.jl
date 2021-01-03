@@ -20,22 +20,13 @@ const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
    BlockTemplate(:LXB, :LXB_OPEN, :LXB_CLOSE, nesting=true),
    BlockTemplate(:DBB, :DBB_OPEN, :DBB_CLOSE),
    # headers
-   BlockTemplate(:H1, :H1_OPEN, LINE_RETURNS),
-   BlockTemplate(:H2, :H2_OPEN, LINE_RETURNS),
-   BlockTemplate(:H3, :H3_OPEN, LINE_RETURNS),
-   BlockTemplate(:H4, :H4_OPEN, LINE_RETURNS),
-   BlockTemplate(:H5, :H5_OPEN, LINE_RETURNS),
-   BlockTemplate(:H6, :H6_OPEN, LINE_RETURNS),
+   BlockTemplate(:H1, :H1_OPEN, END_OF_LINE),
+   BlockTemplate(:H2, :H2_OPEN, END_OF_LINE),
+   BlockTemplate(:H3, :H3_OPEN, END_OF_LINE),
+   BlockTemplate(:H4, :H4_OPEN, END_OF_LINE),
+   BlockTemplate(:H5, :H5_OPEN, END_OF_LINE),
+   BlockTemplate(:H6, :H6_OPEN, END_OF_LINE),
    # Footnote
-   BlockTemplate(:FOOTNOTE_DEF, :FOOTNOTE_DEF, LINE_RETURNS),
-   BlockTemplate(:LINK_DEF,     :LINK_DEF,     LINE_RETURNS),
+   BlockTemplate(:FOOTNOTE_DEF, :FOOTNOTE_DEF, :LINE_RETURN),
+   BlockTemplate(:LINK_DEF,     :LINK_DEF,     END_OF_LINE),
    ])
-
-function md_blockifier(t::Vector{Token})
-   blocks = find_blocks(t, MD_BLOCKS)
-   return blocks
-end
-
-function md_blockifier(s::AS)
-   return s |> md_tokenizer |> md_blockifier
-end

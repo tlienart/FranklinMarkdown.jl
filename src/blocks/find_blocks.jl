@@ -63,7 +63,8 @@ end
 """
 $(SIGNATURES)
 
-Remove blocks which are part of larger blocks.
+Remove blocks which are part of larger blocks (these will get re-formed and re-processed
+at an ulterior step).
 """
 function remove_inner!(blocks::Vector{Block})
     isempty(blocks) && return

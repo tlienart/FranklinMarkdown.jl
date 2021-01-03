@@ -1,48 +1,50 @@
+md_blockifier = s -> FP.default_md_tokenizer(s) |> FP.default_md_blockifier
+
 @testset "Not closed error"  begin
     s = "<!--"
-    @test_throws FPE{FP.BlockNotClosed} FP.md_blockifier(s)
+    @test_throws FPE{FP.BlockNotClosed} md_blockifier(s)
 end
 
 @testset "Comment - no nesting" begin
     s = """
         <!--ABC-->
         """
-    blocks = s |> FP.md_blockifier
+    blocks = s |> md_blockifier
     @test FP.content(blocks[1]) == "ABC"
     @test isempty(blocks[1].inner_tokens)
     s = """
         <!--A<!--B-->
         """
-    blocks = s |> FP.md_blockifier
+    blocks = s |> md_blockifier
     @test blocks[1].inner_tokens[1].name == :COMMENT_OPEN
     @test FP.content(blocks[1]) == "A<!--B"
     s = """
         <!--A<!--B-->C-->
         """
-    blocks = s |> FP.md_blockifier
+    blocks = s |> md_blockifier
     @test length(blocks) == 1
     @test FP.content(blocks[1]) == "A<!--B"
 end
 
 @testset "Other - no nesting" begin
-    blocks = "~~~ABC~~~" |> FP.md_blockifier
+    blocks = "~~~ABC~~~" |> md_blockifier
     @test FP.content(blocks[1]) == "ABC"
     blocks = """
         +++
         ABC
         +++
-        """ |> FP.md_blockifier
+        """ |> md_blockifier
     # code
     @test strip(FP.content(blocks[1])) == "ABC"
-    blocks = "```julia ABC``` ````julia ABC```` `````julia ABC`````" |> FP.md_blockifier
+    blocks = "```julia ABC``` ````julia ABC```` `````julia ABC`````" |> md_blockifier
     @test strip(FP.content(blocks[1])) == "ABC"
     @test strip(FP.content(blocks[2])) == "ABC"
     @test strip(FP.content(blocks[3])) == "ABC"
-    blocks = "`A` ``A`` ``` A```" |> FP.md_blockifier
+    blocks = "`A` ``A`` ``` A```" |> md_blockifier
     @test FP.content(blocks[1]) == "A"
     @test FP.content(blocks[2]) == "A"
     @test strip(FP.content(blocks[3])) == "A"
-    blocks = "```! ABC```" |> FP.md_blockifier
+    blocks = "```! ABC```" |> md_blockifier
     @test strip(FP.content(blocks[1])) == "ABC"
     # headers
     blocks = """
@@ -52,7 +54,7 @@ end
         #### klm
         ##### nop
         ###### qrs
-        """ |> FP.md_blockifier
+        """ |> md_blockifier
     @test strip(FP.content(blocks[1])) == "abc"
     @test strip(FP.content(blocks[2])) == "def"
     @test strip(FP.content(blocks[3])) == "ghi"
@@ -67,35 +69,35 @@ end
 end
 
 @testset "Braces - nesting" begin
-    blocks = "{ABC}" |> FP.md_blockifier
+    blocks = "{ABC}" |> md_blockifier
     @test FP.content(blocks[1]) == "ABC"
-    blocks = "{ABC{DEF}H{IJ}K{L{M}O}P}" |> FP.md_blockifier
+    blocks = "{ABC{DEF}H{IJ}K{L{M}O}P}" |> md_blockifier
     @test FP.content(blocks[1]) == "ABC{DEF}H{IJ}K{L{M}O}P"
 end
 
 @testset "Other - nesting" begin
     blocks = """
         @@abc DEF {GHI} KLM @@
-        """ |> FP.md_blockifier
+        """ |> md_blockifier
     @test strip(FP.content(blocks[1])) == "DEF {GHI} KLM"
 end
 
 @testset "@def" begin
     blocks = """
         @def a = 5
-        """ |> FP.md_blockifier
+        """ |> md_blockifier
     @test strip(FP.content(blocks[1])) == "a = 5"
     blocks = """
         @def a = [1,
             2]
-        """ |> FP.md_blockifier
+        """ |> md_blockifier
     @test isapproxstr(FP.content(blocks[1]), "a=[1,2]")
 end
 
 @testset "Double brace" begin
     blocks = """
         {{abc {g} def}}
-        """ |> FP.md_blockifier
+        """ |> md_blockifier
     @test FP.content(blocks[1]) == "abc {g} def"
 end
 
@@ -104,7 +106,7 @@ end
         <!--~~~ABC~~~-->
         ~~~<!--ABC-->~~~
         """
-    blocks = s |> FP.md_blockifier
+    blocks = s |> md_blockifier
     @test length(blocks) == 2
     @test FP.content(blocks[1]) == "~~~ABC~~~"
     @test FP.content(blocks[2]) == "<!--ABC-->"
@@ -114,14 +116,14 @@ end
         a = "~~~567"
         b = "-->"
         +++
-        """ |> FP.md_blockifier
+        """ |> md_blockifier
     @test strip(FP.content(b[1])) == "a = \"~~~567\"\nb = \"-->\""
 
     b = """
         ```foo
         `A` ``B``
         ```
-        """ |> FP.md_blockifier
+        """ |> md_blockifier
     @test strip(FP.content(b[1])) == "`A` ``B``"
 
     b = """
@@ -133,7 +135,7 @@ end
             @@
             {ABC}
         @@
-        """ |> FP.md_blockifier
+        """ |> md_blockifier
     @test length(b) == 1
     @test isapproxstr(FP.content(b[1]), "@@def ```julia hello```@@ {ABC}")
 end

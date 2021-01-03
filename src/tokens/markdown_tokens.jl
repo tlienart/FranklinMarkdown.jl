@@ -1,23 +1,25 @@
 """
-MD_1_TOKENS
-
-Dictionary of single-char tokens for Markdown. Note that these characters are exclusive,
-they cannot appear again in a larger token.
-"""
-const MD_1_TOKENS = LittleDict{Char, Symbol}(
-    '{'  => :LXB_OPEN,
-    '}'  => :LXB_CLOSE,
-    '\n' => :LINE_RETURN,
-    )
-
-"""
-MD_N_TOKENS
+MD_TOKENS
 
 Dictionary of tokens for Markdown. Note that for each, there may be several
 possibilities to consider in which case the order is important: the first case
 that works will be taken.
 """
-const MD_N_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
+const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
+    '{' => [
+        forward_match("{{") => :DBB_OPEN,
+        forward_match("{")  => :LXB_OPEN
+        ],
+    '}' => [
+        forward_match("}}") => :DBB_CLOSE,
+        forward_match("}")  => :LXB_CLOSE,
+        ],
+    '\n' => [
+        forward_match("\n    ",) => :LINE_RETURN_INDENT_4,
+        forward_match("\n  ",)   => :LINE_RETURN_INDENT_2,
+        forward_match("\n\t",)   => :LINE_RETURN_INDENT_TAB,
+        forward_match("\n")      => :LINE_RETURN
+        ],
     '<' => [
         forward_match("<!--") => :COMMENT_OPEN
         ],
@@ -106,6 +108,14 @@ const MD_N_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
 marking it as a potential open brace, same for the close brace.
 [2] similar to @def except that it must be at the start of the line. =#
 
+
+"""
+END_OF_LINE
+
+All tokens that indicate the end of a line.
+"""
+const END_OF_LINE = (:LINE_RETURN, :LINE_RETURN_INDENT, :EOS)
+
 # """
 # MD_1_TOKENS_MATH
 #
@@ -126,65 +136,52 @@ marking it as a potential open brace, same for the close brace.
 #         ]
 #     )
 
-
-"""
-$(SIGNATURES)
-
-Find specific tokens and check whether they should be adjusted, for instance double
-braces will have been captured individually and need to be merged.
-
-Rules:
-* {,{ => {{ and },} => }} (double brace)
-* \\n,\\s => \\n\\s (newline indent)
-"""
-function adjust!(tokens::Vector{Token})
-    n_tokens = length(tokens)
-    remove = Int[]
-    iszero(n_tokens) && return
-    parent = parent_string(tokens[1])
-    lastidx = lastindex(parent)
-    for i in eachindex(tokens)
-        token = tokens[i]
-        # { => {{ and } => }}
-        for (case, res) in zip((:LXB_OPEN, :LXB_CLOSE), (:DBB_OPEN, :DBB_CLOSE))
-            if (token.name == case) && (i < n_tokens)
-                next_token = tokens[i+1]
-                (to(token) == from(next_token) - 1) || continue
-                if next_token.name == case
-                    push!(remove, i+1)
-                    tokens[i] = Token(res, subs(parent, from(token), to(next_token)))
-                end
-            end
-        end
-        # \n => \n\t and \n => \n⎵
-        if (token.name == :LINE_RETURN)
-            # look at the next character if it exists
-            nxtidx = nextind(parent, to(token))
-            nxtidx < lastidx || continue
-            nxtchar = parent[nxtidx]
-            if nxtchar in (' ', '\t')
-                tokens[i] = Token(:LINE_RETURN_INDENT, token.ss)
-            end
-        end
-    end
-    deleteat!(tokens, remove)
-    return
-end
-
-
-"""
-LINE_RETURNS
-
-All tokens that indicate the end of a line.
-"""
-const LINE_RETURNS = (:LINE_RETURN, :LINE_RETURN_INDENT, :EOS)
+#
+# """
+# $(SIGNATURES)
+#
+# Find specific tokens and check whether they should be adjusted, for instance double
+# braces will have been captured individually and need to be merged.
+#
+# Rules:
+# * {,{ => {{ and },} => }} (double brace)
+# * \\n,\\s => \\n\\s (newline indent)
+# """
+# function postprocess!(tokens::Vector{Token})
+#     n_tokens = length(tokens)
+#     remove = Int[]
+#     iszero(n_tokens) && return
+#     parent = parent_string(tokens[1])
+#     lastidx = lastindex(parent)
+#     for i in eachindex(tokens)
+#         token = tokens[i]
+#         # { => {{ and } => }}
+#         for (case, res) in zip((:LXB_OPEN, :LXB_CLOSE), (:DBB_OPEN, :DBB_CLOSE))
+#             if (token.name == case) && (i < n_tokens)
+#                 next_token = tokens[i+1]
+#                 (to(token) == from(next_token) - 1) || continue
+#                 if next_token.name == case
+#                     push!(remove, i+1)
+#                     tokens[i] = Token(res, subs(parent, from(token), to(next_token)))
+#                 end
+#             end
+#         end
+#         # \n => \n\t and \n => \n⎵
+#         if (token.name == :LINE_RETURN)
+#             # look at the next character if it exists
+#             nxtidx = nextind(parent, to(token))
+#             nxtidx < lastidx || continue
+#             nxtchar = parent[nxtidx]
+#             if nxtchar in (' ', '\t')
+#                 tokens[i] = Token(:LINE_RETURN_INDENT, token.ss)
+#             end
+#         end
+#     end
+#     deleteat!(tokens, remove)
+#     return
+# end
 
 
-function md_tokenizer(s::AS)
-    tokens = find_tokens(s, MD_1_TOKENS, MD_N_TOKENS)
-    adjust!(tokens)
-    return tokens
-end
 
 # function md_math_tokenizer(s::AS)
 #     return find_tokens(s, MD_1_TOKENS_MATH, MD_N_TOKENS_MATH)

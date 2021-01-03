@@ -18,14 +18,12 @@ sequences of chars that match specific tokens. The list of tokens found is retur
 
 **Arguments**
 
-* `s`:   the initial text
-* `d1`: dictionaro of possible tokens (single character)
-* `dn`: dictionary of possible tokens (multiple characters long)
+* `s`: the initial text
+* `templates`: dictionary of possible tokens
 """
 function find_tokens(
             s::AS,
-            d1::LittleDict{Char,Symbol},
-            dn::LittleDict{Char,Vector{Pair{TokenFinder,Symbol}}}
+            templates::LittleDict{Char,Vector{Pair{TokenFinder,Symbol}}}
             )::Vector{Token}
 
     tokens = Token[]
@@ -36,13 +34,9 @@ function find_tokens(
 
     while head_idx <= end_idx
         head_char = s[head_idx]
-        # is it a single-char token?
-        if haskey(d1, head_char)
-            push!(tokens, Token(d1[head_char], subs(s, head_idx)))
-
-        elseif haskey(dn, head_char)
+        if haskey(templates, head_char)
             # Look at each possible finder sequentially
-            @inbounds for ((steps, offset, λ, ν), case) in dn[head_char]
+            @inbounds for ((steps, offset, λ, ν), case) in templates[head_char]
                 #=
                 ↪ steps = length of the lookahead, 0 if incremental (greedy)
                 ↪ offset = if we need to check one extra character
@@ -64,7 +58,7 @@ function find_tokens(
                 it's pushed by 1 again after the if-else-end to start again).
                 =#
                 # exact match of a given fixed pattern
-                if steps > 0
+                if (steps >= 0)
                     tail_idx = nextind(s, head_idx, steps)
                     # is there space for the fixed pattern? otherwise skip
                     at_eos = false

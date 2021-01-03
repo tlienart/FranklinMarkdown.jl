@@ -1,132 +1,171 @@
-@testset "MD_1_TOKENS" begin
-    d1 = FP.MD_1_TOKENS
-    dn = filter(p -> p.first == '<', FP.MD_N_TOKENS)
+@testset "tokenize" begin
     s = """
-        { { } { }
-        } <!--
-        <!--"""
-    tokens = FP.find_tokens(s, d1, dn)
-    @test all(t -> t.name == :LXB_OPEN, tokens[[1, 2, 4]])
-    @test all(t -> t.name == :LXB_CLOSE, tokens[[3, 5, 7]])
-    @test tokens[6].name == :LINE_RETURN
-    @test FP.from(tokens[5]) < FP.from(tokens[6])
-    @test FP.to(tokens[5]) < FP.to(tokens[6])
-    @test tokens[6].ss == "\n"
-    @test all(t -> t.name == :COMMENT_OPEN, tokens[[8, 10]])
-    @test tokens[9].name == :LINE_RETURN
-    @test tokens[11].name == :EOS
-    @test length(tokens) == 11
+        A { B } C
+        D } E { F
+        """
+    tokens = FP.find_tokens(s, FP.MD_TOKENS)
+    names = [t.name for t in tokens]
+    @test count(e -> e == :LXB_OPEN, names) == 2
+    @test count(e -> e == :LXB_CLOSE, names) == 2
+    @test count(e -> e == :LINE_RETURN, names) == 2
+    @test tokens[end].name == :EOS
+    @test length(tokens) == 2 + 2 + 2 + 1
+
+    s = """
+        A <!-- B --> C
+        ---
+        and +++
+        """
+    tokens = FP.find_tokens(s, FP.MD_TOKENS)
+    names = [t.name for t in tokens]
+    @test :COMMENT_OPEN in names
+    @test :COMMENT_CLOSE in names
+    @test :HORIZONTAL_RULE in names
+    @test :MD_DEF_BLOCK in names
 end
 
-@testset "MD_N_TOKENS" begin
+function check_tokens(tokens, idx, name)
+    @test all(t -> t.name == name, tokens[idx])
+    @test all(t -> t.name != name, tokens[[i for i in eachindex(tokens) if i ∉ idx]])
+end
+
+@testset "md-1" begin
+    s = """
+        { { } { } {{ }} }
+        <!--
+            hello
+          bye
+        -->"""
+    tokens = FP.find_tokens(s, FP.MD_TOKENS)
+
+    check_tokens(tokens, [1, 2, 4], :LXB_OPEN)
+    check_tokens(tokens, [3, 5, 8], :LXB_CLOSE)
+
+    check_tokens(tokens, [6], :DBB_OPEN)
+    check_tokens(tokens, [7], :DBB_CLOSE)
+
+    check_tokens(tokens, [9, 13], :LINE_RETURN)
+    check_tokens(tokens, [11], :LINE_RETURN_INDENT_4)
+    check_tokens(tokens, [12], :LINE_RETURN_INDENT_2)
+
+    check_tokens(tokens, [10], :COMMENT_OPEN)
+    check_tokens(tokens, [14], :COMMENT_CLOSE)
+
+    check_tokens(tokens, [15], :EOS)
+
+    @test length(tokens) == 15
+
+    t = """
+        abc
+            def
+        {{abc}}
+        """ |> FP.default_md_tokenizer
+    @test t[1].name == :LINE_RETURN_INDENT_4
+    @test t[2].name == :LINE_RETURN
+    @test t[3].name == :DBB_OPEN
+    @test t[4].name == :DBB_CLOSE
+end
+
+@testset "md-base" begin
     s = """--> ----"""
-    tokens = FP.find_tokens(s, FP.MD_1_TOKENS, FP.MD_N_TOKENS)
+    tokens = FP.find_tokens(s, FP.MD_TOKENS)
     @test tokens[1].name == :COMMENT_CLOSE
     @test tokens[2].name == :HORIZONTAL_RULE
     @test tokens[3].name == :EOS
     s = """+++ +++
     """
-    tokens = FP.find_tokens(s, FP.MD_1_TOKENS, FP.MD_N_TOKENS)
+    tokens = FP.find_tokens(s, FP.MD_TOKENS)
     @test length(tokens) == 3 # 1 +++ 2 \n 3 EOS
     @test tokens[1].name == :MD_DEF_BLOCK
-    tokens = """~~~ a""" |> FP.md_tokenizer
+    tokens = """~~~ a""" |> FP.default_md_tokenizer
     @test tokens[1].name == :RAW_HTML
-    tokens = """[^1]: [^ab]""" |> FP.md_tokenizer
+
+    tokens = """[^1]: [^ab]""" |> FP.default_md_tokenizer
     @test tokens[1].name == :FOOTNOTE_REF
     @test tokens[2].name == :FOOTNOTE_REF
-    tokens = """]: [^ab]:""" |> FP.md_tokenizer
+
+    tokens = """]: [^ab]:""" |> FP.default_md_tokenizer
     @test tokens[1].name == :LINK_DEF
     @test tokens[2].name == :FOOTNOTE_REF
-    tokens = """:foobar: and: this: bar""" |> FP.md_tokenizer
+
+    tokens = """:foobar: and: this: bar""" |> FP.default_md_tokenizer
     @test length(tokens) == 2
     @test tokens[1].name == :CAND_EMOJI
 
     # \\
-    tokens = raw"\\, \ , \*" |> FP.md_tokenizer
+    tokens = raw"\\, \ , \*" |> FP.default_md_tokenizer
     @test length(tokens) == 3 + 1
     @test tokens[1].name == :CHAR_LINEBREAK
     @test tokens[2].name == :CHAR_BACKSPACE
     @test tokens[3].name == :CHAR_ASTERISK
-    tokens = raw"\_, \`, \@, \{, \}, \$" |> FP.md_tokenizer
+    tokens = raw"\_, \`, \@, \{, \}, \$" |> FP.default_md_tokenizer
     @test tokens[1].name == :CHAR_UNDERSCORE
     @test tokens[2].name == :CHAR_BACKTICK
     @test tokens[3].name == :CHAR_ATSIGN
     @test tokens[4].name == :INACTIVE
     @test tokens[5].name == :INACTIVE
     @test tokens[6].name == :INACTIVE
-    tokens = raw"\[ \] \newenvironment{foo}{a}{b}" |> FP.md_tokenizer
+    tokens = raw"\[ \] \newenvironment{foo}{a}{b}" |> FP.default_md_tokenizer
     @test tokens[1].name == :MATH_C_OPEN
     @test tokens[2].name == :MATH_C_CLOSE
     @test tokens[3].name == :LX_NEWENVIRONMENT
     @test tokens[4].name == :LXB_OPEN
-    tokens = raw"\newcommand{a}{b}\begin{a}\end{a}" |> FP.md_tokenizer
+    tokens = raw"\newcommand{a}{b}\begin{a}\end{a}" |> FP.default_md_tokenizer
     @test tokens[1].name == :LX_NEWCOMMAND
     @test tokens[2].name == :LXB_OPEN
     @test tokens[4].name == :LXB_OPEN
     @test tokens[6].name == :CAND_LX_BEGIN
     @test tokens[9].name == :CAND_LX_END
-    tokens = raw"\foo\bar{a}" |> FP.md_tokenizer
+    tokens = raw"\foo\bar{a}" |> FP.default_md_tokenizer
     @test tokens[1].name == :LX_COMMAND
     @test tokens[2].name == :LX_COMMAND
     @test tokens[1].ss == raw"\foo"
     @test tokens[2].ss == raw"\bar"
     @test tokens[4].name == :LXB_CLOSE
 
-    tokens = raw"@def @@d0 @@d1,d-2 @@" |> FP.md_tokenizer
+    tokens = raw"@def @@d0 @@d1,d-2 @@" |> FP.default_md_tokenizer
     @test tokens[1].name == :MD_DEF_OPEN
     @test tokens[2].name == :DIV_OPEN
     @test tokens[3].name == :DIV_OPEN
     @test tokens[3].ss == "@@d1,d-2"
     @test tokens[4].name == :DIV_CLOSE
 
-    tokens = raw"# ### ####### " |> FP.md_tokenizer
+    tokens = raw"# ### ####### " |> FP.default_md_tokenizer
     @test tokens[1].name == :H1_OPEN
     @test tokens[2].name == :H3_OPEN
     @test tokens[3].name == :H6_OPEN
 
-    tokens = raw"&amp; & foo" |> FP.md_tokenizer
+    tokens = raw"&amp; & foo" |> FP.default_md_tokenizer
     @test tokens[1].name == :CHAR_HTML_ENTITY
     @test length(tokens) == 2
 
-    tokens = raw"$ $$ $a$" |> FP.md_tokenizer
+    tokens = raw"$ $$ $a$" |> FP.default_md_tokenizer
     @test tokens[1].name == :MATH_A
     @test tokens[2].name == :MATH_B
     @test tokens[3].name == :MATH_A
     @test tokens[4].name == :MATH_A
 
-    tokens = raw"_$>_ _$<_ ___ ****" |> FP.md_tokenizer
+    tokens = raw"_$>_ _$<_ ___ ****" |> FP.default_md_tokenizer
     @test tokens[1].name == :MATH_I_OPEN
     @test tokens[2].name == :MATH_I_CLOSE
     @test tokens[3].name == :HORIZONTAL_RULE
     @test tokens[4].name == :HORIZONTAL_RULE
 end
 
-@testset "MD_N_TOKENS code" begin
-    tokens = raw"` `` ``` ```` `````" |> FP.md_tokenizer
+@testset "MD-code" begin
+    tokens = raw"` `` ``` ```` `````" |> FP.default_md_tokenizer
     @test tokens[1].name == :CODE_SINGLE
     @test tokens[2].name == :CODE_DOUBLE
     @test tokens[3].name == :CODE_TRIPLE
     @test tokens[4].name == :CODE_QUAD
     @test tokens[5].name == :CODE_PENTA
 
-    tokens = raw"``` ```! ```julia" |> FP.md_tokenizer
+    tokens = raw"``` ```! ```julia" |> FP.default_md_tokenizer
     @test tokens[1].name == :CODE_TRIPLE
     @test tokens[2].name == :CODE_TRIPLE!
     @test tokens[3].name == :CODE_LANG3
 
-    tokens = raw"````hello `````foo" |> FP.md_tokenizer
+    tokens = raw"````hello `````foo" |> FP.default_md_tokenizer
     @test tokens[1].name == :CODE_LANG4
     @test tokens[2].name == :CODE_LANG5
-end
-
-@testset "adjustments" begin
-    t = """
-        abc
-            def
-        {{abc}}
-        """ |> FP.md_tokenizer
-    @test t[1].name == :LINE_RETURN_INDENT
-    @test t[2].name == :LINE_RETURN
-    @test t[3].name == :DBB_OPEN
-    @test t[4].name == :DBB_CLOSE
 end

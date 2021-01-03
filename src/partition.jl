@@ -1,9 +1,9 @@
 function partition(
-        s::AS,
-        t::AbstractVector{Token},
-        tokenizer::Function,
-        blockifier::Function
-        )::Vector{TextOrBlock}
+            s::AS,
+            t::AbstractVector{Token},
+            tokenizer::Function,
+            blockifier::Function,
+            )::Vector{TextOrBlock}
 
     parts = TextOrBlock[]
     isempty(s) && return parts
@@ -37,6 +37,31 @@ function partition(
     return parts
 end
 
-function partition_md(s, t=EMPTY_TOKEN_VEC)
-    return partition(s, t, md_tokenizer, md_blockifier)
+
+function tokenizer_factory(
+            templates::LittleDict=MD_TOKENS,
+            postprocess::Function=identity
+            )::Function
+    return s -> postprocess(find_tokens(s, templates))
 end
+
+default_md_tokenizer = tokenizer_factory()
+# default_html_tokenizer = tokenizer_factory( ... )
+
+function blockifier_factory(
+            templates::LittleDict=MD_BLOCKS,
+            postprocess::Function=identity
+            )::Function
+    return t -> postprocess(find_blocks(t, templates))
+end
+
+default_md_blockifier = blockifier_factory()
+# default_html_tokenizer = blockifier_factory( ... )
+
+function default_md_partition(s, t=EMPTY_TOKEN_VEC)
+    return partition(s, t, default_md_tokenizer, default_md_blockifier)
+end
+
+# function default_html_partition(s, t=EMPTY_TOKEN_VEC)
+#     return partition(s, t, default_html_tokenizer, default_html_blockifier)
+# end
