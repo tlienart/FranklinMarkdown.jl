@@ -1,4 +1,15 @@
 """
+*_WHITESPACE_PAT
+
+Pattern to match the whitespaces (tabs or spaces) at the start of a line, see
+[`dedent`](@ref).
+"""
+const LEADING_WHITESPACE_PAT = r"^([ \t]*)\S"
+const NEWLINE_WHITESPACE_PAT = r"\n([ \t]*)\S"
+
+# ======================================================================================
+
+"""
 LX_COMMAND_PAT
 
 Allowed latex command name.

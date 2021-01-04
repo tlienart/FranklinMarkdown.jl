@@ -30,3 +30,47 @@ end
     @test FP.from(ss) == 2
     @test FP.to(ss) == 3
 end
+
+@testset "dedent" begin
+    for wsp in ("    ", " ", "\t")
+        @test FP.dedent("""
+            $(wsp)hello
+            $(wsp)bye
+            """) == """
+            hello
+            bye
+            """
+        @test FP.dedent("""
+            $(wsp)$(wsp)hello
+            $(wsp)bye
+            """) == """
+            $(wsp)hello
+            bye
+            """
+        @test FP.dedent("""
+            $(wsp)abc
+
+            $(wsp)def
+            """) == """
+            abc
+
+            def
+            """
+    end
+    # mixing
+    wsp = "\t"
+    @test FP.dedent("""
+        $(wsp) hello
+        $(wsp)$(wsp)bye
+        """) == """
+         hello
+        $(wsp)bye
+        """
+    @test FP.dedent("""
+         $(wsp)hello
+        $(wsp)$(wsp)bye
+        """) == """
+         $(wsp)hello
+        $(wsp)$(wsp)bye
+        """
+end
