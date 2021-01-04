@@ -14,25 +14,25 @@ function partition(
         return [Text(SubString(s))]
     end
     blocks = blockifier(t)
-    isempty(blocks) && return [Text(SubString(s))]
+    isempty(blocks) && return [Text(SubString(s), t)]
 
     # add Text at beginning if first block is not there
     first_block = blocks[1]
     last_block = blocks[end]
     if from(s) < from(first_block)
-        push!(parts, Text(subs(s, from(s), previous_index(first_block))))
+        push!(parts, Text(subs(s, from(s), previous_index(first_block)), t))
     end
     for i in 1:length(blocks)-1
         bi   = blocks[i]
         bip1 = blocks[i+1]
         push!(parts, blocks[i])
         inter = subs(s, next_index(bi), previous_index(bip1))
-        isempty(inter) || push!(parts, Text(inter))
+        isempty(inter) || push!(parts, Text(inter, t))
     end
     push!(parts, last_block)
     # add Text at the end if last block is not there
     if to(s) > to(last_block)
-        push!(parts, Text(subs(s, next_index(last_block), to(s))))
+        push!(parts, Text(subs(s, next_index(last_block), to(s)), t))
     end
     return parts
 end

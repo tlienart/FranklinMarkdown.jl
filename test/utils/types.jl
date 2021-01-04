@@ -27,7 +27,7 @@ end
     t1 = FP.Token(:ab, FP.subs(s, 1))
     t2 = FP.Token(:cd, FP.subs(s, 4))
     b = FP.Block(:foo, t1 => t2)
-    @test b.name == :foo
+    @test typeof(b) == FP.Block{:foo}
     @test b.ss == "abcd"
     @test b.open === t1
     @test b.close === t2

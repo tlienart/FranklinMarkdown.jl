@@ -1,5 +1,3 @@
-md_blockifier = s -> FP.default_md_tokenizer(s) |> FP.default_md_blockifier
-
 @testset "Not closed error"  begin
     s = "<!--"
     @test_throws FPE{FP.BlockNotClosed} md_blockifier(s)

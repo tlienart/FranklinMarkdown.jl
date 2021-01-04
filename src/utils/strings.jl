@@ -66,11 +66,14 @@ function dedent(s::AS)
     # initial whitespace if any
     iwsp = match(LEADING_WHITESPACE_PAT, s)
     # common whitespace
-    cwsp = (iwsp !== nothing) ? iwsp.captures[1] : nothing
+    cwsp = nothing
 
-    # there's no leading whitespace on the first line --> no dedent
-    isempty(cwsp) && return s
-
+    if iwsp !== nothing
+        cwsp = iwsp.captures[1]
+        # there's no leading whitespace on the first line --> no dedent
+        isempty(cwsp) && return s
+    end
+    
     for m in eachmatch(NEWLINE_WHITESPACE_PAT, s)
         # skip empty lines
         (m !== nothing) || continue

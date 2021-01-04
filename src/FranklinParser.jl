@@ -17,6 +17,7 @@ include("tokens/markdown_tokens.jl")
 
 include("blocks/find_blocks.jl")
 include("blocks/markdown_blocks.jl")
+include("blocks/utils.jl")
 
 include("partition.jl")
 

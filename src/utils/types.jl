@@ -42,14 +42,28 @@ end
 SpecialChar(ss) = SpecialChar(ss, "")
 
 
+const EMPTY_TOKEN_VEC = Token[]
+
 """
 $(TYPEDEF)
 
-Spans of text which should be left to the fallback engine (such as
-CommonMark for instance).
+Spans of text which should be left to the fallback engine (such as CommonMark for
+instance). Text blocks can also have inner tokens that are non-block delimiters such as
+emojis, html entities and special characters.
 """
 struct Text <: AbstractSpan
     ss::SubString
+    inner_tokens::AbstractVector{Token}
+    function Text(ss, it=EMPTY_TOKEN_VEC)
+        isempty(it) && return new(ss, it)
+        fss = from(ss)
+        tss = to(ss)
+        i = findfirst(t -> fss <= from(t), it)
+        j = findlast(t -> to(t) <= tss && !is_eos(t), it)
+        any(isnothing, (i, j)) && return new(ss, EMPTY_TOKEN_VEC)
+        inner_tokens = @view it[i:j]
+        new(ss, inner_tokens)
+    end
 end
 
 """
@@ -58,8 +72,7 @@ $(TYPEDEF)
 Blocks are defined by an opening and a closing `Token`, they may be nested. For instance
 braces block are formed of an opening `{` and a closing `}`.
 """
-struct Block <: AbstractSpan
-    name::Symbol
+struct Block{N} <: AbstractSpan
     open::Token
     close::Token
     ss::SubString
@@ -68,12 +81,10 @@ end
 
 const TextOrBlock = Union{Text, Block}
 
-const EMPTY_TOKEN_VEC = Token[]
-
 function Block(n::Symbol, p::Pair{Token,Token}, it=EMPTY_TOKEN_VEC)
     o, c = p.first, p.second
     ss = subs(parent_string(o), from(o), to(c))
-    return Block(n, o, c, ss, it)
+    return Block{n}(o, c, ss, it)
 end
 
 function Block(n::Symbol, s::SubVector{Token})

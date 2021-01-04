@@ -17,8 +17,6 @@
 
 The recursion would happen upon treatment of `Block` objects where the `partition_md` can be called again.
 
-
-
 ---------------------------------------
 
 ## Work in progress
@@ -27,16 +25,15 @@ WIP
 
 * get all tokens and all blocks
   * [x] markdown tokenization
-    * [x] posthoc tokenization for `{{`, `}}` `LR_INDENT` etc
     * [ ] add validator for emoji, footnote (e.g. `abc]:]:`)
       * [ ] validate emoji
       * [ ] validate footnote
-    * [ ] check specific token are at start of line (`+++`, `###`, `@def`, hrules)
+    * [ ] check specific token are at start of line (`+++`, `###`, `@def`, hrules) (this would be done after dedent)
     * [ ] mark empty lines between two indented lines as indented (see footnote definition, and https://www.markdownguide.org/extended-syntax/#footnotes)
   * [x] find markdown definitions (needs indented lines)
   * [ ] markdown blocks
     * [x] basic
-    * [ ] double brace blocks, headers, ...
+    * [x] double brace blocks, headers, ...
     * [ ] math parsing
     * [ ] footnote definitions over multiple lines
   * [ ] html tokenization
@@ -44,11 +41,21 @@ WIP
   * [ ] latex-like elements
     * [ ] dedent definitions
 * [ ] context of errors / warnings (would be caught)
-* get intermediate markdown representation
-  * [ ] resolve as much as possible to CM-MD
-  * [ ] placeholder for lxcom, code, raw html, hfun
-* get intermediate output (html/latex) using CM
-* return intermediate output + auxiliary information for Franklin to use in `convert` function
+
+DOCSTRINGS
+
+* [ ] add documentation for partition
+
+RULES
+
+* [ ] rule factory (in / out, context etc)
+* [ ] allow passing rules dictionary for special blocks (test this in tests with CommonMark dependency)
+* [ ] find a way to enable/disable rules etc. so that users can reuse the rules they want and disable or re-define the ones they don't want.
+
+
+INTEGRATION
+
+* [ ]
 
 **Warning**
 

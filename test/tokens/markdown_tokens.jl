@@ -24,11 +24,6 @@
     @test :MD_DEF_BLOCK in names
 end
 
-function check_tokens(tokens, idx, name)
-    @test all(t -> t.name == name, tokens[idx])
-    @test all(t -> t.name != name, tokens[[i for i in eachindex(tokens) if i ∉ idx]])
-end
-
 @testset "md-1" begin
     s = """
         { { } { } {{ }} }
