@@ -3,7 +3,9 @@ module FranklinParser
 using DocStringExtensions
 import OrderedCollections: LittleDict
 
-const SubVector{T} = SubArray{T, 1}
+const SubVector{T} = SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}
+const SS = SubString{String}
+const AS = Union{String, SS}
 
 include("utils/strings.jl")
 include("utils/types.jl")

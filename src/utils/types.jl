@@ -6,9 +6,9 @@ the block.
 """
 abstract type AbstractSpan end
 
-from(s::AbstractSpan)          = from(s.ss)
-to(s::AbstractSpan)            = to(s.ss)
-parent_string(s::AbstractSpan) = parent_string(s.ss)
+from(s::AbstractSpan)          = from(s.ss::SubString{String})
+to(s::AbstractSpan)            = to(s.ss::SubString{String})
+parent_string(s::AbstractSpan) = parent_string(s.ss::SubString{String})
 content(s::AbstractSpan)       = s.ss
 
 
@@ -36,7 +36,7 @@ insertion. For instance if an asterisk is seen and meant to be preserved as such
 will be stored as a special char with html "&#42;".
 """
 struct SpecialChar <: AbstractSpan
-    ss::SubString
+    ss::SubString{String}
     html::String
 end
 SpecialChar(ss) = SpecialChar(ss, "")
