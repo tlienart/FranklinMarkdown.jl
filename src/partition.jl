@@ -1,3 +1,10 @@
+"""
+$(SIGNATURES)
+
+Go through a piece of text, either with an existing tokenization or an empty one,
+tokenize if needed with the given tokenizer, blockify with the given blockifier and
+return a partition of the text into a vector of Text elements and Block elements.
+"""
 function partition(
             s::SS,
             t::SubVector{Token},
