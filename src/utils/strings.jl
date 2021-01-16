@@ -1,5 +1,3 @@
-const AS = Union{String, SubString}
-
 """
 $(SIGNATURES)
 
@@ -7,10 +5,12 @@ Facilitate taking a SubString of an AS. The bounds given are expected to be vali
 String indices.
 Returns a SubString.
 """
-subs(s::AS, from::Int, to::Int)    = SubString(s, from, to)
-subs(s::AS, from::Int)             = subs(s, from, from)
-subs(s::AS, range::UnitRange{Int}) = SubString(s, range)
-subs(s::AS)                        = SubString(s)
+subs(s::AS, from::Int, to::Int)::SS = SubString(s, from, to)
+subs(s::AS, from::Int)              = subs(s, from, from)
+subs(s::AS, range::UnitRange{Int})  = subs(s, range.start, range.stop)
+
+subs(s::SS)     = s
+subs(s::String) = SS(s)
 
 """
 $(SIGNATURES)
@@ -19,8 +19,8 @@ Returns the parent string corresponding to `s`; i.e. `s` itself if it is a Strin
 the parent string if `s` is a SubString.
 Returns a String.
 """
-parent_string(s::String)    = s
-parent_string(s::SubString) = s.string
+parent_string(s::String) = s
+parent_string(s::SS)     = s.string
 
 """
 $(SIGNATURES)
@@ -30,8 +30,8 @@ starts. If `ss` is a String, return 1.
 Returns an Int.
 ```
 """
-from(ss::SubString) = nextind(parent_string(ss), ss.offset)
-from(s::String)     = 1
+from(ss::SS)    = nextind(parent_string(ss), ss.offset)
+from(s::String) = 1
 
 """
 $(SIGNATURES)
@@ -40,8 +40,8 @@ Given a SubString `ss`, returns the position in the parent string where the subs
 ends. If `ss` is a String, return the last index.
 Returns an Int.
 """
-to(ss::SubString) = ss.offset + ss.ncodeunits
-to(s::String)     = lastindex(s)
+to(ss::SS)    = ss.offset + ss.ncodeunits
+to(s::String) = lastindex(s)
 
 """
 $(SIGNATURES)
@@ -60,9 +60,10 @@ next_index(o) = nextind(parent_string(o), to(o))
 """
 $(SIGNATURES)
 
-Remove the common leading whitespace from each non-empty line.
+Remove the common leading whitespace from each non-empty line. The returned text
+is decoupled from the original text (forced to String).
 """
-function dedent(s::AS)
+function dedent(s::SS)::String
     # initial whitespace if any
     iwsp = match(LEADING_WHITESPACE_PAT, s)
     # common whitespace
@@ -71,15 +72,15 @@ function dedent(s::AS)
     if iwsp !== nothing
         cwsp = iwsp.captures[1]
         # there's no leading whitespace on the first line --> no dedent
-        isempty(cwsp) && return s
+        isempty(cwsp) && return String(s)
     end
-    
+
     for m in eachmatch(NEWLINE_WHITESPACE_PAT, s)
         # skip empty lines
         (m !== nothing) || continue
         twsp = m.captures[1]
         # if twsp is empty, there's no leading whitespace on that line --> no dedent
-        isempty(twsp) && return s
+        isempty(twsp) && return String(s)
         # does twsp contain cwsp?
         startswith(twsp, cwsp) && continue
         # does cwsp contain twsp?
@@ -98,7 +99,7 @@ function dedent(s::AS)
             cwsp = cwsp[1:i]
         else
             # if we're here then TWSP and CWSP have an empty intersection --> no dedent
-            return s
+            return String(s)
         end
     end
     # we're here --> remove all cwsp + remove cwsp from first line if relevant
@@ -106,3 +107,4 @@ function dedent(s::AS)
     iwsp === nothing && return ds
     return replace(ds, "$cwsp" => "", count=1)
 end
+dedent(s::String) = dedent(subs(s))

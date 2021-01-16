@@ -19,6 +19,7 @@ isapproxstr(s1::AbstractString, s2::AbstractString) =
 md_blockifier = s -> FP.default_md_tokenizer(s) |> FP.default_md_blockifier
 
 function check_tokens(tokens, idx, name)
-    @test all(t -> t.name == name, tokens[idx])
-    @test all(t -> t.name != name, tokens[[i for i in eachindex(tokens) if i ∉ idx]])
+    @test all(FP.name.(tokens[idx]) .== name)
+    compl = [i for i in eachindex(tokens) if i ∉ idx]
+    @test all(FP.name.(tokens[compl]) .!= name)
 end
