@@ -10,7 +10,7 @@ abstract type AbstractSpan end
 from(s::AbstractSpan)          = from(s.ss::SS)
 to(s::AbstractSpan)            = to(s.ss::SS)
 parent_string(s::AbstractSpan) = parent_string(s.ss::SS)
-content(s::AbstractSpan)       = s.ss::SS
+content(s::AbstractSpan)::SS   = s.ss::SS
 
 #
 # Note: we don't want to have Token{N} with e.g. Token{:EOS} like we do Block.

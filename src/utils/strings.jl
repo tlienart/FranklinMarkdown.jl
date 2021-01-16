@@ -60,9 +60,10 @@ next_index(o) = nextind(parent_string(o), to(o))
 """
 $(SIGNATURES)
 
-Remove the common leading whitespace from each non-empty line.
+Remove the common leading whitespace from each non-empty line. The returned text
+is decoupled from the original text (forced to String).
 """
-function dedent(s::AS)::AS
+function dedent(s::SS)::String
     # initial whitespace if any
     iwsp = match(LEADING_WHITESPACE_PAT, s)
     # common whitespace
@@ -71,7 +72,7 @@ function dedent(s::AS)::AS
     if iwsp !== nothing
         cwsp = iwsp.captures[1]
         # there's no leading whitespace on the first line --> no dedent
-        isempty(cwsp) && return s
+        isempty(cwsp) && return String(s)
     end
 
     for m in eachmatch(NEWLINE_WHITESPACE_PAT, s)
@@ -79,7 +80,7 @@ function dedent(s::AS)::AS
         (m !== nothing) || continue
         twsp = m.captures[1]
         # if twsp is empty, there's no leading whitespace on that line --> no dedent
-        isempty(twsp) && return s
+        isempty(twsp) && return String(s)
         # does twsp contain cwsp?
         startswith(twsp, cwsp) && continue
         # does cwsp contain twsp?
@@ -98,7 +99,7 @@ function dedent(s::AS)::AS
             cwsp = cwsp[1:i]
         else
             # if we're here then TWSP and CWSP have an empty intersection --> no dedent
-            return s
+            return String(s)
         end
     end
     # we're here --> remove all cwsp + remove cwsp from first line if relevant
@@ -106,3 +107,4 @@ function dedent(s::AS)::AS
     iwsp === nothing && return ds
     return replace(ds, "$cwsp" => "", count=1)
 end
+dedent(s::String) = dedent(subs(s))
