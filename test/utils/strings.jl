@@ -12,6 +12,8 @@ end
     @test FP.subs("abcd", 2) == "b"
     @test FP.subs("abcd", 2, 3) == "bc"
     @test FP.subs("abcd", 2:3) == "bc"
+    a = FP.subs("abc")
+    @test FP.subs(a) === a
     # invalid string indices
     @test_throws StringIndexError FP.subs("jμΛια", 2:3)
 end
