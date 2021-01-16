@@ -73,13 +73,13 @@ $(SIGNATURES)
 
 Validator function wrapping a regex match.
 """
-validator(rx::Regex) = s -> !isnothing(match(rx, s))
+validator(rx::Regex) = s -> (match(rx, s) !== nothing)
 
 """
 $(SIGNATURES)
 
 Check whether `c` is a letter or is in a vector of characters `oc`.
 """
-is_letter_or(c::Char, oc::NTuple{K,Char}=()) where K = isletter(c) || (c ∈ oc)
+is_letter_or(c::Char, oc::NTuple{K, Char}=()) where K = isletter(c) || (c ∈ oc)
 
 is_alphanum_or(c::Char, oc::NTuple{K, Char}=()) where K = is_letter_or(c, (oc..., NUM_CHAR...))

@@ -14,7 +14,7 @@ end
         <!--A<!--B-->
         """
     blocks = s |> md_blockifier
-    @test blocks[1].inner_tokens[1].name == :COMMENT_OPEN
+    @test FP.name(blocks[1].inner_tokens[1]) == :COMMENT_OPEN
     @test FP.content(blocks[1]) == "A<!--B"
     s = """
         <!--A<!--B-->C-->

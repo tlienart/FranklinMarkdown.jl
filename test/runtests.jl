@@ -6,6 +6,15 @@ const CM = CommonMark
 
 include("testutils.jl")
 
+@testset "concrete" begin
+    @test isconcretetype(FP.SS)
+    @test isconcretetype(FP.SubVector{FP.Token})
+    @test isconcretetype(typeof(FP.EMPTY_TOKEN_SVEC))
+    @test isconcretetype(FP.Token{:name})
+    @test isconcretetype(FP.Block{:name,FP.Token{:open},FP.Token{:close}})
+    @test isconcretetype(Vector{FP.Block})
+end
+
 @testset "utils" begin
     include("utils/strings.jl")
     include("utils/types.jl")

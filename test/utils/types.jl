@@ -1,13 +1,12 @@
 @testset "Token" begin
     s = "abcd"
-    t = FP.Token(:ab, FP.subs(s, 2:3))
+    t = FP.Token{:ab}(FP.subs(s, 2:3))
     @test typeof(t) <: FP.AbstractSpan
     @test FP.from(t) == 2
     @test FP.to(t) == 3
     @test FP.parent_string(s) === s
-    @test t.name == :ab
     @test t.ss == "bc"
-    t = FP.Token(:EOS, FP.subs(s, lastindex(s)))
+    t = FP.Token{:EOS}(FP.subs(s, lastindex(s)))
     @test FP.is_eos(t)
 end
 
@@ -24,10 +23,10 @@ end
 
 @testset "Block" begin
     s = "abcd"
-    t1 = FP.Token(:ab, FP.subs(s, 1))
-    t2 = FP.Token(:cd, FP.subs(s, 4))
+    t1 = FP.Token{:ab}(FP.subs(s, 1))
+    t2 = FP.Token{:cd}(FP.subs(s, 4))
     b = FP.Block(:foo, t1 => t2)
-    @test typeof(b) == FP.Block{:foo}
+    @test typeof(b) == FP.Block{:foo,:ab,:cd}
     @test b.ss == "abcd"
     @test b.open === t1
     @test b.close === t2

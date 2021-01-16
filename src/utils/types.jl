@@ -1,31 +1,38 @@
 """
 $(TYPEDEF)
 
-SubString of the parent String with a specific meaning for Franklin. All subtypes of `AbstractBlock` must have an `ss` field corresponding to the substring associated to
-the block.
+Section of a parent String with a specific meaning for Franklin. All subtypes of
+`AbstractBlock` must have an `ss` field corresponding to the substring associated to the
+block. This field is necessarily of type `SubString{String}`.
 """
 abstract type AbstractSpan end
 
-from(s::AbstractSpan)          = from(s.ss::SubString{String})
-to(s::AbstractSpan)            = to(s.ss::SubString{String})
-parent_string(s::AbstractSpan) = parent_string(s.ss::SubString{String})
-content(s::AbstractSpan)       = s.ss
+from(s::AbstractSpan)          = from(s.ss::SS)
+to(s::AbstractSpan)            = to(s.ss::SS)
+parent_string(s::AbstractSpan) = parent_string(s.ss::SS)
+content(s::AbstractSpan)       = s.ss::SS
 
-
+#
+# Note: we don't want to have Token{N} with e.g. Token{:EOS} like we do Block.
+# Indeed, if we had this then we'd need to have the block type to be Block{N,TO,TC}
+# to be concrete
+#
 """
 $(TYPEDEF)
 
 A token is a subtype of `Span` which typically determines the start or end of an block.
 It can also be used for special characters.
 """
-struct Token <: AbstractSpan
-    name::Symbol
-    ss::SubString
+struct Token{N} <: AbstractSpan
+    ss::SS
 end
 
-to(t::Token) = ifelse(t.name == :EOS, from(t), to(t.ss))
+to(t::Token{:EOS}) = from(t.ss)
 
-is_eos(t::Token) = t.name == :EOS
+is_eos(t::Token)       = false
+is_eos(t::Token{:EOS}) = true
+
+name(t::Token{N}) where N = N
 
 
 """
@@ -36,13 +43,13 @@ insertion. For instance if an asterisk is seen and meant to be preserved as such
 will be stored as a special char with html "&#42;".
 """
 struct SpecialChar <: AbstractSpan
-    ss::SubString{String}
+    ss::SS
     html::String
 end
 SpecialChar(ss) = SpecialChar(ss, "")
 
 
-const EMPTY_TOKEN_VEC = Token[]
+const EMPTY_TOKEN_SVEC = @view (Token[])[1:0]
 
 """
 $(TYPEDEF)
@@ -52,15 +59,16 @@ instance). Text blocks can also have inner tokens that are non-block delimiters 
 emojis, html entities and special characters.
 """
 struct Text <: AbstractSpan
-    ss::SubString
-    inner_tokens::AbstractVector{Token}
-    function Text(ss, it=EMPTY_TOKEN_VEC)
+    ss::SS
+    inner_tokens::SubVector{Token}
+
+    function Text(ss, it=EMPTY_TOKEN_SVEC)
         isempty(it) && return new(ss, it)
         fss = from(ss)
         tss = to(ss)
         i = findfirst(t -> fss <= from(t), it)
         j = findlast(t -> to(t) <= tss && !is_eos(t), it)
-        any(isnothing, (i, j)) && return new(ss, EMPTY_TOKEN_VEC)
+        i === nothing || j === nothing && return new(ss, EMPTY_TOKEN_SVEC)
         inner_tokens = @view it[i:j]
         new(ss, inner_tokens)
     end
@@ -72,25 +80,27 @@ $(TYPEDEF)
 Blocks are defined by an opening and a closing `Token`, they may be nested. For instance
 braces block are formed of an opening `{` and a closing `}`.
 """
-struct Block{N} <: AbstractSpan
-    open::Token
-    close::Token
-    ss::SubString
-    inner_tokens::AbstractVector{Token}
+struct Block{N, O, C} <: AbstractSpan
+    open::Token{O}
+    close::Token{C}
+    ss::SS
+    inner_tokens::SubVector{Token}
 end
 
 const TextOrBlock = Union{Text, Block}
 
-function Block(n::Symbol, p::Pair{Token,Token}, it=EMPTY_TOKEN_VEC)
+function Block(N::Symbol, p::Pair{Token{O}, Token{C}}, it=EMPTY_TOKEN_SVEC) where {O, C}
     o, c = p.first, p.second
     ss = subs(parent_string(o), from(o), to(c))
-    return Block{n}(o, c, ss, it)
+    return Block{N, O, C}(o, c, ss, it)
 end
 
 function Block(n::Symbol, s::SubVector{Token})
     it = @view s[2:end-1]
     return Block(n, s[1] => s[end], it)
 end
+
+name(b::Block{N, O, C}) where {N, O, C} = N
 
 """
 $(SIGNATURES)
@@ -99,7 +109,7 @@ Return the content of a `Block`, for instance the content of a `{...}` block wou
 `...`. Note EOS is a special '0 length' case to  deal with the fact that a text can end
 with a token (which would then be an overlapping token and an EOS).
 """
-function content(b::Block)::SubString
+function content(b::Block)::SS
     s = parent_string(b.ss)  # does not allocate
     t = from(b.close)
     # find the relevant range of the parent string

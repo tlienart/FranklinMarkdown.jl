@@ -1,6 +1,6 @@
 function partition(
-            s::AS,
-            t::AbstractVector{Token},
+            s::SS,
+            t::SubVector{Token},
             tokenizer::Function,
             blockifier::Function,
             )::Vector{TextOrBlock}
@@ -11,10 +11,10 @@ function partition(
         t = tokenizer(s)
     end
     if length(t) == 1   # only the EOS token
-        return [Text(SubString(s))]
+        return [Text(s)]
     end
     blocks = blockifier(t)
-    isempty(blocks) && return [Text(SubString(s), t)]
+    isempty(blocks) && return [Text(s, t)]
 
     # add Text at beginning if first block is not there
     first_block = blocks[1]
@@ -36,6 +36,8 @@ function partition(
     end
     return parts
 end
+partition(s::String, a...) = partition(subs(s), a...)
+partition(s::SS, v::Vector{Token}, a...) = partition(s, subv(v), a...)
 
 
 function tokenizer_factory(
@@ -58,10 +60,10 @@ end
 default_md_blockifier = blockifier_factory()
 # default_html_tokenizer = blockifier_factory( ... )
 
-function default_md_partition(s, t=EMPTY_TOKEN_VEC)
+function default_md_partition(s, t=EMPTY_TOKEN_SVEC)
     return partition(s, t, default_md_tokenizer, default_md_blockifier)
 end
 
-# function default_html_partition(s, t=EMPTY_TOKEN_VEC)
+# function default_html_partition(s, t=EMPTY_TOKEN_SVEC)
 #     return partition(s, t, default_html_tokenizer, default_html_blockifier)
 # end

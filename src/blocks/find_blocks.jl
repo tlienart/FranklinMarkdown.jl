@@ -5,7 +5,7 @@ Given a list of tokens and a dictionary of block templates, find all blocks matc
 templates. The blocks are sorted by order of appearance and inner blocks are weeded out.
 """
 function find_blocks(
-            tokens::AbstractVector{Token},
+            tokens::SubVector{Token},
             templates::LittleDict{Symbol, BlockTemplate}
             )::Vector{Block}
 
@@ -17,8 +17,7 @@ function find_blocks(
     template_keys = keys(templates)
     @inbounds for i in eachindex(tokens)
         is_active[i] || continue
-        opening = tokens[i].name
-
+        opening = name(tokens[i])
         opening in template_keys || continue
 
         template = templates[opening]
@@ -29,19 +28,19 @@ function find_blocks(
         closing_index = nothing
         open_depth = 1
         for j in i+1:n_tokens
-            name = tokens[j].name
-            if nesting && (name == opening)
+            candidate = name(tokens[j])
+            if nesting && (candidate == opening)
                 open_depth += 1
-            elseif (name in closing)
+            elseif (candidate in closing)
                 open_depth -= 1
             end
-            if iszero(open_depth)
+            if open_depth == 0
                 closing_index = j
                 break
             end
         end
 
-        if isnothing(closing_index)
+        if closing_index === nothing
             parser_exception(BlockNotClosed, """
                 An opening token '$(opening)' was found but not closed.
                 """)
@@ -58,7 +57,7 @@ function find_blocks(
     remove_inner!(blocks)
     return blocks
 end
-
+find_blocks(t::Vector{Token}, a...) = find_blocks(subv(t), a...)
 
 """
 $(SIGNATURES)

@@ -22,7 +22,7 @@ sequences of chars that match specific tokens. The list of tokens found is retur
 * `templates`: dictionary of possible tokens
 """
 function find_tokens(
-            s::AS,
+            s::SS,
             templates::LittleDict{Char,Vector{Pair{TokenFinder,Symbol}}}
             )::Vector{Token}
 
@@ -74,7 +74,7 @@ function find_tokens(
                         # if offset --> looked at 1 extra char (lookahead)
                         back_one = offset && !at_eos
                         head_idx = prevind(s, tail_idx, back_one)
-                        token = Token(case, chop(candidate, tail=back_one))
+                        token = Token{case}(chop(candidate, tail=back_one))
                         push!(tokens, token)
                         # once a token is identified, no need to check other cases (go to while)
                         break
@@ -100,9 +100,9 @@ function find_tokens(
                     if tail_idx > head_idx
                         candidate = subs(s, head_idx, tail_idx)
                         # check if the validator is happy otherwise skip
-                        isnothing(ν) || ν(candidate) || continue
+                        (ν === nothing) || ν(candidate) || continue
                         # if it's happy push the token & move after the match
-                        token = Token(case, candidate)
+                        token = Token{case}(candidate)
                         push!(tokens, token)
                         head_idx = tail_idx
                     end
@@ -113,7 +113,9 @@ function find_tokens(
     end
     # finally push the end token on the stack observe that it can overlap a token
     # that would be at the end of the string.
-    eos = Token(:EOS, subs(s, end_idx))
+    eos = Token{:EOS}(subs(s, end_idx))
     push!(tokens, eos)
     return tokens
 end
+
+find_tokens(s::String, a...) = find_tokens(subs(s), a...)
