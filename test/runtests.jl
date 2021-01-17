@@ -24,10 +24,12 @@ end
 @testset "tokens" begin
     include("tokens/find_tokens.jl")
     include("tokens/markdown_tokens.jl")
+    include("tokens/html_tokens.jl")
 end
 
 @testset "blocks" begin
     include("blocks/markdown_blocks.jl")
+    include("blocks/html_blocks.jl")
     include("blocks/utils.jl")
 end
 

@@ -47,30 +47,57 @@ partition(s::String, a...) = partition(subs(s), a...)
 partition(s::SS, v::Vector{Token}, a...) = partition(s, subv(v), a...)
 
 
-function tokenizer_factory(
+"""
+$SIGNATURES
+
+Arguments:
+----------
+    templates: a dictionary or matchers to find tokens.
+    postprocess: a function to apply on tokens after they've been found e.g. to merge
+        them or filter them etc.
+
+Returns:
+--------
+    A function that takes a string and returns a vector of tokens.
+"""
+function tokenizer_factory(;
             templates::LittleDict=MD_TOKENS,
             postprocess::Function=identity
             )::Function
     return s -> postprocess(find_tokens(s, templates))
 end
 
-default_md_tokenizer = tokenizer_factory()
-# default_html_tokenizer = tokenizer_factory( ... )
+default_md_tokenizer   = tokenizer_factory()
+default_html_tokenizer = tokenizer_factory(templates=HTML_TOKENS)
 
-function blockifier_factory(
+
+"""
+$SIGNATURES
+
+Arguments:
+----------
+    templates: a dictionary or matchers to find blocks.
+    postprocess: a function to apply on the blocks after they've been found.
+
+Returns:
+--------
+    A function that takes tokens and returns a vector of blocks.
+"""
+function blockifier_factory(;
             templates::LittleDict=MD_BLOCKS,
             postprocess::Function=identity
             )::Function
     return t -> postprocess(find_blocks(t, templates))
 end
 
-default_md_blockifier = blockifier_factory()
-# default_html_tokenizer = blockifier_factory( ... )
+default_md_blockifier   = blockifier_factory()
+default_html_blockifier = blockifier_factory(templates=HTML_BLOCKS)
+
 
 function default_md_partition(s, t=EMPTY_TOKEN_SVEC)
     return partition(s, t, default_md_tokenizer, default_md_blockifier)
 end
 
-# function default_html_partition(s, t=EMPTY_TOKEN_SVEC)
-#     return partition(s, t, default_html_tokenizer, default_html_blockifier)
-# end
+function default_html_partition(s, t=EMPTY_TOKEN_SVEC)
+    return partition(s, t, default_html_tokenizer, default_html_blockifier)
+end
