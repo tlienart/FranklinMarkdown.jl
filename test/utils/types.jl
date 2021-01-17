@@ -10,17 +10,6 @@
     @test FP.is_eos(t)
 end
 
-@testset "SpecialChar" begin
-    s = "ab * c"
-    sch = FP.SpecialChar(FP.subs(s, 4), "&#42;")
-    @test typeof(sch) <: FP.AbstractSpan
-    @test FP.from(sch) == 4
-    @test FP.to(sch) == 4
-    @test sch.html == "&#42;"
-    sch = FP.SpecialChar("foo")
-    @test sch.html == ""
-end
-
 @testset "Block" begin
     s = "abcd"
     t1 = FP.Token{:ab}(FP.subs(s, 1))

@@ -5,12 +5,12 @@ Facilitate taking a SubString of an AS. The bounds given are expected to be vali
 String indices.
 Returns a SubString.
 """
-subs(s::AS, from::Int, to::Int)::SS = SubString(s, from, to)
-subs(s::AS, from::Int)              = subs(s, from, from)
-subs(s::AS, range::UnitRange{Int})  = subs(s, range.start, range.stop)
+subs(s::SS, from::Int, to::Int)::SS = SubString(s, from, to)
+subs(s::SS, from::Int)              = subs(s, from, from)
+subs(s::SS, range::UnitRange{Int})  = subs(s, range.start, range.stop)
 
-subs(s::SS)     = s
-subs(s::String) = SS(s)
+subs(s::SS) = s
+subs(s::String, a...) = subs(SS(s), a...)
 
 """
 $(SIGNATURES)

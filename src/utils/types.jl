@@ -34,21 +34,6 @@ is_eos(t::Token{:EOS}) = true
 
 name(t::Token{N}) where N = N
 
-
-"""
-$(TYPEDEF)
-
-Wrapper around a special character (e.g. entity) keeping track of the exact HTML
-insertion. For instance if an asterisk is seen and meant to be preserved as such, it
-will be stored as a special char with html "&#42;".
-"""
-struct SpecialChar <: AbstractSpan
-    ss::SS
-    html::String
-end
-SpecialChar(ss) = SpecialChar(ss, "")
-
-
 const EMPTY_TOKEN_SVEC = @view (Token[])[1:0]
 
 """
@@ -73,6 +58,7 @@ struct Text <: AbstractSpan
         new(ss, inner_tokens)
     end
 end
+
 
 """
 $(TYPEDEF)

@@ -1,10 +1,3 @@
-@testset "AS" begin
-    @test "abc" isa FP.AS
-    @test SubString("abc") isa FP.AS
-    @test !(1 isa FP.AS)
-    @test !('a' isa FP.AS)
-end
-
 @testset "subs" begin
     @test FP.subs("abc") == "abc"
     @test FP.subs("abc") !== "abc"

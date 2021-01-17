@@ -3,6 +3,10 @@
 [![CI Actions Status](https://github.com/tlienart/FranklinParser.jl/workflows/CI/badge.svg)](https://github.com/tlienart/FranklinParser.jl/actions)
 [![codecov](https://codecov.io/gh/tlienart/FranklinParser.jl/branch/main/graph/badge.svg?token=mNry6r2aIn)](https://codecov.io/gh/tlienart/FranklinParser.jl)
 
+## Warning notes
+
+* [ ] no requirements for `#+` to be at the beginning of a line, it will be taken as a header until the current end of line. The reason for this is so that we can avoid having to dedent `div` contents to check whether `#+` are at the beginning of the line at the div indentation level. Users who want to introduce `#+` "as is" should use `\#`.
+
 ## Workflow (MD)
 
 ### Default init (original MD string -> first level partition)

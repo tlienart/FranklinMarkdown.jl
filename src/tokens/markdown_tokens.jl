@@ -42,17 +42,21 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
     ':' => [
         greedy_match(is_emoji) => :CAND_EMOJI,
         ],
-    '\\' => [ # -- special characters, see `find_special_chars` in ocblocks
-        forward_match("\\\\") => :CHAR_LINEBREAK,   # --> <br/>
-        forward_match("\\", SPACE_CHAR) => :CHAR_BACKSPACE,   # --> &#92;
-        forward_match("\\*")  => :CHAR_ASTERISK,    # --> &#42;
-        forward_match("\\_")  => :CHAR_UNDERSCORE,  # --> &#95;
-        forward_match("\\`")  => :CHAR_BACKTICK,    # --> &#96;
-        forward_match("\\@")  => :CHAR_ATSIGN,      # --> &#64;
+    '\\' => [ # -- special characters (https://www.amp-what.com/unicode/search)
+              # if they're un-ambiguous for CommonMark we just skip them, otherwise
+              # we mark them as CHAR_*** and they will be replaced by their HTML entity
+              # note that skipping explicitly is useful to avoid ambiguity in parsing
+        forward_match("\\\\") => :LINEBREAK,       # --> <br/>
+        forward_match("\\", SPACE_CHAR) => :SKIP,
+        forward_match("\\*")  => :CHAR_42,
+        forward_match("\\_")  => :CHAR_95,
+        forward_match("\\`")  => :CHAR_96,
+        forward_match("\\@")  => :SKIP,
+        forward_match("\\#")  => :CHAR_35,
+        forward_match("\\{")  => :SKIP,
+        forward_match("\\}")  => :SKIP,
+        forward_match("\\\$") => :SKIP,
         # -- maths
-        forward_match("\\{")  => :INACTIVE,         # See note [^1]
-        forward_match("\\}")  => :INACTIVE,         # See note [^1]
-        forward_match("\\\$") => :INACTIVE,         # See note [^1]
         forward_match("\\[")  => :MATH_C_OPEN,      # \[ ...
         forward_match("\\]")  => :MATH_C_CLOSE,     #    ... \]
         # -- latex
@@ -68,7 +72,7 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         greedy_match(is_div_open)       => :DIV_OPEN,       # @@dname
         ],
     '#' => [
-        forward_match("#",      (' ',)) => :H1_OPEN, # see note [^2]
+        forward_match("#",      (' ',)) => :H1_OPEN,
         forward_match("##",     (' ',)) => :H2_OPEN,
         forward_match("###",    (' ',)) => :H3_OPEN,
         forward_match("####",   (' ',)) => :H4_OPEN,
@@ -103,10 +107,6 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         greedy_match(is_hr3) => :HORIZONTAL_RULE,
         ]
     )  # end dict
-#= NOTE
-[1] capturing \{ here will force the head to move after it thereby not
-marking it as a potential open brace, same for the close brace.
-[2] similar to @def except that it must be at the start of the line. =#
 
 
 """
