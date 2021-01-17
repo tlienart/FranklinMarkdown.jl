@@ -23,7 +23,7 @@ sequences of chars that match specific tokens. The list of tokens found is retur
 """
 function find_tokens(
             s::SS,
-            templates::LittleDict{Char,Vector{Pair{TokenFinder,Symbol}}}
+            templates::LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}
             )::Vector{Token}
 
     tokens = Token[]

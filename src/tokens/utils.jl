@@ -37,7 +37,7 @@ or not),
 """
 function forward_match(
             refstring::String,
-            next_char::NTuple{K,Char} where K = (),
+            next_char::NTuple{K, Char} where K = (),
             is_followed=true
             )::TokenFinder
 

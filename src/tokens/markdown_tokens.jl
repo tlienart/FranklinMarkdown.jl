@@ -43,19 +43,16 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         greedy_match(is_emoji) => :CAND_EMOJI,
         ],
     '\\' => [ # -- special characters (https://www.amp-what.com/unicode/search)
-              # if they're un-ambiguous for CommonMark we just skip them, otherwise
-              # we mark them as CHAR_*** and they will be replaced by their HTML entity
-              # note that skipping explicitly is useful to avoid ambiguity in parsing
         forward_match("\\\\") => :LINEBREAK,       # --> <br/>
-        forward_match("\\", SPACE_CHAR) => :SKIP,
+        forward_match("\\", SPACE_CHAR) => :CHAR_92,
         forward_match("\\*")  => :CHAR_42,
         forward_match("\\_")  => :CHAR_95,
         forward_match("\\`")  => :CHAR_96,
-        forward_match("\\@")  => :SKIP,
+        forward_match("\\@")  => :CHAR_64,
         forward_match("\\#")  => :CHAR_35,
-        forward_match("\\{")  => :SKIP,
-        forward_match("\\}")  => :SKIP,
-        forward_match("\\\$") => :SKIP,
+        forward_match("\\{")  => :CHAR_123,
+        forward_match("\\}")  => :CHAR_125,
+        forward_match("\\\$") => :CHAR_36,
         # -- maths
         forward_match("\\[")  => :MATH_C_OPEN,      # \[ ...
         forward_match("\\]")  => :MATH_C_CLOSE,     #    ... \]
@@ -115,6 +112,14 @@ END_OF_LINE
 All tokens that indicate the end of a line.
 """
 const END_OF_LINE = (:LINE_RETURN, :LINE_RETURN_INDENT, :EOS)
+
+"""
+MD_IGNORE
+
+Tokens that may be left over after partition but should be ignored in text blocks.
+"""
+const MD_IGNORE = (:LINE_RETURN, :LINE_RETURN_INDENT_TAB, :LINE_RETURN_INDENT_2,
+                   :LINE_RETURN_INDENT_4)
 
 # """
 # MD_1_TOKENS_MATH

@@ -137,3 +137,12 @@ end
     @test length(b) == 1
     @test isapproxstr(FP.content(b[1]), "@@def ```julia hello```@@ {ABC}")
 end
+
+@testset "md def" begin
+    b = """
+        @def x = [
+            1, 2, 3
+            ]
+        """ |> md_blockifier
+    @test isapproxstr(FP.content(b[1]), "x = [1,2,3]")
+end

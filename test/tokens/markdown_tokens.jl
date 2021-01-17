@@ -88,25 +88,19 @@ end
     @test FP.name(tokens[1]) == :CAND_EMOJI
 
     # \\
-    s = raw"\\, \ , \*"
-    tokens = FP.find_tokens(s, FP.MD_TOKENS)
+    tokens = raw"\\, \ , \*" |> FP.default_md_tokenizer
     @test length(tokens) == 3 + 1
     @test FP.name(tokens[1]) == :LINEBREAK
-    @test FP.name(tokens[2]) == :SKIP
+    @test FP.name(tokens[2]) == :CHAR_92
     @test FP.name(tokens[3]) == :CHAR_42
-    tokens = s |> FP.default_md_tokenizer
-    @test length(tokens) == 2 + 1
-    s = raw"\_, \`, \@, \{, \}, \$, \#"
-    tokens = FP.find_tokens(s, FP.MD_TOKENS)
+    tokens = raw"\_, \`, \@, \{, \}, \$, \#" |> FP.default_md_tokenizer
     @test FP.name(tokens[1]) == :CHAR_95
     @test FP.name(tokens[2]) == :CHAR_96
-    @test FP.name(tokens[3]) == :SKIP
-    @test FP.name(tokens[4]) == :SKIP
-    @test FP.name(tokens[5]) == :SKIP
-    @test FP.name(tokens[6]) == :SKIP
+    @test FP.name(tokens[3]) == :CHAR_64
+    @test FP.name(tokens[4]) == :CHAR_123
+    @test FP.name(tokens[5]) == :CHAR_125
+    @test FP.name(tokens[6]) == :CHAR_36
     @test FP.name(tokens[7]) == :CHAR_35
-    tokens = s |> FP.default_md_tokenizer
-    @test length(tokens) == 3 + 1
     tokens = raw"\[ \] \newenvironment{foo}{a}{b}" |> FP.default_md_tokenizer
     @test FP.name(tokens[1]) == :MATH_C_OPEN
     @test FP.name(tokens[2]) == :MATH_C_CLOSE
