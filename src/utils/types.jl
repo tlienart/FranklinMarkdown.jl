@@ -34,31 +34,9 @@ is_eos(t::Token{:EOS}) = true
 
 name(t::Token{N}) where N = N
 
+const EMPTY_TOKEN = Token{Nothing}(subs(""))
+
 const EMPTY_TOKEN_SVEC = @view (Token[])[1:0]
-
-"""
-$(TYPEDEF)
-
-Spans of text which should be left to the fallback engine (such as CommonMark for
-instance). Text blocks can also have inner tokens that are non-block delimiters such as
-emojis, html entities and special characters.
-"""
-struct Text <: AbstractSpan
-    ss::SS
-    inner_tokens::SubVector{Token}
-
-    function Text(ss, it=EMPTY_TOKEN_SVEC)
-        isempty(it) && return new(ss, it)
-        fss = from(ss)
-        tss = to(ss)
-        i = findfirst(t -> fss <= from(t), it)
-        j = findlast(t -> to(t) <= tss && !is_eos(t), it)
-        i === nothing || j === nothing && return new(ss, EMPTY_TOKEN_SVEC)
-        inner_tokens = @view it[i:j]
-        new(ss, inner_tokens)
-    end
-end
-
 
 """
 $(TYPEDEF)
@@ -73,8 +51,6 @@ struct Block{N, O, C} <: AbstractSpan
     inner_tokens::SubVector{Token}
 end
 
-const TextOrBlock = Union{Text, Block}
-
 function Block(N::Symbol, p::Pair{Token{O}, Token{C}}, it=EMPTY_TOKEN_SVEC) where {O, C}
     o, c = p.first, p.second
     ss = subs(parent_string(o), from(o), to(c))
@@ -86,7 +62,31 @@ function Block(n::Symbol, s::SubVector{Token})
     return Block(n, s[1] => s[end], it)
 end
 
+function Block(n::Symbol, ss::SS, sv::SubVector{Token})
+    return Block{n,Nothing,Nothing}(EMPTY_TOKEN, EMPTY_TOKEN, ss, sv)
+end
+
 name(b::Block{N, O, C}) where {N, O, C} = N
+
+"""
+Text
+
+Spans of text which should be left to the fallback engine (such as CommonMark for
+instance). Text blocks can also have inner tokens that are non-block delimiters such as
+emojis or html entities.
+"""
+const Text = Block{:TEXT, Nothing, Nothing}
+
+function text(ss, it=EMPTY_TOKEN_SVEC)::Text
+    isempty(it) && return Block(:TEXT, ss, it)
+    fss = from(ss)
+    tss = to(ss)
+    i = findfirst(t -> fss <= from(t), it)
+    j = findlast(t -> to(t) <= tss && !is_eos(t), it)
+    i === nothing || j === nothing && return Block(:TEXT, ss, EMPTY_TOKEN_SVEC)
+    inner_tokens = @view it[i:j]
+    return Block(:TEXT, ss, inner_tokens)
+end
 
 """
 $(SIGNATURES)
@@ -105,6 +105,7 @@ function content(b::Block)::SS
     return subs(s, idxo, idxc)
 end
 
+content(b::Block{:TEXT}) = return b.ss
 
 """
 $(TYPEDEF)

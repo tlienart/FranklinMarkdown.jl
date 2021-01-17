@@ -2,18 +2,18 @@
     s = "ABC"
     parts = FP.default_md_partition(s)
     @test length(parts) == 1
-    @test isa(parts[1], FP.Text)
+    @test isa(parts[1], FP.Block{:TEXT})
     @test FP.content(parts[1]) == s
     s = "ABC<!--DEF-->"
     parts = FP.default_md_partition(s)
     @test length(parts) == 2
-    @test isa(parts[1], FP.Text)
+    @test isa(parts[1], FP.Block{:TEXT})
     @test isa(parts[2], FP.Block)
     @test typeof(parts[2]) <: FP.Block{:COMMENT}
     s = "ABC<!--DEF-->GHI"
     parts = FP.default_md_partition(s)
     @test length(parts) == 3
-    @test all(isa(parts[i], FP.Text) for i in (1, 3))
+    @test all(isa(parts[i], FP.Block{:TEXT}) for i in (1, 3))
     @test isa(parts[2], FP.Block)
     s = "ABC<!--DEF-->GHI<!--JKL-->MNO"
     parts = FP.default_md_partition(s)

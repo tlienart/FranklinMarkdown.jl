@@ -23,7 +23,7 @@ end
     @test isa(b, FP.AbstractSpan)
 
     s = "abc def ghi"
-    t = FP.Text(FP.subs(s, 5:7))
+    t = FP.text(FP.subs(s, 5:7))
     @test isa(t, FP.AbstractSpan)
     @test FP.content(t) == "def"
 end
