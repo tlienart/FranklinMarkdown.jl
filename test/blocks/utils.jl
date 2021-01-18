@@ -15,7 +15,7 @@ end
         \ \\ \# \@ \` \{ \} \* \_
         Hello
         """ |> FranklinParser.default_md_partition
-    s = FranklinParser.prepare_text(p[1])
+    s = FranklinParser.prepare(p[1])
     @test s isa String
     @test isapproxstr(s, """
         &#92; <br> &#35; &#64; &#96; &#123; &#125; &#42; &#95;

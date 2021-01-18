@@ -2,7 +2,7 @@ function get_classes(b::Block{:DIV, :DIV_OPEN, :DIV_CLOSE})::String
     return replace(b.open.ss[3:end], "," => " ")
 end
 
-function prepare_text(b::Block{:TEXT})::String
+function prepare(b::Block{:TEXT})::String
     c = content(b)
     isempty(b.inner_tokens) && return String(c)
     io = IOBuffer()
