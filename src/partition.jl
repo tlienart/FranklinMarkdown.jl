@@ -23,23 +23,25 @@ function partition(
     blocks = blockifier(tokens)
     isempty(blocks) && return [text(s, tokens)]
 
+    parent = parent_string(s)
+
     # add Text at beginning if first block is not there
     first_block = blocks[1]
     last_block = blocks[end]
     if from(s) < from(first_block)
-        push!(parts, text(subs(s, from(s), previous_index(first_block)), tokens))
+        push!(parts, text(subs(parent, from(s), previous_index(first_block)), tokens))
     end
     for i in 1:length(blocks)-1
         bi   = blocks[i]
         bip1 = blocks[i+1]
         push!(parts, blocks[i])
-        inter = subs(s, next_index(bi), previous_index(bip1))
+        inter = subs(parent, next_index(bi), previous_index(bip1))
         isempty(inter) || push!(parts, text(inter, tokens))
     end
     push!(parts, last_block)
     # add Text at the end if last block is not there
     if to(s) > to(last_block)
-        push!(parts, text(subs(s, next_index(last_block), to(s)), tokens))
+        push!(parts, text(subs(parent, next_index(last_block), to(s)), tokens))
     end
     return parts
 end
