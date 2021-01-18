@@ -17,7 +17,12 @@ function prepare(b::Block{:TEXT})::String
     return String(take!(io))
 end
 
-insert(t::Token{:LINEBREAK}) = "<br>"
+
+insert(t::Token{:LINEBREAK})       = "<br>"
+insert(t::Token{:HORIZONTAL_RULE}) = "<hr>"
+
+insert(t::Token{:CHAR_HTML_ENTITY}) = String(t.ss)
+
 insert(t::Token{:CHAR_92})   = "&#92;"   # '\'
 insert(t::Token{:CHAR_42})   = "&#42;"   # '*'
 insert(t::Token{:CHAR_95})   = "&#95;"   # '_'

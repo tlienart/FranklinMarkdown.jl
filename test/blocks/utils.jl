@@ -14,11 +14,17 @@ end
     p = raw"""
         \ \\ \# \@ \` \{ \} \* \_
         Hello
-        """ |> FranklinParser.default_md_partition
-    s = FranklinParser.prepare(p[1])
+        """ |> FP.default_md_partition
+    s = FP.prepare(p[1])
     @test s isa String
     @test isapproxstr(s, """
         &#92; <br> &#35; &#64; &#96; &#123; &#125; &#42; &#95;
         Hello
+        """)
+    s = raw"""
+        &#42; ---
+        """ |> FP.default_md_partition |> first |> FP.prepare
+    @test isapproxstr(s, """
+        &#42; <hr>
         """)
 end
