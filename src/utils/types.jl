@@ -65,6 +65,9 @@ function Block(n::Symbol, ss::SS, sv::SubVector{Token})
     return Block{n,Nothing,Nothing}(EMPTY_TOKEN, EMPTY_TOKEN, ss, sv)
 end
 
+SingleBlock(S::Symbol, t::Token) =
+    Block{S, S, Nothing}(t, EMPTY_TOKEN, t.ss, EMPTY_TOKEN_SVEC)
+
 name(b::Block{N, O, C}) where {N, O, C} = N
 
 """
@@ -124,3 +127,7 @@ end
 
 BlockTemplate(n, o, c::Symbol, ne) = BlockTemplate(n, o, (c,), ne)
 BlockTemplate(a...; nesting=false) = BlockTemplate(a..., nesting)
+
+const NO_CLOSING = (:NoClosing,)
+
+SingleTokenBlockTemplate(name::Symbol) = BlockTemplate(name, name, NO_CLOSING, false)

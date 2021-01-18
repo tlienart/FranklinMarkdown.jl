@@ -21,8 +21,13 @@ function find_blocks(
         opening in template_keys || continue
 
         template = templates[opening]
-        closing = template.closing
-        nesting = template.nesting
+        closing  = template.closing
+        nesting  = template.nesting
+
+        if closing === NO_CLOSING
+            push!(blocks, SingleBlock(opening, tokens[i]))
+            continue
+        end
 
         # Find the closing token
         closing_index = nothing

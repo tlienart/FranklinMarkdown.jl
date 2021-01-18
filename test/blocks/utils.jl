@@ -12,19 +12,23 @@ end
 
 @testset "prepare text" begin
     p = raw"""
-        \ \\ \# \@ \` \{ \} \* \_
+        \ \# \@ \` \{ \} \* \_
         Hello
         """ |> FP.default_md_partition
+    @test length(p) == 1
     s = FP.prepare(p[1])
     @test s isa String
     @test isapproxstr(s, """
-        &#92; <br> &#35; &#64; &#96; &#123; &#125; &#42; &#95;
+        &#92; &#35; &#64; &#96; &#123; &#125; &#42; &#95;
         Hello
         """)
-    s = raw"""
-        &#42; ---
-        """ |> FP.default_md_partition |> first |> FP.prepare
-    @test isapproxstr(s, """
-        &#42; <hr>
-        """)
+    p = raw"""
+        &#42; --- \\
+        """ |> FP.default_md_partition
+
+    @test p[1] isa FP.Block{:TEXT}
+    @test p[2] isa FP.Block{:HORIZONTAL_RULE}
+    @test p[3] isa FP.Block{:TEXT}
+    @test p[4] isa FP.Block{:LINEBREAK}
+    @test p[5] isa FP.Block{:TEXT}
 end

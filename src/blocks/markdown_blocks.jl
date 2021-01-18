@@ -29,4 +29,7 @@ const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
    # Footnote
    BlockTemplate(:FOOTNOTE_DEF, :FOOTNOTE_DEF, :LINE_RETURN),
    BlockTemplate(:LINK_DEF,     :LINK_DEF,     END_OF_LINE),
+   # Direct blocks
+   SingleTokenBlockTemplate(:LINEBREAK),
+   SingleTokenBlockTemplate(:HORIZONTAL_RULE),
    ])
