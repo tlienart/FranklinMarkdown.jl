@@ -165,3 +165,14 @@ end
     @test FP.name(tokens[1]) == :CODE_LANG4
     @test FP.name(tokens[2]) == :CODE_LANG5
 end
+
+@testset "HR" begin
+    s = """---+ ** **** _____""" |> FP.default_md_tokenizer
+    @test length(s) == 3 + 1
+    @test FP.name(s[1]) == :HORIZONTAL_RULE
+    @test s[1].ss == "---"
+    @test FP.name(s[2]) == :HORIZONTAL_RULE
+    @test s[2].ss == "****"
+    @test FP.name(s[3]) == :HORIZONTAL_RULE
+    @test s[3].ss == "_____"
+end

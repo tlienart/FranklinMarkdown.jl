@@ -1,4 +1,14 @@
 """
+HR*_PAT
+
+Pattern to match horizontal rule indicators.
+"""
+const HR1_PAT = r"\-{3}\-*"
+const HR2_PAT = r"\_{3}\_*"
+const HR3_PAT = r"\*{3}\**"
+
+
+"""
 *_WHITESPACE_PAT
 
 Pattern to match the whitespaces (tabs or spaces) at the start of a line, see
@@ -7,7 +17,6 @@ Pattern to match the whitespaces (tabs or spaces) at the start of a line, see
 const LEADING_WHITESPACE_PAT = r"^([ \t]*)\S"
 const NEWLINE_WHITESPACE_PAT = r"\n([ \t]*)\S"
 
-# ======================================================================================
 
 """
 LX_COMMAND_PAT
@@ -19,6 +28,7 @@ Allowed latex command name.
 * \\ab1_cd*
 """
 const LX_COMMAND_PAT = r"^\\\p{L}[\p{L}_0-9]*\*?$"
+
 
 """
 HTML_ENTITY_PAT
@@ -33,6 +43,7 @@ Ref: https://dev.w3.org/html5/html-author/charref.
 * &#8851;
 """
 const HTML_ENTITY_PAT = r"&(?:[a-zA-Z]+[0-9]{0,2}|#[0-9]{1,6}|#x[0-9a-f]{1,6});"
+
 
 """
 CODE_LANG*_PAT

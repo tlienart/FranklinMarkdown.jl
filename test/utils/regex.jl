@@ -25,3 +25,11 @@ end
     v = FP.validator(FP.CODE_LANG5_PAT)
     @test v("`````jμliα")
 end
+
+@testset "HR*" begin
+    @test match(FP.HR1_PAT, "---") !== nothing
+    @test match(FP.HR1_PAT, "--") === nothing
+    @test match(FP.HR1_PAT, "-------") !== nothing
+    @test match(FP.HR2_PAT, "___") !== nothing
+    @test match(FP.HR3_PAT, "***") !== nothing
+end

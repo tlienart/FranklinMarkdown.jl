@@ -81,6 +81,8 @@ Check if it looks like `---+`.
 """
 is_hr1(::Int, c::Char) = (c == '-')
 
+val_hr1 = validator(HR1_PAT)
+
 """
 $(SIGNATURES)
 
@@ -88,9 +90,13 @@ Check if it looks like `___+`.
 """
 is_hr2(::Int, c::Char) = (c == '_')
 
+val_hr2 = validator(HR2_PAT)
+
 """
 $(SIGNATURES)
 
 Check if it looks like `***+`.
 """
 is_hr3(::Int, c::Char) = (c == '*')
+
+val_hr3 = validator(HR3_PAT)
