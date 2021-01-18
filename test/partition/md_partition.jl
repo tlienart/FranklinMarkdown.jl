@@ -38,4 +38,7 @@ end
     @test FP.name(parts[3].inner_tokens[2]) == :CHAR_HTML_ENTITY
     @test FP.name(parts[3].inner_tokens[3]) == :LINE_RETURN
     @test length(parts[3].inner_tokens) == 3
+
+    # recursion
+    subparts = FP.default_md_partition(parts[2])
 end
