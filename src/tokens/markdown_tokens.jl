@@ -25,7 +25,7 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         ],
     '-' => [
         forward_match("-->")          => :COMMENT_CLOSE,
-        greedy_match(is_hr1, val_hr1) => :HORIZONTAL_RULE
+        greedy_match(is_hr1, val_hr1) => :HRULE
         ],
     '+' => [
         forward_match("+++", ('\n',)) => :MD_DEF_BLOCK
@@ -86,7 +86,7 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
     '_' => [
         forward_match("_\$>_")        => :MATH_I_OPEN,  # internal when resolving a lx command
         forward_match("_\$<_")        => :MATH_I_CLOSE, # within mathenv (e.g. \R <> \mathbb R)
-        greedy_match(is_hr2, val_hr2) => :HORIZONTAL_RULE,
+        greedy_match(is_hr2, val_hr2) => :HRULE,
         ],
     '`' => [
         forward_match("`",  ('`',), false)  => :CODE_SINGLE,  # `⎵
@@ -101,7 +101,7 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         greedy_match(is_lang(5), val_lang5) => :CODE_LANG5,   # `````lang*
         ],
     '*' => [
-        greedy_match(is_hr3, val_hr3) => :HORIZONTAL_RULE,
+        greedy_match(is_hr3, val_hr3) => :HRULE,
         ]
     )  # end dict
 

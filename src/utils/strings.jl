@@ -66,11 +66,8 @@ is decoupled from the original text (forced to String).
 function dedent(s::SS)::String
     # initial whitespace if any
     iwsp = match(LEADING_WHITESPACE_PAT, s)
-    # common whitespace
-    cwsp = nothing
-
     if iwsp !== nothing
-        cwsp = iwsp.captures[1]
+        cwsp::SS = iwsp.captures[1]
         # there's no leading whitespace on the first line --> no dedent
         isempty(cwsp) && return String(s)
     end
@@ -78,7 +75,7 @@ function dedent(s::SS)::String
     for m in eachmatch(NEWLINE_WHITESPACE_PAT, s)
         # skip empty lines
         (m !== nothing) || continue
-        twsp = m.captures[1]
+        twsp::SS = m.captures[1]
         # if twsp is empty, there's no leading whitespace on that line --> no dedent
         isempty(twsp) && return String(s)
         # does twsp contain cwsp?
@@ -91,12 +88,13 @@ function dedent(s::SS)::String
         # if we're here then TWSP and CWSP don't have a common part --> check intersection
         # for instance CWSP = "\t⎵" and TWSP = "\t\t" --> CWSP = "\t"
         i = 0
-        for (c1, c2) in zip(cwsp, twsp)
-            c1 == c2 || break
-            i += 1
+        for j in eachindex(cwsp)
+            isvalid(twsp, j) || break
+            cwsp[j] == twsp[j] || break
+            i = j
         end
         if i > 0
-            cwsp = cwsp[1:i]
+            cwsp = subs(cwsp, 1:i)
         else
             # if we're here then TWSP and CWSP have an empty intersection --> no dedent
             return String(s)

@@ -20,7 +20,7 @@
     names = FP.name.(tokens)
     @test :COMMENT_OPEN in names
     @test :COMMENT_CLOSE in names
-    @test :HORIZONTAL_RULE in names
+    @test :HRULE in names
     @test :MD_DEF_BLOCK in names
 end
 
@@ -65,7 +65,7 @@ end
     s = """--> ----"""
     tokens = FP.find_tokens(s, FP.MD_TOKENS)
     @test FP.name(tokens[1]) == :COMMENT_CLOSE
-    @test FP.name(tokens[2]) == :HORIZONTAL_RULE
+    @test FP.name(tokens[2]) == :HRULE
     @test FP.name(tokens[3]) == :EOS
     s = """+++ +++
     """
@@ -144,8 +144,8 @@ end
     tokens = raw"_$>_ _$<_ ___ ****" |> FP.default_md_tokenizer
     @test FP.name(tokens[1]) == :MATH_I_OPEN
     @test FP.name(tokens[2]) == :MATH_I_CLOSE
-    @test FP.name(tokens[3]) == :HORIZONTAL_RULE
-    @test FP.name(tokens[4]) == :HORIZONTAL_RULE
+    @test FP.name(tokens[3]) == :HRULE
+    @test FP.name(tokens[4]) == :HRULE
 end
 
 @testset "MD-code" begin
@@ -169,10 +169,10 @@ end
 @testset "HR" begin
     s = """---+ ** **** _____""" |> FP.default_md_tokenizer
     @test length(s) == 3 + 1
-    @test FP.name(s[1]) == :HORIZONTAL_RULE
+    @test FP.name(s[1]) == :HRULE
     @test s[1].ss == "---"
-    @test FP.name(s[2]) == :HORIZONTAL_RULE
+    @test FP.name(s[2]) == :HRULE
     @test s[2].ss == "****"
-    @test FP.name(s[3]) == :HORIZONTAL_RULE
+    @test FP.name(s[3]) == :HRULE
     @test s[3].ss == "_____"
 end

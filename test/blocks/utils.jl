@@ -27,7 +27,7 @@ end
         """ |> FP.default_md_partition
 
     @test p[1] isa FP.Block{:TEXT}
-    @test p[2] isa FP.Block{:HORIZONTAL_RULE}
+    @test p[2] isa FP.Block{:HRULE}
     @test p[3] isa FP.Block{:TEXT}
     @test p[4] isa FP.Block{:LINEBREAK}
     @test p[5] isa FP.Block{:TEXT}

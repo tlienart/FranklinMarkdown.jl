@@ -18,8 +18,8 @@ function prepare(b::Block{:TEXT})::String
     return String(take!(io))
 end
 
-insert(t::Token{:LINEBREAK})       = "~~~<br>~~~"
-insert(t::Token{:HORIZONTAL_RULE}) = "~~~<hr>~~~"
+insert(t::Token{:LINEBREAK}) = "~~~<br>~~~"
+insert(t::Token{:HRULE})     = "~~~<hr>~~~"
 
 insert(t::Token{:CHAR_HTML_ENTITY}) = String(t.ss)
 

@@ -31,5 +31,5 @@ const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
    BlockTemplate(:LINK_DEF,     :LINK_DEF,     END_OF_LINE),
    # Direct blocks
    SingleTokenBlockTemplate(:LINEBREAK),
-   SingleTokenBlockTemplate(:HORIZONTAL_RULE),
+   SingleTokenBlockTemplate(:HRULE),
    ])
