@@ -11,7 +11,7 @@ end
     r = (s, o, λ, ν) = FP.forward_match("abc")
     @test s == 2 == length("abc") - 1
     @test r isa FP.TokenFinder
-    @test λ("abc", false)
+    @test λ(FP.subs("abc"), false)
     @test !o  # no check of next char
     @test ν   # no check of next char so ok at EOS
 
@@ -20,15 +20,15 @@ end
     @test s == 3 == length("abc") - 1 + 1
     @test o   # check of next char
     @test !ν  # not ok at EOS because can't be alpha
-    @test λ("abcα", false)
-    @test !λ("abc", true)
+    @test λ(FP.subs("abcα"), false)
+    @test !λ(FP.subs("abc"), true)
 
     # single char
     r = (s, o, λ, ν) = FP.forward_match("{")
     @test s == 0 == length("{") - 1
     @test r isa FP.TokenFinder
-    @test λ("{", false)
-    @test λ("{", true)
+    @test λ(FP.subs("{"), false)
+    @test λ(FP.subs("{"), true)
     @test !o
     @test ν
 end
@@ -40,7 +40,7 @@ end
     @test !o
     @test λ('1')
     @test !λ('a')
-    @test ν(missing) == true
+    @test ν(FP.subs("")) == true
     @test r isa FP.TokenFinder
     # with validator
     r = FP.greedy_match(e -> e in FP.NUM_CHAR, c -> length(c) == 3)
@@ -80,21 +80,21 @@ end
     @test λ(4, '0')
     @test λ(4, '-')
     # validator
-    @test ν(missing) == true
+    @test ν(FP.subs("")) == true
 end
 
 @testset "is_html_entity" begin
     (s, o, λ, ν) = FP.greedy_match(FP.is_html_entity, FP.val_html_entity)
     @test !o
     @test λ(1, 'a')
-    @test ν("&#42;")
+    @test ν(FP.subs("&#42;"))
 end
 
 @testset "is_emoji" begin
     (s, o, λ, ν) = FP.greedy_match(FP.is_emoji)
     @test !o
     @test λ(1, '+')
-    @test ν(missing) == true
+    @test ν(FP.subs("")) == true
 end
 
 @testset "is_footnote" begin
@@ -103,7 +103,7 @@ end
     @test λ(1, '^')
     @test λ(2, 'a')
     @test λ(3, ']')
-    @test ν(missing) == true
+    @test ν(FP.subs("")) == true
 end
 
 @testset "is_hr*" begin

@@ -72,7 +72,7 @@ function find_tokens(
                     candidate = subs(s, head_idx, tail_idx)
                     if λ(candidate, at_eos)
                         # if offset --> looked at 1 extra char (lookahead)
-                        back_one = offset && !at_eos
+                        back_one = offset & !at_eos
                         head_idx = prevind(s, tail_idx, back_one)
                         token = Token(case, chop(candidate, tail=back_one))
                         push!(tokens, token)
@@ -85,7 +85,7 @@ function find_tokens(
                     tail_idx  = head_idx
                     probe_idx = nextind(s, head_idx)
                     probe_idx > end_idx && continue
-                    probe_char = s[probe_idx]
+                    probe_char::Char = s[probe_idx]
 
                     # while the condition holds, get next char
                     while λ(nchars, probe_char)
@@ -100,7 +100,7 @@ function find_tokens(
                     if tail_idx > head_idx
                         candidate = subs(s, head_idx, tail_idx)
                         # check if the validator is happy otherwise skip
-                        (ν::Function)(candidate) || continue
+                        (ν::Function)(candidate)::Bool || continue
                         # if it's happy push the token & move after the match
                         token = Token(case, candidate)
                         push!(tokens, token)
@@ -118,4 +118,4 @@ function find_tokens(
     return tokens
 end
 
-find_tokens(s::String, a...) = find_tokens(subs(s), a...)
+find_tokens(s::String, templates) = find_tokens(subs(s), templates)

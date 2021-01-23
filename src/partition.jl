@@ -65,7 +65,7 @@ Returns:
 """
 function tokenizer_factory(;
             templates::LittleDict=MD_TOKENS,
-            postprocess::Function=(ts -> filter!(t -> t.name != :SKIP, ts))
+            postprocess::Function=(ts::Vector{Token} -> filter!(t -> t.name != :SKIP, ts))
             )::Function
     return s -> postprocess(find_tokens(s, templates))
 end
