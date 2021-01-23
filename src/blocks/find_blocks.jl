@@ -17,7 +17,7 @@ function find_blocks(
     template_keys = keys(templates)
     @inbounds for i in eachindex(tokens)
         is_active[i] || continue
-        opening = name(tokens[i])
+        opening = tokens[i].name
         opening in template_keys || continue
 
         template = templates[opening]
@@ -25,15 +25,15 @@ function find_blocks(
         nesting  = template.nesting
 
         if closing === NO_CLOSING
-            push!(blocks, SingleBlock(opening, tokens[i]))
+            push!(blocks, TokenBlock(tokens[i]))
             continue
         end
 
         # Find the closing token
-        closing_index = nothing
+        closing_index = -1
         open_depth = 1
         for j in i+1:n_tokens
-            candidate = name(tokens[j])
+            candidate = tokens[j].name
             if nesting && (candidate == opening)
                 open_depth += 1
             elseif (candidate in closing)
@@ -45,7 +45,7 @@ function find_blocks(
             end
         end
 
-        if closing_index === nothing
+        if closing_index == -1
             parser_exception(BlockNotClosed, """
                 An opening token '$(opening)' was found but not closed.
                 """)

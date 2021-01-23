@@ -18,10 +18,10 @@ function partition(
         tokens = tokenizer(s)
     end
     if length(tokens) == 1   # only the EOS token
-        return [text(s)]
+        return [TextBlock(s)]
     end
     blocks = blockifier(tokens)
-    isempty(blocks) && return [text(s, tokens)]
+    isempty(blocks) && return [TextBlock(s, tokens)]
 
     parent = parent_string(s)
 
@@ -29,19 +29,20 @@ function partition(
     first_block = blocks[1]
     last_block = blocks[end]
     if from(s) < from(first_block)
-        push!(parts, text(subs(parent, from(s), previous_index(first_block)), tokens))
+        tb = TextBlock(subs(parent, from(s), previous_index(first_block)), tokens)
+        push!(parts, tb)
     end
     for i in 1:length(blocks)-1
         bi   = blocks[i]
         bip1 = blocks[i+1]
         push!(parts, blocks[i])
         inter = subs(parent, next_index(bi), previous_index(bip1))
-        isempty(inter) || push!(parts, text(inter, tokens))
+        isempty(inter) || push!(parts, TextBlock(inter, tokens))
     end
     push!(parts, last_block)
     # add Text at the end if last block is not there
     if to(s) > to(last_block)
-        push!(parts, text(subs(parent, next_index(last_block), to(s)), tokens))
+        push!(parts, TextBlock(subs(parent, next_index(last_block), to(s)), tokens))
     end
     return parts
 end
@@ -64,7 +65,7 @@ Returns:
 """
 function tokenizer_factory(;
             templates::LittleDict=MD_TOKENS,
-            postprocess::Function=(t -> filter!(e -> !isa(e, Token{:SKIP}), t))
+            postprocess::Function=(ts -> filter!(t -> t.name != :SKIP, ts))
             )::Function
     return s -> postprocess(find_tokens(s, templates))
 end

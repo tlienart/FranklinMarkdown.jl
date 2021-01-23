@@ -2,11 +2,11 @@
     t = """
         {{ A }} <script abc></script><script> <!-- -->
         """ |> FP.default_html_tokenizer
-    @test FP.name(t[1]) == :DBB_OPEN
-    @test FP.name(t[2]) == :DBB_CLOSE
-    @test FP.name(t[3]) == :SCRIPT_OPEN
-    @test FP.name(t[4]) == :SCRIPT_CLOSE
-    @test FP.name(t[5]) == :SCRIPT_OPEN
-    @test FP.name(t[6]) == :COMMENT_OPEN
-    @test FP.name(t[7]) == :COMMENT_CLOSE
+    @test t[1].name == :DBB_OPEN
+    @test t[2].name == :DBB_CLOSE
+    @test t[3].name == :SCRIPT_OPEN
+    @test t[4].name == :SCRIPT_CLOSE
+    @test t[5].name == :SCRIPT_OPEN
+    @test t[6].name == :COMMENT_OPEN
+    @test t[7].name == :COMMENT_CLOSE
 end

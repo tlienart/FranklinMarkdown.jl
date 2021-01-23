@@ -40,7 +40,7 @@ end
     @test !o
     @test λ('1')
     @test !λ('a')
-    @test isnothing(ν)
+    @test ν(missing) == true
     @test r isa FP.TokenFinder
     # with validator
     r = FP.greedy_match(e -> e in FP.NUM_CHAR, c -> length(c) == 3)
@@ -80,7 +80,7 @@ end
     @test λ(4, '0')
     @test λ(4, '-')
     # validator
-    @test isnothing(ν)
+    @test ν(missing) == true
 end
 
 @testset "is_html_entity" begin
@@ -94,7 +94,7 @@ end
     (s, o, λ, ν) = FP.greedy_match(FP.is_emoji)
     @test !o
     @test λ(1, '+')
-    @test isnothing(ν)
+    @test ν(missing) == true
 end
 
 @testset "is_footnote" begin
@@ -103,7 +103,7 @@ end
     @test λ(1, '^')
     @test λ(2, 'a')
     @test λ(3, ']')
-    @test isnothing(ν)
+    @test ν(missing) == true
 end
 
 @testset "is_hr*" begin

@@ -66,7 +66,7 @@ $(SIGNATURES)
 
 Lazily accept the next character and stop as soon as it fails to verify `λ(c)`.
 """
-greedy_match(λ::Function, validator=nothing) = (-1, false, λ, validator)
+greedy_match(λ::Function, validator=(_ -> true)) = (-1, false, λ, validator)
 
 """
 $(SIGNATURES)
