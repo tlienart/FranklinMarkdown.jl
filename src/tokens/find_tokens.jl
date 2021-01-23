@@ -8,7 +8,7 @@ const TokenFinder = Tuple{
         Int,        # steps (number of characters for a look ahead)
         Bool,       # whether to check the following char or not
         Function,   # oracle indicating whether there's a match
-        Union{Bool,Nothing,Function}} # whether it can be at EOS
+        Union{Bool, Function}}  # whether it can be at EOS
 
 """
 $(SIGNATURES)
@@ -32,11 +32,11 @@ function find_tokens(
     head_idx = firstindex(s)
     end_idx  = lastindex(s)
 
-    while head_idx <= end_idx
+    @inbounds while head_idx <= end_idx
         head_char = s[head_idx]
         if haskey(templates, head_char)
             # Look at each possible finder sequentially
-            @inbounds for ((steps, offset, λ, ν), case) in templates[head_char]
+            for ((steps, offset, λ, ν), case) in templates[head_char]
                 #=
                 ↪ steps = length of the lookahead, 0 if incremental (greedy)
                 ↪ offset = if we need to check one extra character
@@ -62,7 +62,7 @@ function find_tokens(
                     tail_idx = nextind(s, head_idx, steps)
                     # is there space for the fixed pattern? otherwise skip
                     at_eos = false
-                    if ν && (tail_idx == nextind(s, end_idx))
+                    if ν::Bool && (tail_idx == nextind(s, end_idx))
                         tail_idx = end_idx
                         at_eos = true
                     end
@@ -72,9 +72,9 @@ function find_tokens(
                     candidate = subs(s, head_idx, tail_idx)
                     if λ(candidate, at_eos)
                         # if offset --> looked at 1 extra char (lookahead)
-                        back_one = offset && !at_eos
+                        back_one = offset & !at_eos
                         head_idx = prevind(s, tail_idx, back_one)
-                        token = Token{case}(chop(candidate, tail=back_one))
+                        token = Token(case, chop(candidate, tail=back_one))
                         push!(tokens, token)
                         # once a token is identified, no need to check other cases (go to while)
                         break
@@ -85,7 +85,7 @@ function find_tokens(
                     tail_idx  = head_idx
                     probe_idx = nextind(s, head_idx)
                     probe_idx > end_idx && continue
-                    probe_char = s[probe_idx]
+                    probe_char::Char = s[probe_idx]
 
                     # while the condition holds, get next char
                     while λ(nchars, probe_char)
@@ -100,9 +100,9 @@ function find_tokens(
                     if tail_idx > head_idx
                         candidate = subs(s, head_idx, tail_idx)
                         # check if the validator is happy otherwise skip
-                        (ν === nothing) || ν(candidate) || continue
+                        (ν::Function)(candidate)::Bool || continue
                         # if it's happy push the token & move after the match
-                        token = Token{case}(candidate)
+                        token = Token(case, candidate)
                         push!(tokens, token)
                         head_idx = tail_idx
                     end
@@ -113,9 +113,9 @@ function find_tokens(
     end
     # finally push the end token on the stack observe that it can overlap a token
     # that would be at the end of the string.
-    eos = Token{:EOS}(subs(s, end_idx))
+    eos = Token(:EOS, subs(s, end_idx))
     push!(tokens, eos)
     return tokens
 end
 
-find_tokens(s::String, a...) = find_tokens(subs(s), a...)
+find_tokens(s::String, templates) = find_tokens(subs(s), templates)

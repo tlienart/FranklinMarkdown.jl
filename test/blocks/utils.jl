@@ -5,8 +5,8 @@
         GHI
         """ |> md_blockifier
     div = blocks[1]
-    @test typeof(div) <: FP.Block{:DIV}
-    @test FP.name(div) == :DIV
+    @test typeof(div) == FP.Block
+    @test div.name == :DIV
     @test FP.get_classes(div) == "c1 c2"
 end
 
@@ -16,7 +16,7 @@ end
         Hello
         """ |> FP.default_md_partition
     @test length(p) == 1
-    s = FP.prepare(p[1])
+    s = FP.prepare_text(p[1])
     @test s isa String
     @test isapproxstr(s, """
         &#92; &#35; &#64; &#96; &#123; &#125; &#42; &#95;
@@ -26,9 +26,10 @@ end
         &#42; --- \\
         """ |> FP.default_md_partition
 
-    @test p[1] isa FP.Block{:TEXT}
-    @test p[2] isa FP.Block{:HRULE}
-    @test p[3] isa FP.Block{:TEXT}
-    @test p[4] isa FP.Block{:LINEBREAK}
-    @test p[5] isa FP.Block{:TEXT}
+    @test eltype(p) == FP.Block
+    @test p[1].name == :TEXT
+    @test p[2].name == :HRULE
+    @test p[3].name == :TEXT
+    @test p[4].name == :LINEBREAK
+    @test p[5].name == :TEXT
 end

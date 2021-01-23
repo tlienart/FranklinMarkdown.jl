@@ -46,7 +46,7 @@ function forward_match(
     steps      = ifelse(check_next, steps, prevind(refstring, steps))
     ok_at_eos  = !check_next || !is_followed || EOS ∈ next_char
 
-    λ(s, at_eos) = begin
+    λ(s::SS, at_eos::Bool)::Bool = begin
         if at_eos
             flag  = (s == refstring)
             flag &= ok_at_eos
@@ -66,20 +66,22 @@ $(SIGNATURES)
 
 Lazily accept the next character and stop as soon as it fails to verify `λ(c)`.
 """
-greedy_match(λ::Function, validator=nothing) = (-1, false, λ, validator)
+greedy_match(λ::Function, validator=(_::SS -> true)) = (-1, false, λ, validator)
 
 """
 $(SIGNATURES)
 
 Validator function wrapping a regex match.
 """
-validator(rx::Regex) = s -> (match(rx, s) !== nothing)
+validator(rx::Regex) = (s::SS -> (match(rx, s) !== nothing)::Bool)
 
 """
 $(SIGNATURES)
 
 Check whether `c` is a letter or is in a vector of characters `oc`.
 """
-is_letter_or(c::Char, oc::NTuple{K, Char}=()) where K = isletter(c) || (c ∈ oc)
+is_letter_or(c::Char, oc::NTuple{K, Char}=()) where K =
+    ifelse(isletter(c), true, c ∈ oc)::Bool
 
-is_alphanum_or(c::Char, oc::NTuple{K, Char}=()) where K = is_letter_or(c, (oc..., NUM_CHAR...))
+is_alphanum_or(c::Char, oc::NTuple{K, Char}=()) where K =
+    is_letter_or(c, (oc..., NUM_CHAR...))

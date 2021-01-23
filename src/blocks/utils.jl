@@ -1,15 +1,29 @@
-function get_classes(b::Block{:DIV, :DIV_OPEN, :DIV_CLOSE})::String
-    return replace(b.open.ss[3:end], "," => " ")
+"""
+$(SIGNATURES)
+
+Return the classe(s) of a div block. E.g. `@@c1,c2` will return `"c1 c2"` so that it
+can be injected in a `<div class="..."`.
+"""
+function get_classes(b::Block)::String
+    return replace(subs(b.open.ss, 3:lastindex(b.open.ss)), "," => " ")
 end
 
-function prepare(b::Block{:TEXT})::String
-    c = content(b)
+"""
+$(SIGNATURES)
+
+For a text block, replace the remaining tokens for special characters.
+"""
+function prepare_text(b::Block)::String
+    # in a text block the substring is the content
+    c = b.ss
+    # if there's no tokens over that content, return
     isempty(b.inner_tokens) && return String(c)
+    # otherwise inject as appropriate
     parent = parent_string(c)
     io = IOBuffer()
     head = from(c)
     for t in b.inner_tokens
-        name(t) in MD_IGNORE && continue
+        t.name in MD_IGNORE && continue
         write(io, subs(parent, head, previous_index(t)))
         write(io, insert(t))
         head = next_index(t)
@@ -18,17 +32,22 @@ function prepare(b::Block{:TEXT})::String
     return String(take!(io))
 end
 
-insert(t::Token{:LINEBREAK}) = "~~~<br>~~~"
-insert(t::Token{:HRULE})     = "~~~<hr>~~~"
+"""
+$(SIGNATURES)
 
-insert(t::Token{:CHAR_HTML_ENTITY}) = String(t.ss)
-
-insert(t::Token{:CHAR_92})  = "&#92;"   # '\'
-insert(t::Token{:CHAR_42})  = "&#42;"   # '*'
-insert(t::Token{:CHAR_95})  = "&#95;"   # '_'
-insert(t::Token{:CHAR_96})  = "&#96;"   # '`'
-insert(t::Token{:CHAR_64})  = "&#64;"   # '@'
-insert(t::Token{:CHAR_35})  = "&#35;"   # '#'
-insert(t::Token{:CHAR_123}) = "&#123;"  # '{'
-insert(t::Token{:CHAR_125}) = "&#125;"  # '}'
-insert(t::Token{:CHAR_36})  = "&#36;"   # '$'
+For tokens representing special characters, insert the relevant string.
+"""
+function insert(t::Token)::String
+    s = ""
+    if t.name == :LINEBREAK
+        s = "~~~<br>~~~"
+    elseif t.name == :HRULE
+        s = "~~~<hr>~~~"
+    elseif t.name == :CHAR_HTML_ENTITY
+        s = String(t.ss)
+    else # CHAR_*
+        id = String(t.name)[6:end]
+        s = "&#$(id);"
+    end
+    return s
+end

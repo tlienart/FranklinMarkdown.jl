@@ -19,23 +19,20 @@ parent_string(s::AbstractSpan) = parent_string(s.ss::SS)
 """
 $(TYPEDEF)
 
-A token is a subtype of `Span` which typically determines the start or end of an block.
-It can also be used for special characters.
+A token is a subtype of `AbstractSpan` which typically determines the start or end of
+a block. It can also be used for special characters.
 """
-struct Token{N} <: AbstractSpan
+struct Token <: AbstractSpan
+    name::Symbol
     ss::SS
 end
 
-to(t::Token{:EOS}) = from(t.ss)
+is_eos(t::Token) = t.name == :EOS
+to(t::Token)     = ifelse(is_eos(t), from(t.ss), to(t.ss))
 
-is_eos(t::Token)       = false
-is_eos(t::Token{:EOS}) = true
-
-name(t::Token{N}) where N = N::Symbol
-
-const EMPTY_TOKEN = Token{:NONE}(subs(""))
-
+const EMPTY_TOKEN      = Token(:NONE, subs(""))
 const EMPTY_TOKEN_SVEC = @view (Token[])[1:0]
+
 
 """
 $(TYPEDEF)
@@ -43,17 +40,18 @@ $(TYPEDEF)
 Blocks are defined by an opening and a closing `Token`, they may be nested. For instance
 braces block are formed of an opening `{` and a closing `}`.
 """
-struct Block{N, O, C} <: AbstractSpan
-    open::Token{O}
-    close::Token{C}
+struct Block <: AbstractSpan
+    name::Symbol
+    open::Token
+    close::Token
     ss::SS
     inner_tokens::SubVector{Token}
 end
 
-function Block(N::Symbol, p::Pair{Token{O}, Token{C}}, it=EMPTY_TOKEN_SVEC) where {O, C}
+function Block(n::Symbol, p::Pair{Token, Token}, it=EMPTY_TOKEN_SVEC)
     o, c = p.first, p.second
     ss = subs(parent_string(o), from(o), to(c))
-    return Block{N, O, C}(o, c, ss, it)
+    return Block(n, o, c, ss, it)
 end
 
 function Block(n::Symbol, s::SubVector{Token})
@@ -61,31 +59,26 @@ function Block(n::Symbol, s::SubVector{Token})
     return Block(n, s[1] => s[end], it)
 end
 
-function Block(n::Symbol, ss::SS, sv::SubVector{Token})
-    return Block{n,:NONE,:NONE}(EMPTY_TOKEN, EMPTY_TOKEN, ss, sv)
+function Block(n::Symbol, ss::SS, it=EMPTY_TOKEN_SVEC)
+    return Block(n, EMPTY_TOKEN, EMPTY_TOKEN, ss, it)
 end
 
-SingleBlock(S::Symbol, t::Token) =
-    Block{S, S, :NONE}(t, EMPTY_TOKEN, t.ss, EMPTY_TOKEN_SVEC)
-
-name(b::Block{N, O, C}) where {N, O, C} = N
+TokenBlock(t::Token) = Block(t.name, t, EMPTY_TOKEN, t.ss, EMPTY_TOKEN_SVEC)
 
 """
-Text
+$(SIGNATURES)
 
 Spans of text which should be left to the fallback engine (such as CommonMark for
 instance). Text blocks can also have inner tokens that are non-block delimiters such as
 emojis or html entities.
 """
-const Text = Block{:TEXT, :NONE, :NONE}
-
-function text(ss, it=EMPTY_TOKEN_SVEC)::Text
-    isempty(it) && return Block(:TEXT, ss, it)
+function TextBlock(ss::SS, it=EMPTY_TOKEN_SVEC)::Block
+    isempty(it) && return Block(:TEXT, ss)
     fss = from(ss)
     tss = to(ss)
     i = findfirst(t -> fss <= from(t), it)
     j = findlast(t -> to(t) <= tss && !is_eos(t), it)
-    i === nothing || j === nothing && return Block(:TEXT, ss, EMPTY_TOKEN_SVEC)
+    i === nothing || j === nothing && return Block(:TEXT, ss)
     inner_tokens = @view it[i:j]
     return Block(:TEXT, ss, inner_tokens)
 end
@@ -98,16 +91,15 @@ Return the content of a `Block`, for instance the content of a `{...}` block wou
 with a token (which would then be an overlapping token and an EOS).
 """
 function content(b::Block)::SS
-    s = parent_string(b.ss)  # does not allocate
-    t = from(b.close)
+    b.name == :TEXT && return b.ss
     # find the relevant range of the parent string
+    s = parent_string(b.ss)
+    t = from(b.close)
     idxo = nextind(s, to(b.open))
     idxc = ifelse(is_eos(b.close), t, prevind(s, t))
     # return the substring corresponding to the range
     return subs(s, idxo, idxc)
 end
-
-content(b::Block{:TEXT}) = return b.ss
 
 """
 $(TYPEDEF)

@@ -8,12 +8,15 @@ function process(s::FP.SS)::String
 end
 process(s::String) = process(FP.subs(s))
 
-# explicit typing was just when playing with SnoopCompile.
-process(t::FP.Text) = (t |> FP.content)::FP.SS |> FP.dedent |> cm_parser |> CM.html
-
-function process(b::FP.Block{:DIV, :DIV_OPEN, :DIV_CLOSE})
-    classes = replace(b.open.ss[3:end], "," => " ")
-    return "<div class=\"$(FP.get_classes(b))\">" *
-           process(FP.dedent(FP.content(b))) *
-           "</div>"
+function process(b::FP.Block)::String
+    if b.name == :TEXT
+        return (b |> FP.content)::FP.SS |> FP.dedent |> cm_parser |> CM.html
+    elseif b.name == :DIV
+        classes = replace(b.open.ss[3:end], "," => " ")
+        return "<div class=\"$(FP.get_classes(b))\">" *
+               process(FP.dedent(FP.content(b))) *
+               "</div>"
+    else
+        throw(TypeError("Expected either a text or div block"))
+    end
 end
