@@ -70,7 +70,7 @@ function find_tokens(
 
                     # if there is space, consider the substring and verify whether it matches
                     candidate = subs(s, head_idx, tail_idx)
-                    if λ(candidate, at_eos)
+                    if λ(candidate, at_eos)::Bool
                         # if offset --> looked at 1 extra char (lookahead)
                         back_one = offset & !at_eos
                         head_idx = prevind(s, tail_idx, back_one)
@@ -88,7 +88,7 @@ function find_tokens(
                     probe_char::Char = s[probe_idx]
 
                     # while the condition holds, get next char
-                    while λ(nchars, probe_char)
+                    while λ(nchars, probe_char)::Bool
                         tail_idx   = probe_idx
                         probe_idx  = nextind(s, probe_idx)
                         (probe_idx > end_idx) && break
