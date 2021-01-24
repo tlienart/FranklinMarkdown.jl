@@ -141,11 +141,12 @@ end
     @test tokens[3].name == :MATH_A
     @test tokens[4].name == :MATH_A
 
-    tokens = raw"_$>_ _$<_ ___ ****" |> FP.default_md_tokenizer
+    tokens = raw"_$>_ _$<_ ___ **** ---" |> FP.default_md_tokenizer
     @test tokens[1].name == :MATH_I_OPEN
     @test tokens[2].name == :MATH_I_CLOSE
     @test tokens[3].name == :HRULE
     @test tokens[4].name == :HRULE
+    @test tokens[5].name == :HRULE
 end
 
 @testset "MD-code" begin

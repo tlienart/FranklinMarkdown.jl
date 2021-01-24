@@ -5,4 +5,4 @@ itrigs = inference_triggers(tinf)
 
 fitrigs = filter(itrig -> itrig.callerframes[end].linfo.def.module === FranklinParser, itrigs)
 
-# As of Jan 17, this should be 4 [and only in Base]
+# Jan 24, 0 trigger

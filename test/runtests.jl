@@ -18,12 +18,11 @@ end
 @testset "utils" begin
     include("utils/strings.jl")
     include("utils/types.jl")
-    # include("utils/regex.jl")
 end
 
 @testset "tokens" begin
-    include("tokens/find_tokens.jl")
-    # include("tokens/markdown_tokens.jl")
+    include("tokens/utils.jl")
+    include("tokens/markdown_tokens.jl")
     # include("tokens/html_tokens.jl")
 end
 

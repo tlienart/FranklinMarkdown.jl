@@ -82,16 +82,19 @@ const F_FOOTNOTE = greedy_match(
 F_HR
 """
 const F_HR_1 = greedy_match(
-    head_chars=[['-'], ['-']],
-    tail_chars=['-']
+    head_chars=[['-']],
+    tail_chars=['-'],
+    check=r"-{3}-*"
 )
 const F_HR_2 = greedy_match(
-    head_chars=[['*'], ['*']],
-    tail_chars=['*']
+    head_chars=[['_']],
+    tail_chars=['_'],
+    check=r"_{3}_*"
 )
 const F_HR_3 = greedy_match(
-    head_chars=[['_'], ['_']],
-    tail_chars=['_']
+    head_chars=[['*']],
+    tail_chars=['*'],
+    check=r"\*{3}\**"
 )
 
 # """

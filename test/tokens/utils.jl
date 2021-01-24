@@ -121,13 +121,30 @@ end
     @test FP.greedy_lookahead(tf, 3, '-')
     @test !FP.greedy_lookahead(tf, 3, '_')
     tf = FP.F_HR_2
-    @test FP.greedy_lookahead(tf, 1, '*')
-    @test FP.greedy_lookahead(tf, 2, '*')
-    @test FP.greedy_lookahead(tf, 3, '*')
-    @test !FP.greedy_lookahead(tf, 3, '_')
-    tf = FP.F_HR_3
     @test FP.greedy_lookahead(tf, 1, '_')
     @test FP.greedy_lookahead(tf, 2, '_')
     @test FP.greedy_lookahead(tf, 3, '_')
     @test !FP.greedy_lookahead(tf, 3, '*')
+    tf = FP.F_HR_3
+    @test FP.greedy_lookahead(tf, 1, '*')
+    @test FP.greedy_lookahead(tf, 2, '*')
+    @test FP.greedy_lookahead(tf, 3, '*')
+    @test !FP.greedy_lookahead(tf, 3, '_')
+end
+
+@testset "regexes" begin
+    tf = FP.F_LX_COMMAND
+    for c in (FP.subs(raw"\abc"), FP.subs(raw"\abc_def"), FP.subs(raw"\abc1_def*"))
+        @test FP.check(tf, c)
+    end
+    for c in (FP.subs(raw"\abc "), FP.subs(raw"\abc**"), FP.subs(raw"\a*bc"))
+        @test !FP.check(tf, c)
+    end
+
+    tf = FP.F_HTML_ENTITY
+    for e in ("&sqcap;", "&SquareIntersection;", "&#x02293;", "&#8851;",
+              "&Succeeds;", "&frac78;", "&gEl;", "&gnapprox;")
+        @test FP.check(tf, FP.subs(e))
+    end
+    @test !FP.check(tf, FP.subs("&42;"))
 end

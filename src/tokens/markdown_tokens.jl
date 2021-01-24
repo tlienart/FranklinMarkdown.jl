@@ -24,8 +24,8 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("<!--") => :COMMENT_OPEN
         ],
     '-' => [
-        forward_match("-->")          => :COMMENT_CLOSE,
-        # greedy_match(is_hr1, val_hr1) => :HRULE
+        forward_match("-->") => :COMMENT_CLOSE,
+        F_HR_1               => :HRULE
         ],
     '+' => [
         forward_match("+++", ['\n']) => :MD_DEF_BLOCK
@@ -33,15 +33,15 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
     '~' => [
         forward_match("~~~") => :RAW_HTML
         ],
-    # '[' => [
-    #     greedy_match(is_footnote) => :FOOTNOTE_REF, # [^...](:)? defs will be separated after
-    #     ],
+    '[' => [
+        F_FOOTNOTE => :FOOTNOTE_REF, # [^...](:)? defs will be separated after
+        ],
     ']' => [
         forward_match("]: ") => :LINK_DEF,
         ],
-    # ':' => [
-    #     greedy_match(is_emoji) => :CAND_EMOJI,
-    #     ],
+    ':' => [
+        F_EMOJI => :CAND_EMOJI,
+        ],
     '\\' => [ # -- special characters (https://www.amp-what.com/unicode/search)
         forward_match("\\\\") => :LINEBREAK,       # --> <br/>
         forward_match("\\", SPACE_CHAR) => :CHAR_92,
@@ -57,16 +57,16 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("\\[")  => :MATH_C_OPEN,      # \[ ...
         forward_match("\\]")  => :MATH_C_CLOSE,     #    ... \]
         # -- latex
-        forward_match("\\newenvironment", ['{'])   => :LX_NEWENVIRONMENT,
-        forward_match("\\newcommand", ['{'])       => :LX_NEWCOMMAND,
-        forward_match("\\begin", ['{'])            => :CAND_LX_BEGIN,
-        forward_match("\\end", ['{'])              => :CAND_LX_END,
-        # greedy_match(is_lx_command, val_lx_command) => :LX_COMMAND,  # \command⎵*
+        forward_match("\\newenvironment", ['{']) => :LX_NEWENVIRONMENT,
+        forward_match("\\newcommand", ['{'])     => :LX_NEWCOMMAND,
+        forward_match("\\begin", ['{'])          => :CAND_LX_BEGIN,
+        forward_match("\\end", ['{'])            => :CAND_LX_END,
+        F_LX_COMMAND                             => :LX_COMMAND,  # \command⎵*
         ],
     '@' => [
-        forward_match("@def", [' '])   => :MD_DEF_OPEN,    # @def var = ...
+        forward_match("@def", [' '])    => :MD_DEF_OPEN,    # @def var = ...
         forward_match("@@", SPACE_CHAR) => :DIV_CLOSE,      # @@⎵*
-        # greedy_match(is_div_open)       => :DIV_OPEN,       # @@dname
+        F_DIV_OPEN                      => :DIV_OPEN,       # @@dname
         ],
     '#' => [
         forward_match("#",      [' ']) => :H1_OPEN,
@@ -77,7 +77,7 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("######", [' ']) => :H6_OPEN,
         ],
     '&' => [
-        # greedy_match(is_html_entity, val_html_entity) => :CHAR_HTML_ENTITY,
+        F_HTML_ENTITY => :CHAR_HTML_ENTITY,
         ],
     '$' => [
         forward_match("\$", ['$'], false) => :MATH_A,  # $⎵*
@@ -86,7 +86,7 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
     '_' => [
         forward_match("_\$>_")        => :MATH_I_OPEN,  # internal when resolving a lx command
         forward_match("_\$<_")        => :MATH_I_CLOSE, # within mathenv (e.g. \R <> \mathbb R)
-        # greedy_match(is_hr2, val_hr2) => :HRULE,
+        F_HR_2 => :HRULE,
         ],
     '`' => [
         forward_match("`",  ['`'], false)  => :CODE_SINGLE,  # `⎵
@@ -96,13 +96,14 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("`"^4,  SPACE_CHAR)   => :CODE_QUAD,    # ````⎵*
         forward_match("`"^5,  SPACE_CHAR)   => :CODE_PENTA,   # `````⎵*
         forward_match("```!", SPACE_CHAR)   => :CODE_TRIPLE!, # ```!⎵*
-        # greedy_match(is_lang(3), val_lang3) => :CODE_LANG3,   # ```lang*
-        # greedy_match(is_lang(4), val_lang4) => :CODE_LANG4,   # ````lang*
-        # greedy_match(is_lang(5), val_lang5) => :CODE_LANG5,   # `````lang*
+        #
+        F_LANG_3 => :CODE_LANG3,   # ```lang*
+        F_LANG_4 => :CODE_LANG4,   # ````lang*
+        F_LANG_5 => :CODE_LANG5,   # `````lang*
         ],
-    # '*' => [
-    #     greedy_match(is_hr3, val_hr3) => :HRULE,
-    #     ]
+    '*' => [
+        F_HR_3 => :HRULE,
+        ]
     )  # end dict
 
 

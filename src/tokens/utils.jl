@@ -99,9 +99,9 @@ or not),
 3. a boolean function that can be applied on a sequence of character,
 4. an indicator of whether the pattern can be found at the end of the string.
 """
-function forward_match(
+@inline function forward_match(
             refstring::String,
-            next_chars::Vector{Char} = Char[],
+            next_chars::Vector{Char}=Char[],
             is_followed::Bool=true
             )::TokenFinder
     # steps keeps track of the number of character to consume
