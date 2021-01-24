@@ -13,14 +13,78 @@ List of characters that correspond to a `\\s` regex + EOS.
 
 Ref: https://github.com/JuliaLang/julia/blob/master/base/strings/unicode.jl.
 """
-const SPACE_CHAR = (' ', '\n', '\t', '\v', '\f', '\r', '\u85', '\ua0', EOS)
+const SPACE_CHAR = [' ', '\n', '\t', '\v', '\f', '\r', '\u85', '\ua0', EOS]
 
 """
 NUM_CHAR
 
 Convenience list of characters corresponding to digits.
 """
-const NUM_CHAR = tuple('0':'9'...)
+const NUM_CHAR = ['0':'9'...]
+
+const ALPHA_LATIN = ['a':'z'..., 'A':'Z'...]
+
+const ALPHANUM_LATIN = vcat(ALPHA_LATIN, NUM_CHAR)
+
+const ALPHA_ALL = [Char(i) for i in 1:10_000 if isletter(Char(i))]
+const ALPHANUM_ALL = vcat(ALPHA_ALL, NUM_CHAR)
+
+
+
+struct Chomp
+    # fixed style
+    refstring::String
+    ok_at_eos::Bool
+    is_followed::Bool
+    next_chars::Vector{Char}
+    # greedy style
+    head_chars::Vector{Vector{Char}}
+    tail_chars::Vector{Char}
+end
+function Chomp(;
+            refstring::String="", ok_at_eos::Bool=true, is_followed::Bool=true, next_chars::Vector{Char}=Char[],
+            head_chars::Vector{Vector{Char}}=Vector{Vector{Char}}(),
+            tail_chars::Vector{Char}=Char[])
+    Chomp(
+        refstring, ok_at_eos, is_followed, next_chars,
+        head_chars, tail_chars)
+end
+
+struct TokenFinder
+    steps::Int
+    chomp::Chomp
+    check::Regex
+end
+
+TokenFinder(s::Int, c::Chomp) = TokenFinder(s, c, r"")
+
+
+function fixed_lookahead(tf::TokenFinder, candidate::SS, at_eos::Bool)
+    c = tf.chomp
+    matches = false
+    if at_eos
+        matches  = (candidate == c.refstring)
+        matches &= c.ok_at_eos
+    elseif isempty(c.next_chars)
+        matches  = candidate == c.refstring
+    else
+        matches  = chop(candidate) == c.refstring
+        matches &= !xor(c.is_followed, candidate[end] ∈ c.next_chars)
+    end
+    offset = Int(!isempty(c.next_chars) & !at_eos)
+    return matches, offset
+end
+
+function greedy_lookahead(tf::TokenFinder, nchars::Int, probe_char::Char)
+    c = tf.chomp
+    (nchars > length(c.head_chars)) && return (probe_char in c.tail_chars)
+    return (probe_char in c.head_chars[nchars])
+end
+
+function check(tf::TokenFinder, ss::SS)
+    return match(tf.check, ss) !== nothing
+end
+
 
 """
 $(SIGNATURES)
@@ -37,28 +101,19 @@ or not),
 """
 function forward_match(
             refstring::String,
-            next_char::NTuple{K, Char} where K = (),
-            is_followed=true
+            next_chars::Vector{Char} = Char[],
+            is_followed::Bool=true
             )::TokenFinder
+    # steps keeps track of the number of character to consume
+    steps = lastindex(refstring)
+    steps = ifelse(isempty(next_chars), prevind(refstring, steps), steps)
 
-    steps      = lastindex(refstring)
-    check_next = !isempty(next_char)
-    steps      = ifelse(check_next, steps, prevind(refstring, steps))
-    ok_at_eos  = !check_next || !is_followed || EOS ∈ next_char
+    # check whether it would be allowed to be at the end of the string
+    ok_at_eos::Bool = isempty(next_chars) || !is_followed || EOS ∈ next_chars
 
-    λ(s::SS, at_eos::Bool)::Bool = begin
-        if at_eos
-            flag  = (s == refstring)
-            flag &= ok_at_eos
-        elseif !check_next
-            flag  = (s == refstring)
-        else
-            flag  = (chop(s) == refstring)
-            flag &= !xor(is_followed, s[end] ∈ next_char)
-        end
-        flag
-    end
-    return (steps, check_next, λ, ok_at_eos)
+    # form the validator and return the tokenfinder
+    chomp = Chomp(; refstring, ok_at_eos, is_followed, next_chars)
+    return TokenFinder(steps, chomp)
 end
 
 """
@@ -66,22 +121,27 @@ $(SIGNATURES)
 
 Lazily accept the next character and stop as soon as it fails to verify `λ(c)`.
 """
-greedy_match(λ::Function, validator=(_::SS -> true)) = (-1, false, λ, validator)
+function greedy_match(;
+            head_chars::Vector{Vector{Char}}=Vector{Vector{Char}}(),
+            tail_chars::Vector{Char}=Char[],
+            check::Regex=r"")
+    TokenFinder(-1, Chomp(; head_chars, tail_chars), check)
+end
 
-"""
-$(SIGNATURES)
-
-Validator function wrapping a regex match.
-"""
-validator(rx::Regex) = (s::SS -> (match(rx, s) !== nothing)::Bool)
-
-"""
-$(SIGNATURES)
-
-Check whether `c` is a letter or is in a vector of characters `oc`.
-"""
-is_letter_or(c::Char, oc::NTuple{K, Char}=()) where K =
-    ifelse(isletter(c), true, c ∈ oc)::Bool
-
-is_alphanum_or(c::Char, oc::NTuple{K, Char}=()) where K =
-    is_letter_or(c, (oc..., NUM_CHAR...))
+# """
+# $(SIGNATURES)
+#
+# Validator function wrapping a regex match.
+# """
+# validator(rx::Regex) = (s::SS -> (match(rx, s) !== nothing)::Bool)
+#
+# """
+# $(SIGNATURES)
+#
+# Check whether `c` is a letter or is in a vector of characters `oc`.
+# """
+# is_letter_or(c::Char, oc::NTuple{K, Char}=()) where K =
+#     ifelse(isletter(c), true, c ∈ oc)::Bool
+#
+# is_alphanum_or(c::Char, oc::NTuple{K, Char}=()) where K =
+#     is_letter_or(c, (oc..., NUM_CHAR...))

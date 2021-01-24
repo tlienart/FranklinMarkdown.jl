@@ -12,7 +12,7 @@ const HTML_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         ],
     '<' => [
         forward_match("<!--")                => :COMMENT_OPEN,
-        forward_match("<script", (' ', '>')) => :SCRIPT_OPEN,  # [1]
+        forward_match("<script", [' ', '>']) => :SCRIPT_OPEN,  # [1]
         forward_match("</script>")           => :SCRIPT_CLOSE
         ],
     '-' => [

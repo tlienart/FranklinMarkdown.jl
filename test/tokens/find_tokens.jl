@@ -8,109 +8,126 @@ end
 
 @testset "forward_match" begin
     # no post-check
-    r = (s, o, λ, ν) = FP.forward_match("abc")
-    @test s == 2 == length("abc") - 1
-    @test r isa FP.TokenFinder
-    @test λ(FP.subs("abc"), false)
-    @test !o  # no check of next char
-    @test ν   # no check of next char so ok at EOS
+    tf = FP.forward_match("abc")
+    @test tf.steps == 2 == length("abc") - 1
+    @test tf isa FP.TokenFinder
+    @test FP.fixed_lookahead(tf, FP.subs("abc"), false) == (true, 0)
+    @test isempty(tf.check.pattern)
 
     # with post-check
-    (s, o, λ, ν) = FP.forward_match("abc", ('α',))
-    @test s == 3 == length("abc") - 1 + 1
-    @test o   # check of next char
-    @test !ν  # not ok at EOS because can't be alpha
-    @test λ(FP.subs("abcα"), false)
-    @test !λ(FP.subs("abc"), true)
+    tf = FP.forward_match("abc", ['α'])
+    @test tf.steps == 3 == length("abc") - 1 + 1
+    @test FP.fixed_lookahead(tf, FP.subs("abcα"), false) == (true, 1)
+    @test FP.fixed_lookahead(tf, FP.subs("abcα"), true) == (false, 0)
 
     # single char
-    r = (s, o, λ, ν) = FP.forward_match("{")
-    @test s == 0 == length("{") - 1
-    @test r isa FP.TokenFinder
-    @test λ(FP.subs("{"), false)
-    @test λ(FP.subs("{"), true)
-    @test !o
-    @test ν
+    tf = FP.forward_match("{")
+    @test tf.steps == 0 == length("{") - 1
+    @test FP.fixed_lookahead(tf, FP.subs("{"), false) == (true, 0)
+    @test FP.fixed_lookahead(tf, FP.subs("{"), true) == (true, 0)
 end
 
 @testset "greedy_match" begin
-    # no validator
-    r = (s, o, λ, ν) = FP.greedy_match(e -> e in FP.NUM_CHAR)
-    @test s == -1
-    @test !o
-    @test λ('1')
-    @test !λ('a')
-    @test ν(FP.subs("")) == true
-    @test r isa FP.TokenFinder
-    # with validator
-    r = FP.greedy_match(e -> e in FP.NUM_CHAR, c -> length(c) == 3)
-    @test r isa FP.TokenFinder
-end
-
-@testset "is_letter_or" begin
-    @test FP.is_letter_or('a')
-    for c in ('a', 'b', 'α', 'Λ', '-', '_', '0')
-        @test FP.is_alphanum_or(c, ('-', '_'))
-    end
-    @test !FP.is_alphanum_or('\n', ('-',))
+    tf = FP.greedy_match(tail_chars=FP.NUM_CHAR)
+    @test tf.steps == -1
+    @test FP.greedy_lookahead(tf, 1, '1')
+    @test !FP.greedy_lookahead(tf, 1, 'a')
+    @test tf isa FP.TokenFinder
+    @test isempty(tf.check.pattern)
+    # with check
+    tf = FP.greedy_match(tail_chars=FP.NUM_CHAR, check=r"^\d{3}$")
+    @test FP.greedy_lookahead(tf, 1, '1')
+    @test FP.greedy_lookahead(tf, 2, '2')
+    @test FP.greedy_lookahead(tf, 3, '3')
+    @test FP.check(tf, FP.subs("123"))
+    @test !FP.check(tf, FP.subs("1234"))
 end
 
 @testset "is_div_open" begin
-    @test FP.is_div_open(1, '@')
-    @test !FP.is_div_open(1, 'a')
-    for c in ('a', 'α', '-', '_', ',')
-        @test FP.is_div_open(2, c)
+    tf = FP.F_DIV_OPEN
+    @test FP.greedy_lookahead(tf, 1, '@')
+    @test !FP.greedy_lookahead(tf, 2, '@')
+    for c in ('a', 'Z')
+        @test FP.greedy_lookahead(tf, 2, c)
     end
-    @test !FP.is_div_open(2, '*')
+    # not allowed as first char
+    for c in ('1', '_', 'α')
+        @test !FP.greedy_lookahead(tf, 2, c)
+    end
+    # allowed as subsequent char
+    for c in ('1', '_', 'a', 'Z')
+        @test FP.greedy_lookahead(tf, 3, c)
+    end
+end
+
+@testset "is_latex_command" begin
+    tf = FP.F_LX_COMMAND
+    @test FP.greedy_lookahead(tf, 1, 'a')
+    @test FP.check(tf, FP.subs("\\abcd"))
+    @test !FP.check(tf, FP.subs("\\_abcd"))
+    @test FP.check(tf, FP.subs("\\abcd1"))
 end
 
 @testset "is_lang" begin
-    r = (s, o, λ, ν) = FP.greedy_match(FP.is_lang(3))
-    @test r isa FP.TokenFinder
-    @test s == -1
-    @test !o
-    @test λ(1, '`')
-    @test λ(2, '`')
-    @test !λ(3, '`')
-    # first char must be alpha
-    @test λ(3, 'a')
-    @test !λ(3, '0')
-    @test λ(4, 'a')
-    # then allow alphanum and -
-    @test λ(4, '0')
-    @test λ(4, '-')
-    # validator
-    @test ν(FP.subs("")) == true
+    tf = FP.F_LANG_3
+    @test FP.greedy_lookahead(tf, 1, '`')
+    @test FP.greedy_lookahead(tf, 2, '`')
+    @test !FP.greedy_lookahead(tf, 3, '`')
+    @test FP.greedy_lookahead(tf, 3, 'j')
+    @test FP.check(tf, FP.subs("```julia"))
+    @test !FP.check(tf, FP.subs("```013"))
+
+    tf = FP.F_LANG_4
+    @test FP.greedy_lookahead(tf, 3, '`')
+    @test !FP.greedy_lookahead(tf, 4, '`')
+    @test FP.check(tf, FP.subs("````hello"))
+    @test !FP.check(tf, FP.subs("```hello"))
+    @test !FP.check(tf, FP.subs("`````hello"))
+
+    tf = FP.F_LANG_5
+    @test FP.greedy_lookahead(tf, 4, '`')
+    @test !FP.greedy_lookahead(tf, 6, '`')
+    @test !FP.check(tf, FP.subs("```hello"))
+    @test !FP.check(tf, FP.subs("````hello"))
+    @test FP.check(tf, FP.subs("`````hello"))
+    @test !FP.check(tf, FP.subs("``````hello"))
 end
 
 @testset "is_html_entity" begin
-    (s, o, λ, ν) = FP.greedy_match(FP.is_html_entity, FP.val_html_entity)
-    @test !o
-    @test λ(1, 'a')
-    @test ν(FP.subs("&#42;"))
+    tf = FP.F_HTML_ENTITY
+    @test FP.greedy_lookahead(tf, 2, 'a')
+    @test !FP.greedy_lookahead(tf, 2, 'α')
+    @test FP.check(tf, FP.subs("&#42;"))
 end
 
 @testset "is_emoji" begin
-    (s, o, λ, ν) = FP.greedy_match(FP.is_emoji)
-    @test !o
-    @test λ(1, '+')
-    @test ν(FP.subs("")) == true
+    tf = FP.F_EMOJI
+    for c in ('a', '+', '_', '-')
+        @test FP.greedy_lookahead(tf, 1, c)
+    end
+    @test FP.check(tf, FP.subs(":smile:"))
 end
 
 @testset "is_footnote" begin
-    (s, o, λ, ν) = FP.greedy_match(FP.is_footnote)
-    @test !o
-    @test λ(1, '^')
-    @test λ(2, 'a')
-    @test λ(3, ']')
-    @test ν(FP.subs("")) == true
+    tf = FP.F_FOOTNOTE
+    @test FP.check(tf, FP.subs("[^hello]:"))
+    @test FP.check(tf, FP.subs("[^h1]"))
 end
 
 @testset "is_hr*" begin
-    @test FP.is_hr1(1, '-')
-    @test !FP.is_hr1(1, 'a')
-    @test FP.is_hr2(1, '_')
-    @test !FP.is_hr2(1, 'a')
-    @test FP.is_hr3(1, '*')
-    @test !FP.is_hr3(1, 'a')
+    tf = FP.F_HR_1
+    @test FP.greedy_lookahead(tf, 1, '-')
+    @test FP.greedy_lookahead(tf, 2, '-')
+    @test FP.greedy_lookahead(tf, 3, '-')
+    @test !FP.greedy_lookahead(tf, 3, '_')
+    tf = FP.F_HR_2
+    @test FP.greedy_lookahead(tf, 1, '*')
+    @test FP.greedy_lookahead(tf, 2, '*')
+    @test FP.greedy_lookahead(tf, 3, '*')
+    @test !FP.greedy_lookahead(tf, 3, '_')
+    tf = FP.F_HR_3
+    @test FP.greedy_lookahead(tf, 1, '_')
+    @test FP.greedy_lookahead(tf, 2, '_')
+    @test FP.greedy_lookahead(tf, 3, '_')
+    @test !FP.greedy_lookahead(tf, 3, '*')
 end
