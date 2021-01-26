@@ -1,102 +1,136 @@
 """
-$(SIGNATURES)
+F_DIV_OPEN
 
-In combination with `greedy_match`, checks to see if we have something that looks like a
-`@@div` describing the opening of a div block. Triggering char is a first `@`.
+Finder for `@@div` checking that `div` matches a simplified rule for allowed CSS class
+names. The complete rule being `-?[_a-zA-Z]+[_a-zA-Z0-9-]*` which we simplify here to
+`[a-zA-Z]+[_a-zA-Z0-9-]` and allow `,` for separation so `@@d1,d2` is allowed and
+corresponds to a setting where we pass two classes `class="d1 d2"`.
 """
-function is_div_open(i::Int, c::Char)::Bool
-    i == 1 && return c == '@'
-    return is_alphanum_or(c, ('-','_', ','))
-end
-
-"""
-$(SIGNATURES)
-
-In combination with `greedy_match`, check to see if we have something that looks like a
-valid latex-like command name. Triggering char is a first `\\`.
-"""
-function is_lx_command(i::Int, c::Char)::Bool
-    i == 1 && return is_letter_or(c)
-    return is_letter_or(c, ('_', '*'))
-end
-
-val_lx_command = validator(LX_COMMAND_PAT)
+const F_DIV_OPEN = greedy_match(
+    head_chars=[['@'], ALPHA_LATIN],
+    tail_chars=vcat(ALPHANUM_LATIN, ['-', '_', ','])
+)
 
 """
-$(SIGNATURES)
+F_LX_COMMAND
 
-In combination with `greedy_match`, checks to see if we have something that looks like
-a sequence of 3, 4 or 5 backticks followed by a valid combination of letter defining a
-language. Triggering char is a first backtick.
+Finder for latex command. First character is `[a-zA-Z]`. '*' is only allowed once
+and at the end. We do allow numbers (there's no ambiguity because `\\com1` is not
+allowed to mean `\\com{1}` unlike in LaTeX).
 """
-function is_lang(j)::Function
-    λ(i::Int, c::Char)::Bool = begin
-        i < j  && return c == '`'         # ` followed by `` forms the opening ```
-        i == j && return is_letter_or(c)
-        return is_alphanum_or(c, ('-',))  # eg ```objective-c
-    end
-    return λ
-end
-
-val_lang3 = validator(CODE_LANG3_PAT)
-val_lang4 = validator(CODE_LANG4_PAT)
-val_lang5 = validator(CODE_LANG5_PAT)
+const F_LX_COMMAND = greedy_match(
+    head_chars=[ALPHA_LATIN],
+    tail_chars=vcat(ALPHANUM_LATIN, ['_', '*']),
+    check=LX_COMMAND_PAT
+)
 
 """
-$(SIGNATURES)
+F_LANG_*
 
-In combination with `greedy_match`, checks to see if we have something that looks like a
-html entity. Note that there can be fake matches, so this will need to be validated
-later on; if validated it will be treated as HTML; otherwise it will be shown as
-markdown.
-Triggerin char is a `&`.
+Finder for code blocks. I.e. something like a sequence of 3, 4 or 5 backticks followed
+by a valid combination of letter defining a language.
 """
-is_html_entity(::Int, c::Char)::Bool = is_alphanum_or(c, ('#',';'))
-
-val_html_entity = validator(HTML_ENTITY_PAT)
-
-"""
-$(SIGNATURES)
-
-Check if it looks like an emoji indicator `:...` note that it does not take the final
-`:` this is checked and added in `validate_emoji!`.
-"""
-is_emoji(i::Int, c::Char)::Bool = is_alphanum_or(c, ('+','_','-'))
-
-"""
-$(SIGNATURES)
-
-Check if it looks like `\\[\\^[\\p{L}0-9]+\\]:?`.
-"""
-function is_footnote(i::Int, c::Char)::Bool
-    i == 1 && return c == '^'
-    i == 2 && return is_alphanum_or(c)
-    i > 2  && return is_alphanum_or(c, (']', ':'))
-end
+const F_LANG_3 = greedy_match(
+    head_chars=[['`'], ['`']],
+    tail_chars=vcat(ALPHANUM_LATIN, ['-']),
+    check=CODE_LANG3_PAT
+)
+const F_LANG_4 = greedy_match(
+    head_chars=[['`'], ['`'], ['`']],
+    tail_chars=vcat(ALPHANUM_LATIN, ['-']),
+    check=CODE_LANG4_PAT
+)
+const F_LANG_5 = greedy_match(
+    head_chars=[['`'], ['`'], ['`'], ['`']],
+    tail_chars=vcat(ALPHANUM_LATIN, ['-']),
+    check=CODE_LANG5_PAT
+)
 
 """
-$(SIGNATURES)
+F_HTML_ENTITY
 
-Check if it looks like `---+`.
+Finder for html entities.
 """
-is_hr1(::Int, c::Char)::Bool = (c == '-')
-
-val_hr1 = validator(HR1_PAT)
-
-"""
-$(SIGNATURES)
-
-Check if it looks like `___+`.
-"""
-is_hr2(::Int, c::Char)::Bool = (c == '_')
-
-val_hr2 = validator(HR2_PAT)
+const F_HTML_ENTITY = greedy_match(
+    tail_chars=vcat(ALPHANUM_LATIN, ['#', ';']),
+    check=HTML_ENTITY_PAT
+)
 
 """
-$(SIGNATURES)
+F_EMOJI
 
-Check if it looks like `***+`.
+Finder for emojis (those will have to be validated separately to check Julia recognises
+them).
 """
-is_hr3(::Int, c::Char)::Bool = (c == '*')
+const F_EMOJI = greedy_match(
+    tail_chars=vcat(ALPHANUM_LATIN, [':', '+', '-', '_']),
+    check=EMOJI_PAT
+)
 
-val_hr3 = validator(HR3_PAT)
+"""
+F_FOOTNOTE
+
+Finder for footnotes.
+"""
+const F_FOOTNOTE = greedy_match(
+    head_chars=[['^'], vcat(ALPHANUM_ALL)],
+    tail_chars=vcat(ALPHANUM_ALL, [']', ':', '_']),
+    check=FOOTNOTE_PAT
+)
+
+"""
+F_HR
+"""
+const F_HR_1 = greedy_match(
+    head_chars=[['-']],
+    tail_chars=['-'],
+    check=r"-{3}-*"
+)
+const F_HR_2 = greedy_match(
+    head_chars=[['_']],
+    tail_chars=['_'],
+    check=r"_{3}_*"
+)
+const F_HR_3 = greedy_match(
+    head_chars=[['*']],
+    tail_chars=['*'],
+    check=r"\*{3}\**"
+)
+
+# """
+# $(SIGNATURES)
+#
+# Check if it looks like `\\[\\^[\\p{L}0-9]+\\]:?`.
+# """
+# function is_footnote(i::Int, c::Char)::Bool
+#     i == 1 && return c == '^'
+#     i == 2 && return is_alphanum_or(c)
+#     i > 2  && return is_alphanum_or(c, (']', ':'))
+# end
+#
+# """
+# $(SIGNATURES)
+#
+# Check if it looks like `---+`.
+# """
+# is_hr1(::Int, c::Char)::Bool = (c == '-')
+#
+# val_hr1 = validator(HR1_PAT)
+#
+# """
+# $(SIGNATURES)
+#
+# Check if it looks like `___+`.
+# """
+# is_hr2(::Int, c::Char)::Bool = (c == '_')
+#
+# val_hr2 = validator(HR2_PAT)
+#
+# """
+# $(SIGNATURES)
+#
+# Check if it looks like `***+`.
+# """
+# is_hr3(::Int, c::Char)::Bool = (c == '*')
+#
+# val_hr3 = validator(HR3_PAT)

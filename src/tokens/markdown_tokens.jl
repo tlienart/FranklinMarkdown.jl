@@ -15,32 +15,32 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("}")  => :LXB_CLOSE,
         ],
     '\n' => [
-        forward_match("\n    ",) => :LINE_RETURN_INDENT_4,
-        forward_match("\n  ",)   => :LINE_RETURN_INDENT_2,
-        forward_match("\n\t",)   => :LINE_RETURN_INDENT_TAB,
+        forward_match("\n    ")  => :LINE_RETURN_INDENT_4,
+        forward_match("\n  ")    => :LINE_RETURN_INDENT_2,
+        forward_match("\n\t")    => :LINE_RETURN_INDENT_TAB,
         forward_match("\n")      => :LINE_RETURN
         ],
     '<' => [
         forward_match("<!--") => :COMMENT_OPEN
         ],
     '-' => [
-        forward_match("-->")          => :COMMENT_CLOSE,
-        greedy_match(is_hr1, val_hr1) => :HRULE
+        forward_match("-->") => :COMMENT_CLOSE,
+        F_HR_1               => :HRULE
         ],
     '+' => [
-        forward_match("+++", ('\n',)) => :MD_DEF_BLOCK
+        forward_match("+++", ['\n']) => :MD_DEF_BLOCK
         ],
     '~' => [
         forward_match("~~~") => :RAW_HTML
         ],
     '[' => [
-        greedy_match(is_footnote) => :FOOTNOTE_REF, # [^...](:)? defs will be separated after
+        F_FOOTNOTE => :FOOTNOTE_REF, # [^...](:)? defs will be separated after
         ],
     ']' => [
         forward_match("]: ") => :LINK_DEF,
         ],
     ':' => [
-        greedy_match(is_emoji) => :CAND_EMOJI,
+        F_EMOJI => :CAND_EMOJI,
         ],
     '\\' => [ # -- special characters (https://www.amp-what.com/unicode/search)
         forward_match("\\\\") => :LINEBREAK,       # --> <br/>
@@ -57,51 +57,52 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("\\[")  => :MATH_C_OPEN,      # \[ ...
         forward_match("\\]")  => :MATH_C_CLOSE,     #    ... \]
         # -- latex
-        forward_match("\\newenvironment", ('{',))   => :LX_NEWENVIRONMENT,
-        forward_match("\\newcommand", ('{',))       => :LX_NEWCOMMAND,
-        forward_match("\\begin", ('{',))            => :CAND_LX_BEGIN,
-        forward_match("\\end", ('{',))              => :CAND_LX_END,
-        greedy_match(is_lx_command, val_lx_command) => :LX_COMMAND,  # \command⎵*
+        forward_match("\\newenvironment", ['{']) => :LX_NEWENVIRONMENT,
+        forward_match("\\newcommand", ['{'])     => :LX_NEWCOMMAND,
+        forward_match("\\begin", ['{'])          => :CAND_LX_BEGIN,
+        forward_match("\\end", ['{'])            => :CAND_LX_END,
+        F_LX_COMMAND                             => :LX_COMMAND,  # \command⎵*
         ],
     '@' => [
-        forward_match("@def", (' ',))   => :MD_DEF_OPEN,    # @def var = ...
+        forward_match("@def", [' '])    => :MD_DEF_OPEN,    # @def var = ...
         forward_match("@@", SPACE_CHAR) => :DIV_CLOSE,      # @@⎵*
-        greedy_match(is_div_open)       => :DIV_OPEN,       # @@dname
+        F_DIV_OPEN                      => :DIV_OPEN,       # @@dname
         ],
     '#' => [
-        forward_match("#",      (' ',)) => :H1_OPEN,
-        forward_match("##",     (' ',)) => :H2_OPEN,
-        forward_match("###",    (' ',)) => :H3_OPEN,
-        forward_match("####",   (' ',)) => :H4_OPEN,
-        forward_match("#####",  (' ',)) => :H5_OPEN,
-        forward_match("######", (' ',)) => :H6_OPEN,
+        forward_match("#",      [' ']) => :H1_OPEN,
+        forward_match("##",     [' ']) => :H2_OPEN,
+        forward_match("###",    [' ']) => :H3_OPEN,
+        forward_match("####",   [' ']) => :H4_OPEN,
+        forward_match("#####",  [' ']) => :H5_OPEN,
+        forward_match("######", [' ']) => :H6_OPEN,
         ],
     '&' => [
-        greedy_match(is_html_entity, val_html_entity) => :CHAR_HTML_ENTITY,
+        F_HTML_ENTITY => :CHAR_HTML_ENTITY,
         ],
     '$' => [
-        forward_match("\$", ('$',), false) => :MATH_A,  # $⎵*
+        forward_match("\$", ['$'], false) => :MATH_A,  # $⎵*
         forward_match("\$\$")              => :MATH_B,  # $$⎵*
         ],
     '_' => [
         forward_match("_\$>_")        => :MATH_I_OPEN,  # internal when resolving a lx command
         forward_match("_\$<_")        => :MATH_I_CLOSE, # within mathenv (e.g. \R <> \mathbb R)
-        greedy_match(is_hr2, val_hr2) => :HRULE,
+        F_HR_2 => :HRULE,
         ],
     '`' => [
-        forward_match("`",  ('`',), false)  => :CODE_SINGLE,  # `⎵
-        forward_match("``", ('`',), false)  => :CODE_DOUBLE,  # ``⎵*
+        forward_match("`",  ['`'], false)  => :CODE_SINGLE,  # `⎵
+        forward_match("``", ['`'], false)  => :CODE_DOUBLE,  # ``⎵*
         # 3+ can be named
         forward_match("```",  SPACE_CHAR)   => :CODE_TRIPLE,  # ```⎵*
         forward_match("`"^4,  SPACE_CHAR)   => :CODE_QUAD,    # ````⎵*
         forward_match("`"^5,  SPACE_CHAR)   => :CODE_PENTA,   # `````⎵*
         forward_match("```!", SPACE_CHAR)   => :CODE_TRIPLE!, # ```!⎵*
-        greedy_match(is_lang(3), val_lang3) => :CODE_LANG3,   # ```lang*
-        greedy_match(is_lang(4), val_lang4) => :CODE_LANG4,   # ````lang*
-        greedy_match(is_lang(5), val_lang5) => :CODE_LANG5,   # `````lang*
+        #
+        F_LANG_3 => :CODE_LANG3,   # ```lang*
+        F_LANG_4 => :CODE_LANG4,   # ````lang*
+        F_LANG_5 => :CODE_LANG5,   # `````lang*
         ],
     '*' => [
-        greedy_match(is_hr3, val_hr3) => :HRULE,
+        F_HR_3 => :HRULE,
         ]
     )  # end dict
 
@@ -126,7 +127,7 @@ const MD_IGNORE = (:LINE_RETURN, :LINE_RETURN_INDENT_TAB, :LINE_RETURN_INDENT_2,
 #
 # Reduced subset of `MD_1C_TOKENS` when parsing in a math environment.
 # """
-# const MD_1_TOKENS_MATH = filter(p -> p.first ∈ ('{', '}'), MD_1_TOKENS)
+# const MD_1_TOKENS_MATH = filter(p -> p.first ∈ ['{', '}'), MD_1_TOKENS)
 #
 # """
 # MD_N_TOKENS_MATH
@@ -177,7 +178,7 @@ const MD_IGNORE = (:LINE_RETURN, :LINE_RETURN_INDENT_TAB, :LINE_RETURN_INDENT_2,
 #             nxtidx = nextind(parent, to(token))
 #             nxtidx < lastidx || continue
 #             nxtchar = parent[nxtidx]
-#             if nxtchar in (' ', '\t')
+#             if nxtchar in [' ', '\t')
 #                 tokens[i] = Token(:LINE_RETURN_INDENT, token.ss)
 #             end
 #         end
@@ -231,20 +232,20 @@ const MD_IGNORE = (:LINE_RETURN, :LINE_RETURN_INDENT_TAB, :LINE_RETURN_INDENT_2,
 # const MD_OCB = [
 #     # name                    opening token   closing token(s)
 #     # ---------------------------------------------------------------------
-#     OCProto(:COMMENT,         :COMMENT_OPEN, (:COMMENT_CLOSE,)),
-#     OCProto(:MD_DEF_BLOCK,    :MD_DEF_TOML,  (:MD_DEF_TOML,)  ),
-#     OCProto(:CODE_BLOCK_LANG, :CODE_LANG3,   (:CODE_TRIPLE,)  ),
-#     OCProto(:CODE_BLOCK_LANG, :CODE_LANG4,   (:CODE_QUAD,)    ),
-#     OCProto(:CODE_BLOCK_LANG, :CODE_LANG5,   (:CODE_PENTA,)   ),
-#     OCProto(:CODE_BLOCK!,     :CODE_TRIPLE!, (:CODE_TRIPLE,)  ),
-#     OCProto(:CODE_BLOCK,      :CODE_TRIPLE,  (:CODE_TRIPLE,)  ),
-#     OCProto(:CODE_BLOCK,      :CODE_QUAD,    (:CODE_QUAD,)    ),
-#     OCProto(:CODE_BLOCK,      :CODE_PENTA,   (:CODE_PENTA,)   ),
-#     OCProto(:CODE_INLINE,     :CODE_DOUBLE,  (:CODE_DOUBLE,)  ),
-#     OCProto(:CODE_INLINE,     :CODE_SINGLE,  (:CODE_SINGLE,)  ),
+#     OCProto(:COMMENT,         :COMMENT_OPEN, (:COMMENT_CLOSE]),
+#     OCProto(:MD_DEF_BLOCK,    :MD_DEF_TOML,  (:MD_DEF_TOML]  ),
+#     OCProto(:CODE_BLOCK_LANG, :CODE_LANG3,   (:CODE_TRIPLE]  ),
+#     OCProto(:CODE_BLOCK_LANG, :CODE_LANG4,   (:CODE_QUAD]    ),
+#     OCProto(:CODE_BLOCK_LANG, :CODE_LANG5,   (:CODE_PENTA]   ),
+#     OCProto(:CODE_BLOCK!,     :CODE_TRIPLE!, (:CODE_TRIPLE]  ),
+#     OCProto(:CODE_BLOCK,      :CODE_TRIPLE,  (:CODE_TRIPLE]  ),
+#     OCProto(:CODE_BLOCK,      :CODE_QUAD,    (:CODE_QUAD]    ),
+#     OCProto(:CODE_BLOCK,      :CODE_PENTA,   (:CODE_PENTA]   ),
+#     OCProto(:CODE_INLINE,     :CODE_DOUBLE,  (:CODE_DOUBLE]  ),
+#     OCProto(:CODE_INLINE,     :CODE_SINGLE,  (:CODE_SINGLE]  ),
 #     OCProto(:MD_DEF,          :MD_DEF_OPEN,  L_RETURNS        ), # [^4]
-#     OCProto(:CODE_BLOCK_IND,  :LR_INDENT,    (:LINE_RETURN,)  ),
-#     OCProto(:ESCAPE,          :ESCAPE,       (:ESCAPE,)       ),
+#     OCProto(:CODE_BLOCK_IND,  :LR_INDENT,    (:LINE_RETURN]  ),
+#     OCProto(:ESCAPE,          :ESCAPE,       (:ESCAPE]       ),
 #     OCProto(:FOOTNOTE_DEF,    :FOOTNOTE_DEF, L_RETURNS        ),
 #     OCProto(:LINK_DEF,        :LINK_DEF,     L_RETURNS        ),
 #     # ------------------------------------------------------------------
@@ -257,8 +258,8 @@ const MD_IGNORE = (:LINE_RETURN, :LINE_RETURN_INDENT_TAB, :LINE_RETURN_INDENT_2,
 #     ]
 # # the split is due to double brace blocks being allowed in markdown
 # const MD_OCB2 = [
-#     OCProto(:LXB,             :LXB_OPEN,     (:LXB_CLOSE,), nestable=true),
-#     OCProto(:DIV,             :DIV_OPEN,     (:DIV_CLOSE,), nestable=true),
+#     OCProto(:LXB,             :LXB_OPEN,     (:LXB_CLOSE], nestable=true),
+#     OCProto(:DIV,             :DIV_OPEN,     (:DIV_CLOSE], nestable=true),
 #     ]
 # #= NOTE:
 # * [3] a header can be closed by either a line return or an end of string (for
@@ -303,10 +304,10 @@ const MD_IGNORE = (:LINE_RETURN, :LINE_RETURN_INDENT_TAB, :LINE_RETURN_INDENT_2,
 # Dev note: order does not matter.
 # """
 # const MD_OCB_MATH = [
-#     OCProto(:MATH_A,     :MATH_A,          (:MATH_A,)          ),
-#     OCProto(:MATH_B,     :MATH_B,          (:MATH_B,)          ),
-#     OCProto(:MATH_C,     :MATH_C_OPEN,     (:MATH_C_CLOSE,)    ),
-#     OCProto(:MATH_I,     :MATH_I_OPEN,     (:MATH_I_CLOSE,)    ),
+#     OCProto(:MATH_A,     :MATH_A,          (:MATH_A]          ),
+#     OCProto(:MATH_B,     :MATH_B,          (:MATH_B]          ),
+#     OCProto(:MATH_C,     :MATH_C_OPEN,     (:MATH_C_CLOSE]    ),
+#     OCProto(:MATH_I,     :MATH_I_OPEN,     (:MATH_I_CLOSE]    ),
 #     ]
 #
 #
