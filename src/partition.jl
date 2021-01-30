@@ -46,8 +46,8 @@ function partition(
     end
     return parts
 end
-partition(s::String, a...; kw...) = partition(subs(s), a...; kw...)
-partition(b::Block, a...; kw...)  = partition(content(b), a...; tokens=b.inner_tokens)
+@inline partition(s::String, a...; kw...) = partition(subs(s), a...; kw...)
+@inline partition(b::Block, a...; kw...)  = partition(content(b), a...; tokens=b.inner_tokens)
 
 
 """
@@ -63,7 +63,7 @@ Returns:
 --------
     A function that takes a string and returns a vector of tokens.
 """
-function tokenizer_factory(;
+@inline function tokenizer_factory(;
             templates::LittleDict=MD_TOKENS,
             postprocess::Function=(ts::Vector{Token} -> filter!(t -> t.name != :SKIP, ts))
             )::Function
@@ -86,14 +86,15 @@ Returns:
 --------
     A function that takes tokens and returns a vector of blocks.
 """
-function blockifier_factory(; templates::LittleDict=MD_BLOCKS)::Function
+@inline function blockifier_factory(; templates::LittleDict=MD_BLOCKS)::Function
     return t -> find_blocks(t, templates)
 end
 
 default_md_blockifier   = blockifier_factory()
 default_html_blockifier = blockifier_factory(templates=HTML_BLOCKS)
 
-default_md_partition(s_or_b; kw...) =
-    partition(s_or_b, default_md_tokenizer, default_md_blockifier; kw...)
-default_html_partition(s_or_b; kw...) =
-    partition(s_or_b, default_html_tokenizer, default_html_blockifier; kw...)
+@inline default_md_partition(e; kw...) =
+    partition(e, default_md_tokenizer, default_md_blockifier; kw...)
+
+@inline default_html_partition(e; kw...) =
+    partition(e, default_html_tokenizer, default_html_blockifier; kw...)

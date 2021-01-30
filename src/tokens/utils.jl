@@ -121,7 +121,7 @@ $(SIGNATURES)
 
 Lazily accept the next character and stop as soon as it fails to verify `λ(c)`.
 """
-function greedy_match(;
+@inline function greedy_match(;
             head_chars::Vector{Vector{Char}}=Vector{Vector{Char}}(),
             tail_chars::Vector{Char}=Char[],
             check::Regex=r"")

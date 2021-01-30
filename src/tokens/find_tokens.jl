@@ -95,4 +95,4 @@ function find_tokens(
     return tokens
 end
 
-find_tokens(s::String, templates) = find_tokens(subs(s), templates)
+@inline find_tokens(s::String, templates) = find_tokens(subs(s), templates)

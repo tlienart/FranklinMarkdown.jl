@@ -62,7 +62,8 @@ function find_blocks(
     remove_inner!(blocks)
     return blocks
 end
-find_blocks(t::Vector{Token}, a...) = find_blocks(subv(t), a...)
+
+@inline find_blocks(t::Vector{Token}, a...) = find_blocks(subv(t), a...)
 
 """
 $(SIGNATURES)
