@@ -86,11 +86,8 @@ Returns:
 --------
     A function that takes tokens and returns a vector of blocks.
 """
-function blockifier_factory(;
-            templates::LittleDict=MD_BLOCKS,
-            postprocess::Function=identity
-            )::Function
-    return t -> postprocess(find_blocks(t, templates))
+function blockifier_factory(; templates::LittleDict=MD_BLOCKS)::Function
+    return t -> find_blocks(t, templates)
 end
 
 default_md_blockifier   = blockifier_factory()

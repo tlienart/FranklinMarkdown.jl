@@ -46,7 +46,7 @@ function find_blocks(
         end
 
         if closing_index == -1
-            parser_exception(BlockNotClosed, """
+            parser_exception(:BlockNotClosed, """
                 An opening token '$(opening)' was found but not closed.
                 """)
         end

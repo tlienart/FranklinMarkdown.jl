@@ -1,9 +1,6 @@
-abstract type FranklinParserExceptionTypes end
-
-struct BlockNotClosed <: FranklinParserExceptionTypes end
-
-struct FranklinParserException{T} <: Exception where T <: FranklinParserExceptionTypes
+struct FranklinParserException <: Exception
+    kind::Symbol
     msg::String
 end
 
-parser_exception(T::DataType, m::String) = throw(FranklinParserException{T}(m))
+parser_exception(k::Symbol, m::String) = throw(FranklinParserException(k, m))
