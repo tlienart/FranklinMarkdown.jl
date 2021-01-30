@@ -23,21 +23,21 @@ end
 @testset "tokens" begin
     include("tokens/utils.jl")
     include("tokens/markdown_tokens.jl")
-    # include("tokens/html_tokens.jl")
+    include("tokens/html_tokens.jl")
 end
 
-# @testset "blocks" begin
-#     include("blocks/markdown_blocks.jl")
-#     include("blocks/html_blocks.jl")
-#     include("blocks/utils.jl")
-# end
-#
-# @testset "partition" begin
-#     include("partition/md_partition.jl")
-#     include("partition/html_partition.jl")
-# end
-#
-# @testset "integration" begin
-#     include("integration/rules.jl")
-#     include("integration/div_blocks.jl")
-# end
+@testset "blocks" begin
+    include("blocks/markdown_blocks.jl")
+    include("blocks/html_blocks.jl")
+    include("blocks/utils.jl")
+end
+
+@testset "partition" begin
+    include("partition/md_partition.jl")
+    include("partition/html_partition.jl")
+end
+
+@testset "integration" begin
+    include("integration/rules.jl")
+    include("integration/div_blocks.jl")
+end
