@@ -60,6 +60,39 @@ next_index(o) = nextind(parent_string(o), to(o))
 """
 $(SIGNATURES)
 
+Return the characters just before the object. Empty vector if there isn't the number of
+characters required.
+"""
+function previous_chars(o, n::Int=1)
+    ps = parent_string(o)
+    fo = from(o)
+    i  = prevind(ps, fo, n)
+    i <= 0 && return Char[]
+    j  = prevind(ps, fo)
+    ij = [nextind(ps, i, k) for k in 0:n-1]
+    return [ps[k] for k in ij]
+end
+
+"""
+$(SIGNATURES)
+
+Return the characters just after the object. Empty vector if there isn't the number of
+characters required.
+"""
+function next_chars(o, n::Int=1)
+    ps = parent_string(o)
+    no = to(o)
+    j  = nextind(ps, no, n)
+    j > lastindex(ps) && return Char[]
+    i  = nextind(ps, no)
+    ij = [nextind(ps, i, k) for k in 0:n-1]
+    return [ps[k] for k in ij]
+end
+
+
+"""
+$(SIGNATURES)
+
 Remove the common leading whitespace from each non-empty line. The returned text
 is decoupled from the original text (forced to String).
 """

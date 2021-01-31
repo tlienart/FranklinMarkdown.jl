@@ -69,3 +69,14 @@ end
         $(wsp)$(wsp)bye
         """
 end
+
+@testset "prev/next chars" begin
+    s = "abc def ghi"
+    ss = FP.subs(s, 5:7)
+    @test FP.previous_chars(ss, 3) == ['b', 'c', ' ']
+    @test FP.next_chars(ss, 3) == [' ', 'g', 'h']
+    s = "jμΛι∀γϵ∛Ϡe"
+    ss = FP.subs(s, 4:8)
+    @test FP.previous_chars(ss, 2) == ['j', 'μ']
+    @test FP.next_chars(ss, 3) == ['γ', 'ϵ', '∛']
+end
