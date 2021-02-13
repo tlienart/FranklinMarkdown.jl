@@ -39,11 +39,7 @@ For tokens representing special characters, insert the relevant string.
 """
 function insert(t::Token)::String
     s = ""
-    if t.name == :LINEBREAK
-        s = "~~~<br>~~~"
-    elseif t.name == :HRULE
-        s = "~~~<hr>~~~"
-    elseif t.name == :CHAR_HTML_ENTITY
+    if t.name == :CHAR_HTML_ENTITY
         s = String(t.ss)
     else # CHAR_*
         id = String(t.name)[6:end]

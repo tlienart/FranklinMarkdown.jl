@@ -32,4 +32,8 @@ end
     @test p[3].name == :TEXT
     @test p[4].name == :LINEBREAK
     @test p[5].name == :TEXT
+    t = raw"""
+        abc \\ --- &#60;
+        """ |> FP.default_md_partition
+    @test FP.prepare_text(t[end]) == " &#60;\n"
 end
