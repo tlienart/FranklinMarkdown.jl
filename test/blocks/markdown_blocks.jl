@@ -146,3 +146,30 @@ end
         """ |> md_blockifier
     @test isapproxstr(FP.content(b[1]), "x = [1,2,3]")
 end
+
+@testset "maths" begin
+    b = raw"""
+        A $B$ C
+        """ |> md_blockifier
+    @test b[1].name == :MATH_A
+    @test FP.content(b[1]) == "B"
+    b = raw"""
+        A $$B$$ C
+        """ |> md_blockifier
+    @test b[1].name == :MATH_B
+    @test FP.content(b[1]) == "B"
+    b = raw"""
+        A \[B\] C
+        """ |> md_blockifier
+    @test b[1].name == :MATH_C
+    @test FP.content(b[1]) == "B"
+    b = raw"""
+        A _$>_B_$<_ C
+        """ |> md_blockifier
+    @test b[1].name == :MATH_I
+    b = raw"""
+        A $$B$$ C $D$
+        """ |> md_blockifier
+    @test b[1].name == :MATH_B
+    @test b[2].name == :MATH_A
+end

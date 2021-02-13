@@ -13,6 +13,11 @@ const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
    BlockTemplate(:CODE_BLOCK,      :CODE_PENTA,   :CODE_PENTA   ),
    BlockTemplate(:CODE_INLINE,     :CODE_DOUBLE,  :CODE_DOUBLE  ),
    BlockTemplate(:CODE_INLINE,     :CODE_SINGLE,  :CODE_SINGLE  ),
+   # maths
+   BlockTemplate(:MATH_A, :MATH_A,      :MATH_A      ),
+   BlockTemplate(:MATH_B, :MATH_B,      :MATH_B      ),
+   BlockTemplate(:MATH_C, :MATH_C_OPEN, :MATH_C_CLOSE),
+   BlockTemplate(:MATH_I, :MATH_I_OPEN, :MATH_I_CLOSE),
    # md def one line
    BlockTemplate(:MD_DEF, :MD_DEF_OPEN, (:LINE_RETURN, :EOS)),
    # div and braces

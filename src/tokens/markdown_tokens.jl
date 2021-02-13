@@ -81,16 +81,16 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         ],
     '$' => [
         forward_match("\$", ['$'], false) => :MATH_A,  # $⎵*
-        forward_match("\$\$")              => :MATH_B,  # $$⎵*
+        forward_match("\$\$")             => :MATH_B,  # $$⎵*
         ],
     '_' => [
-        forward_match("_\$>_")        => :MATH_I_OPEN,  # internal when resolving a lx command
-        forward_match("_\$<_")        => :MATH_I_CLOSE, # within mathenv (e.g. \R <> \mathbb R)
+        forward_match("_\$>_") => :MATH_I_OPEN,  # internal when resolving a lx command
+        forward_match("_\$<_") => :MATH_I_CLOSE, # within mathenv (e.g. \R <> \mathbb R)
         F_HR_2 => :HRULE,
         ],
     '`' => [
-        forward_match("`",  ['`'], false)  => :CODE_SINGLE,  # `⎵
-        forward_match("``", ['`'], false)  => :CODE_DOUBLE,  # ``⎵*
+        forward_match("`",  ['`'], false)   => :CODE_SINGLE,  # `⎵
+        forward_match("``", ['`'], false)   => :CODE_DOUBLE,  # ``⎵*
         # 3+ can be named
         forward_match("```",  SPACE_CHAR)   => :CODE_TRIPLE,  # ```⎵*
         forward_match("`"^4,  SPACE_CHAR)   => :CODE_QUAD,    # ````⎵*
