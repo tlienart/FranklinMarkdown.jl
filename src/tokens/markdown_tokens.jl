@@ -59,8 +59,8 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         # -- latex
         forward_match("\\newenvironment", ['{']) => :LX_NEWENVIRONMENT,
         forward_match("\\newcommand", ['{'])     => :LX_NEWCOMMAND,
-        forward_match("\\begin", ['{'])          => :CAND_LX_BEGIN,
-        forward_match("\\end", ['{'])            => :CAND_LX_END,
+        forward_match("\\begin", ['{'])          => :LX_BEGIN,
+        forward_match("\\end", ['{'])            => :LX_END,
         F_LX_COMMAND                             => :LX_COMMAND,  # \command⎵*
         ],
     '@' => [

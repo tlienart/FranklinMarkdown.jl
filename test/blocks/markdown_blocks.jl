@@ -173,3 +173,18 @@ end
     @test b[1].name == :MATH_B
     @test b[2].name == :MATH_A
 end
+
+@testset "lx-obj" begin
+    b = raw"""
+        \begin{abc}\end{def}\newcommand{hello}\newenvironment{foo}\bar
+        """ |> md_blockifier
+    @test b[1].name == :LX_BEGIN
+    @test b[2].name == :LXB
+    @test b[3].name == :LX_END
+    @test b[4].name == :LXB
+    @test b[5].name == :LX_NEWCOMMAND
+    @test b[6].name == :LXB
+    @test b[7].name == :LX_NEWENVIRONMENT
+    @test b[8].name == :LXB
+    @test b[9].name == :LX_COMMAND
+end

@@ -37,4 +37,10 @@ const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
    # Direct blocks
    SingleTokenBlockTemplate(:LINEBREAK),
    SingleTokenBlockTemplate(:HRULE),
+   # Direct blocks -- latex objects
+   SingleTokenBlockTemplate(:LX_NEWENVIRONMENT),
+   SingleTokenBlockTemplate(:LX_NEWCOMMAND),
+   SingleTokenBlockTemplate(:LX_COMMAND),
+   SingleTokenBlockTemplate(:LX_BEGIN),
+   SingleTokenBlockTemplate(:LX_END)
    ])

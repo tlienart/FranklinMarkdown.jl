@@ -110,8 +110,8 @@ end
     @test tokens[1].name == :LX_NEWCOMMAND
     @test tokens[2].name == :LXB_OPEN
     @test tokens[4].name == :LXB_OPEN
-    @test tokens[6].name == :CAND_LX_BEGIN
-    @test tokens[9].name == :CAND_LX_END
+    @test tokens[6].name == :LX_BEGIN
+    @test tokens[9].name == :LX_END
     tokens = raw"\foo\bar{a}" |> FP.default_md_tokenizer
     @test tokens[1].name == :LX_COMMAND
     @test tokens[2].name == :LX_COMMAND

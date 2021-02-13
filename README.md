@@ -38,7 +38,7 @@ WIP
   * [ ] markdown blocks
     * [x] basic
     * [x] double brace blocks, headers, ...
-    * [ ] math parsing
+    * [x] math parsing
     * [ ] footnote definitions over multiple lines
   * [ ] html tokenization
   * [ ] html blocks
