@@ -99,6 +99,7 @@ is decoupled from the original text (forced to String).
 function dedent(s::SS)::String
     # initial whitespace if any
     iwsp = match(LEADING_WHITESPACE_PAT, s)
+    cwsp = ""
     if iwsp !== nothing
         cwsp::SS = iwsp.captures[1]
         # there's no leading whitespace on the first line --> no dedent
@@ -106,11 +107,10 @@ function dedent(s::SS)::String
     end
 
     for m in eachmatch(NEWLINE_WHITESPACE_PAT, s)
-        # skip empty lines
-        (m !== nothing) || continue
         twsp::SS = m.captures[1]
         # if twsp is empty, there's no leading whitespace on that line --> no dedent
         isempty(twsp) && return String(s)
+        isempty(cwsp) && (cwsp = twsp; continue)
         # does twsp contain cwsp?
         startswith(twsp, cwsp) && continue
         # does cwsp contain twsp?
