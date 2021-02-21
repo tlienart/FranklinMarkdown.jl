@@ -36,4 +36,10 @@ end
         abc \\ --- &#60;
         """ |> FP.default_md_partition
     @test FP.prepare_text(t[end]) == " &#60;\n"
+
+    # emoji
+    p = raw"""
+        A :ghost: and :smile: but :foo:
+        """ |> FP.default_md_partition
+    @test FP.prepare_text(p[1]) // "A 👻 and 😄 but :foo:"
 end

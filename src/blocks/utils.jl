@@ -38,12 +38,16 @@ $(SIGNATURES)
 For tokens representing special characters, insert the relevant string.
 """
 function insert(t::Token)::String
-    s = ""
+    stname = String(t.name)
+    s = String(t.ss)  # safe default
     if t.name == :CHAR_HTML_ENTITY
         s = String(t.ss)
-    else # CHAR_*
-        id = String(t.name)[6:end]
+    elseif startswith(stname, "CHAR_") # CHAR_*
+        id = stname[6:end]
         s = "&#$(id);"
+    elseif t.name == :CAND_EMOJI
+        # check if it's a valid emoji
+        s = get(emoji_symbols, "\\$(t.ss)", s)
     end
     return s
 end
