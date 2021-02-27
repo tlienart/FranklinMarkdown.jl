@@ -127,21 +127,3 @@ Lazily accept the next character and stop as soon as it fails to verify `λ(c)`.
             check::Regex=r"")
     TokenFinder(-1, Chomp(; head_chars, tail_chars), check)
 end
-
-# """
-# $(SIGNATURES)
-#
-# Validator function wrapping a regex match.
-# """
-# validator(rx::Regex) = (s::SS -> (match(rx, s) !== nothing)::Bool)
-#
-# """
-# $(SIGNATURES)
-#
-# Check whether `c` is a letter or is in a vector of characters `oc`.
-# """
-# is_letter_or(c::Char, oc::NTuple{K, Char}=()) where K =
-#     ifelse(isletter(c), true, c ∈ oc)::Bool
-#
-# is_alphanum_or(c::Char, oc::NTuple{K, Char}=()) where K =
-#     is_letter_or(c, (oc..., NUM_CHAR...))

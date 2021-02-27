@@ -11,11 +11,7 @@ from(s::AbstractSpan)          = from(s.ss::SS)
 to(s::AbstractSpan)            = to(s.ss::SS)
 parent_string(s::AbstractSpan) = parent_string(s.ss::SS)
 
-#
-# Note: we don't want to have Token{N} with e.g. Token{:EOS} like we do Block.
-# Indeed, if we had this then we'd need to have the block type to be Block{N,TO,TC}
-# to be concrete
-#
+
 """
 $(TYPEDEF)
 
