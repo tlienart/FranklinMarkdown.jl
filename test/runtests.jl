@@ -35,6 +35,7 @@ end
 @testset "partition" begin
     include("partition/md_partition.jl")
     include("partition/html_partition.jl")
+    include("partition/math_partition.jl")
 end
 
 @testset "integration" begin

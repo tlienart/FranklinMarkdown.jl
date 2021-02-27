@@ -72,7 +72,7 @@ end
 
 default_md_tokenizer   = tokenizer_factory()
 default_html_tokenizer = tokenizer_factory(templates=HTML_TOKENS)
-
+default_math_tokenizer = tokenizer_factory(templates=MD_MATH_TOKENS)
 
 """
 $SIGNATURES
@@ -98,3 +98,6 @@ default_html_blockifier = blockifier_factory(templates=HTML_BLOCKS)
 
 @inline default_html_partition(e; kw...) =
     partition(e, default_html_tokenizer, default_html_blockifier; kw...)
+
+@inline default_math_partition(e; kw...) =
+    partition(e, default_math_tokenizer, default_md_blockifier; kw...)

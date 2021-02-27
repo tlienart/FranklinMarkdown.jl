@@ -106,6 +106,25 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         ]
     )  # end dict
 
+"""
+MD_MATH_TOKENS
+
+Tokens that should be considered within a math environment.
+"""
+const MD_MATH_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
+    '{' => [
+        forward_match("{")  => :LXB_OPEN
+        ],
+    '}' => [
+        forward_match("}")  => :LXB_CLOSE,
+        ],
+    '\\' => [
+        forward_match("\\begin", ['{'])          => :LX_BEGIN,
+        forward_match("\\end", ['{'])            => :LX_END,
+        F_LX_COMMAND                             => :LX_COMMAND,  # \command⎵*
+        ],
+    ) # end dict
+
 
 """
 END_OF_LINE
