@@ -22,15 +22,42 @@ Convenience list of characters corresponding to digits.
 """
 const NUM_CHAR = ['0':'9'...]
 
+"""
+ALPHA_LATIN
+
+Convenience list of characters corresponding to letters a-zA-Z.
+"""
 const ALPHA_LATIN = ['a':'z'..., 'A':'Z'...]
 
+"""
+ALPHANUM_LATIN
+
+Convenience list of characters corresponding to a-zA-Z0-9.
+"""
 const ALPHANUM_LATIN = vcat(ALPHA_LATIN, NUM_CHAR)
 
+"""
+ALPHA_ALL
+
+All 10_000 first characters.
+"""
 const ALPHA_ALL = [Char(i) for i in 1:10_000 if isletter(Char(i))]
+
+"""
+ALPHANUM_ALL
+
+ALPHA_ALL and digits.
+"""
 const ALPHANUM_ALL = vcat(ALPHA_ALL, NUM_CHAR)
 
 
+"""
+Chomp
 
+Structure to encapsulate rules around a token such as whether it's fine
+at the end of a string, what are allowed following characters and, in
+the greedy case, what characters are allowed.
+"""
 struct Chomp
     # fixed style
     refstring::String
@@ -42,23 +69,36 @@ struct Chomp
     tail_chars::Vector{Char}
 end
 function Chomp(;
-            refstring::String="", ok_at_eos::Bool=true, is_followed::Bool=true, next_chars::Vector{Char}=Char[],
+            refstring::String="",
+            ok_at_eos::Bool=true,
+            is_followed::Bool=true,
+            next_chars::Vector{Char}=Char[],
             head_chars::Vector{Vector{Char}}=Vector{Vector{Char}}(),
             tail_chars::Vector{Char}=Char[])
     Chomp(
-        refstring, ok_at_eos, is_followed, next_chars,
-        head_chars, tail_chars)
+        refstring, ok_at_eos, is_followed,
+        next_chars, head_chars, tail_chars)
 end
 
+"""
+TokenFinder
+
+Structure to find a token keeping track of how many characters should be seen,
+some rules with respect to positioning or following chars (see Chomp) and
+possibly a validator that checks whether a candidate respects a rule.
+"""
 struct TokenFinder
     steps::Int
     chomp::Chomp
     check::Regex
 end
-
 TokenFinder(s::Int, c::Chomp) = TokenFinder(s, c, r"")
 
+"""
+$(SIGNATURES)
 
+Applies a fixed lookahead step corresponding to a token finder.
+"""
 function fixed_lookahead(tf::TokenFinder, candidate::SS, at_eos::Bool)
     c = tf.chomp
     matches = false
@@ -75,12 +115,22 @@ function fixed_lookahead(tf::TokenFinder, candidate::SS, at_eos::Bool)
     return matches, offset
 end
 
+"""
+$(SIGNATURES)
+
+Applies a greedy lookahead step corresponding to a token finder.
+"""
 function greedy_lookahead(tf::TokenFinder, nchars::Int, probe_char::Char)
     c = tf.chomp
     (nchars > length(c.head_chars)) && return (probe_char in c.tail_chars)
     return (probe_char in c.head_chars[nchars])
 end
 
+"""
+$(SIGNATURES)
+
+Check whether a substring verifies the regex of a token finder.
+"""
 function check(tf::TokenFinder, ss::SS)
     return match(tf.check, ss) !== nothing
 end
@@ -89,15 +139,9 @@ end
 """
 $(SIGNATURES)
 
-Return a tuple corresponding to a forward lookup checking if a sequence of characters
-matches `refstring` and is followed (or not followed if `is_followed==false`) by a
-character out of a list of characters (`follow`). The tuple returned has:
-
-1. a number of steps indicating the number of characters to check,
-2. whether there is an offset or not (if it is required to check a following character
-or not),
-3. a boolean function that can be applied on a sequence of character,
-4. an indicator of whether the pattern can be found at the end of the string.
+Return a TokenFinder corresponding to a forward lookup checking if a sequence of
+characters matches a `refstring` and is followed (or not followed if
+`is_followed==false`) by a character out of a list of characters (`next_chars`).
 """
 @inline function forward_match(
             refstring::String,
