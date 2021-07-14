@@ -21,8 +21,8 @@ include("tokens/_md_tokens.jl")
 include("tokens/_html_tokens.jl")
 
 include("blocks/find_blocks.jl")
-include("blocks/md_blocks.jl")
-include("blocks/html_blocks.jl")
+include("blocks/_md_blocks.jl")
+include("blocks/_html_blocks.jl")
 include("blocks/utils.jl")
 
 include("partition.jl")
