@@ -1,8 +1,9 @@
 """
 $(SIGNATURES)
 
-Go through a text left to right, one (valid) char at the time and keep track of
-sequences of chars that match specific tokens. The list of tokens found is returned.
+Go through a text left to right, one (valid) char at the time and keep track
+of sequences of chars that match specific tokens. The list of tokens found is
+returned.
 
 **Arguments**
 

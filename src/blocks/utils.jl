@@ -1,8 +1,8 @@
 """
 $(SIGNATURES)
 
-Return the classe(s) of a div block. E.g. `@@c1,c2` will return `"c1 c2"` so that it
-can be injected in a `<div class="..."`.
+Return the classe(s) of a div block. E.g. `@@c1,c2` will return `"c1 c2"` so
+that it can be injected in a `<div class="..."`.
 """
 function get_classes(b::Block)::String
     return replace(subs(b.open.ss, 3:lastindex(b.open.ss)), "," => " ")

@@ -33,22 +33,19 @@ end
         -->"""
     tokens = FP.find_tokens(s, FP.MD_TOKENS)
 
-    check_tokens(tokens, [1, 2, 4], :LXB_OPEN)
-    check_tokens(tokens, [3, 5, 8], :LXB_CLOSE)
+    check_tokens(tokens, [1, 2, 4, 6, 7], :LXB_OPEN)
+    check_tokens(tokens, [3, 5, 8, 9, 10], :LXB_CLOSE)
 
-    check_tokens(tokens, [6], :DBB_OPEN)
-    check_tokens(tokens, [7], :DBB_CLOSE)
+    check_tokens(tokens, [11, 15], :LINE_RETURN)
+    check_tokens(tokens, [13], :LINE_RETURN_INDENT_4)
+    check_tokens(tokens, [14], :LINE_RETURN_INDENT_2)
 
-    check_tokens(tokens, [9, 13], :LINE_RETURN)
-    check_tokens(tokens, [11], :LINE_RETURN_INDENT_4)
-    check_tokens(tokens, [12], :LINE_RETURN_INDENT_2)
+    check_tokens(tokens, [12], :COMMENT_OPEN)
+    check_tokens(tokens, [16], :COMMENT_CLOSE)
 
-    check_tokens(tokens, [10], :COMMENT_OPEN)
-    check_tokens(tokens, [14], :COMMENT_CLOSE)
+    check_tokens(tokens, [17], :EOS)
 
-    check_tokens(tokens, [15], :EOS)
-
-    @test length(tokens) == 15
+    @test length(tokens) == 17
 
     t = """
         abc
@@ -57,8 +54,6 @@ end
         """ |> FP.default_md_tokenizer
     @test t[1].name == :LINE_RETURN_INDENT_4
     @test t[2].name == :LINE_RETURN
-    @test t[3].name == :DBB_OPEN
-    @test t[4].name == :DBB_CLOSE
 end
 
 @testset "md-base" begin

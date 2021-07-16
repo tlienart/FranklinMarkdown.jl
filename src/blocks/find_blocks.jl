@@ -1,8 +1,9 @@
 """
 $(SIGNATURES)
 
-Given a list of tokens and a dictionary of block templates, find all blocks matching
-templates. The blocks are sorted by order of appearance and inner blocks are weeded out.
+Given a list of tokens and a dictionary of block templates, find all blocks
+matching templates. The blocks are sorted by order of appearance and inner
+blocks are weeded out.
 """
 function find_blocks(
             tokens::SubVector{Token},
@@ -60,16 +61,20 @@ function find_blocks(
     end
     sort!(blocks, by=from)
     remove_inner!(blocks)
+    # assemble double brace blocks; this has to be done here to avoid
+    # ambiguity with stray {{ or }} in Lx context.
+    form_dbb!(blocks)
     return blocks
 end
 
 @inline find_blocks(t::Vector{Token}, a...) = find_blocks(subv(t), a...)
 
+
 """
 $(SIGNATURES)
 
-Remove blocks which are part of larger blocks (these will get re-formed and re-processed
-at an ulterior step).
+Remove blocks which are part of larger blocks (these will get re-formed and
+re-processed at an ulterior step).
 """
 function remove_inner!(blocks::Vector{Block})
     isempty(blocks) && return
@@ -89,4 +94,24 @@ function remove_inner!(blocks::Vector{Block})
     end
     deleteat!(blocks, [i for i in eachindex(blocks) if !is_active[i]])
     return
+end
+
+
+"""
+$(SIGNATURES)
+
+Find LXB blocks that start with `{{` and and with `}}` and mark them as :DBB.
+"""
+function form_dbb!(b::Vector{Block})
+    for i in eachindex(b)
+        b[i].name === :LXB || continue
+        ss = b[i].ss
+        (startswith(ss, "{{") && endswith(ss, "}}")) || continue
+
+        open  = Token(:DBB_OPEN, subs(ss, 1:2))
+        li    = lastindex(ss)
+        close = Token(:DBB_CLOSE, subs(ss, li-1:li))
+        it    = @view b[i].inner_tokens[2:end-1]
+        b[i]  = Block(:DBB, open => close, it)
+    end
 end

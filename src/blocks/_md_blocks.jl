@@ -23,7 +23,6 @@ const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
    # div and braces
    BlockTemplate(:DIV, :DIV_OPEN, :DIV_CLOSE, nesting=true),
    BlockTemplate(:LXB, :LXB_OPEN, :LXB_CLOSE, nesting=true),
-   BlockTemplate(:DBB, :DBB_OPEN, :DBB_CLOSE),
    # headers
    BlockTemplate(:H1, :H1_OPEN, END_OF_LINE),
    BlockTemplate(:H2, :H2_OPEN, END_OF_LINE),

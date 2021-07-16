@@ -1,8 +1,8 @@
 using Test, FranklinParser, OrderedCollections, Pkg
 import CommonMark
-const FP = FranklinParser
-const FPE = FP.FranklinParserException
-const CM = CommonMark
+FP = FranklinParser
+FPE = FP.FranklinParserException
+CM = CommonMark
 
 include("testutils.jl")
 

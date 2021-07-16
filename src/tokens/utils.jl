@@ -1,8 +1,8 @@
 """
 EOS
 
-Mark the end of the string to parse (helps with corner cases where a token ends a
-document without being followed by a space).
+Mark the end of the string to parse (helps with corner cases where a token
+ends a document without being followed by a space).
 """
 const EOS = '\0'
 
@@ -54,9 +54,9 @@ const ALPHANUM_ALL = vcat(ALPHA_ALL, NUM_CHAR)
 """
 Chomp
 
-Structure to encapsulate rules around a token such as whether it's fine
-at the end of a string, what are allowed following characters and, in
-the greedy case, what characters are allowed.
+Structure to encapsulate rules around a token such as whether it's fine at the
+end of a string, what are allowed following characters and, in the greedy
+case, what characters are allowed.
 """
 struct Chomp
     # fixed style
@@ -139,9 +139,9 @@ end
 """
 $(SIGNATURES)
 
-Return a TokenFinder corresponding to a forward lookup checking if a sequence of
-characters matches a `refstring` and is followed (or not followed if
-`is_followed==false`) by a character out of a list of characters (`next_chars`).
+Return a TokenFinder corresponding to a forward lookup checking if a sequence
+of characters matches a `refstring` and is followed (or not followed if
+`is_followed==false`) by a char out of a list of chars (`next_chars`).
 """
 @inline function forward_match(
             refstring::String,
@@ -163,7 +163,7 @@ end
 """
 $(SIGNATURES)
 
-Lazily accept the next character and stop as soon as it fails to verify `λ(c)`.
+Lazily accept the next char and stop as soon as it fails to verify `λ(c)`.
 """
 @inline function greedy_match(;
             head_chars::Vector{Vector{Char}}=Vector{Vector{Char}}(),

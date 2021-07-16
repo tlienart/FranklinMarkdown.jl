@@ -7,11 +7,11 @@ that works will be taken.
 """
 const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
     '{' => [
-        forward_match("{{") => :DBB_OPEN,
+        # forward_match("{{") => :DBB_OPEN,
         forward_match("{")  => :LXB_OPEN
         ],
     '}' => [
-        forward_match("}}") => :DBB_CLOSE,
+        # forward_match("}}") => :DBB_CLOSE,
         forward_match("}")  => :LXB_CLOSE,
         ],
     '\n' => [

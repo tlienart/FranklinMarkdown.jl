@@ -99,6 +99,16 @@ end
     @test FP.content(blocks[1]) == "abc {g} def"
 end
 
+@testset "Ambiguous double braces" begin
+    blocks = raw"""
+        \a{\b{c}} \a{{b}\c{d}}
+        """ |> md_blockifier
+    @test blocks[1].ss == raw"\a"
+    @test blocks[2].ss == raw"{\b{c}}"
+    @test blocks[3].ss == raw"\a"
+    @test blocks[4].ss == raw"{{b}\c{d}}"
+end
+
 @testset "Mix" begin
     s = """
         <!--~~~ABC~~~-->
