@@ -43,3 +43,5 @@ const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
    SingleTokenBlockTemplate(:LX_BEGIN),
    SingleTokenBlockTemplate(:LX_END)
    ])
+
+# NOTE: {{...}} blocks (DBB_BLOCK) are processed separately, see find_blocks
