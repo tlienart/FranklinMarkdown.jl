@@ -5,4 +5,6 @@
     @test b[1].name == :DBB
     @test b[2].name == :COMMENT
     @test b[3].name == :SCRIPT
+
+    @test FP.content(b[1]) == " A "
 end
