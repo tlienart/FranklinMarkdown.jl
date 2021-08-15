@@ -23,7 +23,9 @@ end
         Hello
         """)
     p = raw"""
-        &#42; --- \\
+        &#42;
+         ----
+        \\
         """ |> FP.default_md_partition
 
     @test eltype(p) == FP.Block
@@ -32,10 +34,26 @@ end
     @test p[3].name == :TEXT
     @test p[4].name == :LINEBREAK
     @test p[5].name == :TEXT
+
+    # no clash with tables
+    p = raw"""
+    | x   | y   |
+    | --- | --- |
+    | 0 | 1 |
+    """ |> FP.default_md_partition
+    @test p[1].name == :TEXT
+    @test length(p) == 1
+
     t = raw"""
-        abc \\ --- &#60;
+        abc \\
+          --------
+        &#60;
         """ |> FP.default_md_partition
-    @test FP.prepare_text(t[end]) == " &#60;\n"
+    @test t[1].name == :TEXT
+    @test t[2].name == :LINEBREAK
+    @test t[3].name == :TEXT
+    @test t[4].name == :HRULE
+    @test FP.prepare_text(t[end]) == "\n&#60;\n"
 
     # emoji
     p = raw"""

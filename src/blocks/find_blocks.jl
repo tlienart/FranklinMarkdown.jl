@@ -61,9 +61,35 @@ function find_blocks(
     end
     sort!(blocks, by=from)
     remove_inner!(blocks)
+
     # assemble double brace blocks; this has to be done here to avoid
     # ambiguity with stray {{ or }} in Lx context.
     form_dbb!(blocks)
+
+    # discard hrule blocks if there's something else than spaces
+    # on that line (common mark spec + avoids clash with tables)
+    remove = Int[]
+    for (i, b) in enumerate(blocks)
+        b.name == :HRULE || continue
+        # find the first non space character that's not '\n' before
+        # after the block; if any, remove the block
+        valid = true
+        s = parent_string(b.ss)
+        p = prevind(s, from(b.open))
+        while p > 0
+            s[p] == '\n' && break
+            s[p] != ' '  && (valid = false; break)
+            p = prevind(s, p)
+        end
+        n = nextind(s, to(b.open))
+        while n < lastindex(s)
+            s[n] == '\n' && break
+            s[n] != ' '  && (valid = false; break)
+            n = nextind(s, n)
+        end
+        valid || push!(remove, i)
+    end
+    deleteat!(blocks, remove)
     return blocks
 end
 
