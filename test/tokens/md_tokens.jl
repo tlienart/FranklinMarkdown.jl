@@ -18,10 +18,12 @@
         """
     tokens = FP.find_tokens(s, FP.MD_TOKENS)
     names = [t.name for t in tokens]
-    @test :COMMENT_OPEN in names
-    @test :COMMENT_CLOSE in names
-    @test :HRULE in names
-    @test :MD_DEF_BLOCK in names
+    @test names == [
+        :COMMENT_OPEN, :COMMENT_CLOSE, :LINE_RETURN,
+        :LINE_RETURN,  # hrule are processed as blocks
+        :MD_DEF_BLOCK, :LINE_RETURN,
+        :EOS
+    ]
 end
 
 @testset "md-1" begin
@@ -36,9 +38,7 @@ end
     check_tokens(tokens, [1, 2, 4, 6, 7], :LXB_OPEN)
     check_tokens(tokens, [3, 5, 8, 9, 10], :LXB_CLOSE)
 
-    check_tokens(tokens, [11, 15], :LINE_RETURN)
-    check_tokens(tokens, [13], :LINE_RETURN_INDENT_4)
-    check_tokens(tokens, [14], :LINE_RETURN_INDENT_2)
+    check_tokens(tokens, [11, 13, 14, 15], :LINE_RETURN)
 
     check_tokens(tokens, [12], :COMMENT_OPEN)
     check_tokens(tokens, [16], :COMMENT_CLOSE)
@@ -52,16 +52,21 @@ end
             def
         {{abc}}
         """ |> FP.default_md_tokenizer
-    @test t[1].name == :LINE_RETURN_INDENT_4
-    @test t[2].name == :LINE_RETURN
+    @test t[1].name == t[2].name == :LINE_RETURN
 end
 
 @testset "md-base" begin
+    s = """* *a _ b_ **a b**"""
+    tokens = FP.find_tokens(s, FP.MD_TOKENS)
+    @test tokens[1].name == :EMPH_OPEN
+    @test tokens[2].name == :EMPH_CLOSE
+    @test tokens[3].name == :STRONG_OPEN
+    @test tokens[4].name == :STRONG_CLOSE
+    @test tokens[5].name == :EOS
     s = """--> ----"""
     tokens = FP.find_tokens(s, FP.MD_TOKENS)
     @test tokens[1].name == :COMMENT_CLOSE
-    @test tokens[2].name == :HRULE
-    @test tokens[3].name == :EOS
+    @test tokens[2].name == :EOS
     s = """+++ +++
     """
     tokens = FP.find_tokens(s, FP.MD_TOKENS)
@@ -139,9 +144,7 @@ end
     tokens = raw"_$>_ _$<_ ___ **** ---" |> FP.default_md_tokenizer
     @test tokens[1].name == :MATH_I_OPEN
     @test tokens[2].name == :MATH_I_CLOSE
-    @test tokens[3].name == :HRULE
-    @test tokens[4].name == :HRULE
-    @test tokens[5].name == :HRULE
+    @test tokens[3].name == :EOS
 end
 
 @testset "MD-code" begin
@@ -160,15 +163,4 @@ end
     tokens = raw"````hello `````foo" |> FP.default_md_tokenizer
     @test tokens[1].name == :CODE_LANG4
     @test tokens[2].name == :CODE_LANG5
-end
-
-@testset "HR" begin
-    s = """---+ ** **** _____""" |> FP.default_md_tokenizer
-    @test length(s) == 3 + 1
-    @test s[1].name == :HRULE
-    @test s[1].ss == "---"
-    @test s[2].name == :HRULE
-    @test s[2].ss == "****"
-    @test s[3].name == :HRULE
-    @test s[3].ss == "_____"
 end

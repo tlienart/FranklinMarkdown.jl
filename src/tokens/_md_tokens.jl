@@ -4,28 +4,27 @@ MD_TOKENS
 Dictionary of tokens for Markdown. Note that for each, there may be several
 possibilities to consider in which case the order is important: the first case
 that works will be taken.
+
+Dev: F_* are greedy match, see `md_utils.jl`.
+
+Try: https://spec.commonmark.org/dingus
 """
 const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
     '{' => [
-        # forward_match("{{") => :DBB_OPEN,
         forward_match("{")  => :LXB_OPEN
         ],
     '}' => [
-        # forward_match("}}") => :DBB_CLOSE,
         forward_match("}")  => :LXB_CLOSE,
         ],
     '\n' => [
-        forward_match("\n    ")  => :LINE_RETURN_INDENT_4,
-        forward_match("\n  ")    => :LINE_RETURN_INDENT_2,
-        forward_match("\n\t")    => :LINE_RETURN_INDENT_TAB,
-        forward_match("\n")      => :LINE_RETURN
+        F_LINE_RETURN       => :LINE_RETURN,
+        forward_match("\n") => :LINE_RETURN,
         ],
     '<' => [
         forward_match("<!--") => :COMMENT_OPEN
         ],
     '-' => [
         forward_match("-->") => :COMMENT_CLOSE,
-        F_HR_1               => :HRULE
         ],
     '+' => [
         forward_match("+++", ['\n']) => :MD_DEF_BLOCK
@@ -84,9 +83,9 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("\$\$")             => :MATH_B,  # $$⎵*
         ],
     '_' => [
-        forward_match("_\$>_") => :MATH_I_OPEN,  # internal when resolving a lx command
-        forward_match("_\$<_") => :MATH_I_CLOSE, # within mathenv (e.g. \R <> \mathbb R)
-        F_HR_2 => :HRULE,
+        forward_match("_\$>_")           => :MATH_I_OPEN,  # internal when resolving a lx command
+        forward_match("_\$<_")           => :MATH_I_CLOSE, # within mathenv (e.g. \R <> \mathbb R)
+        forward_match("_", ['_'], false) => :EMPH_EM_CAND,
         ],
     '`' => [
         forward_match("`",  ['`'], false)   => :CODE_SINGLE,  # `⎵
@@ -102,7 +101,8 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         F_LANG_5 => :CODE_LANG5,   # `````lang*
         ],
     '*' => [
-        F_HR_3 => :HRULE,
+        forward_match("*", ['*'], false)  => :EMPH_EM_CAND,
+        forward_match("**", ['*'], false) => :EMPH_STRONG_CAND,
         ]
     )  # end dict
 
@@ -131,12 +131,11 @@ END_OF_LINE
 
 All tokens that indicate the end of a line.
 """
-const END_OF_LINE = (:LINE_RETURN, :LINE_RETURN_INDENT, :EOS)
+const END_OF_LINE = (:LINE_RETURN, :EOS)
 
 """
 MD_IGNORE
 
 Tokens that may be left over after partition but should be ignored in text blocks.
 """
-const MD_IGNORE = (:LINE_RETURN, :LINE_RETURN_INDENT_TAB, :LINE_RETURN_INDENT_2,
-                   :LINE_RETURN_INDENT_4)
+const MD_IGNORE = (:LINE_RETURN,)

@@ -1,11 +1,3 @@
-# CM fix // disable parsing of indented blocks
-struct SkipIndented end
-block_rule(::SkipIndented) = CM.Rule((p, c) -> 0, 8, "")
-cm_parser = CM.enable!(CM.disable!(CM.Parser(),
-                        CM.IndentedCodeBlockRule()), SkipIndented())
-
-# --------------------------------------------------------------------------------------
-
 import Base.//
 
 isapproxstr(s1::AbstractString, s2::AbstractString) =

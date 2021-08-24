@@ -89,11 +89,64 @@ function find_tokens(
         end
         head_idx = nextind(s, head_idx)
     end
+
     # finally push the end token on the stack observe that it can overlap a token
     # that would be at the end of the string.
     eos = Token(:EOS, subs(s, end_idx))
     push!(tokens, eos)
+
+    # validate or drop emphasis tokens
+    process_emphasis_tokens!(tokens)
     return tokens
 end
 
 @inline find_tokens(s::String, templates) = find_tokens(subs(s), templates)
+
+
+function process_emphasis_tokens!(tokens::Vector{Token})
+    isempty(tokens) && return
+    remove = Int[]
+    ps = parent_string(first(tokens))
+    N  = lastindex(ps)
+    for (i, t) in enumerate(tokens)
+        # ' _\S' => opening
+        # '\S_ ' => closing
+        # other => discard
+        if t.name == :EMPH_EM_CAND
+            kp = previous_index(t)
+            kn = next_index(t)
+            if (kp < 1 || ps[kp] ∈ ('\n', ' ', '\t')) && (
+                kn <= N && ps[kn] ∉ ('\n', ' ', '\t', '_'))
+
+                tokens[i] = Token(:EMPH_OPEN, t.ss)
+
+            elseif (kn > N || ps[kn] ∈ ('\n', ' ', '\t')) && (
+                    kp >= 1 && ps[kp] ∉ ('\n', ' ', '\t', '_'))
+
+                tokens[i] = Token(:EMPH_CLOSE, t.ss)
+
+            else
+                push!(remove, i)
+            end
+
+        elseif t.name == :EMPH_STRONG_CAND
+            kp = previous_index(t)
+            kn = next_index(t)
+            if (kp < 1 || ps[kp] ∈ ('\n', ' ', '\t')) && (
+                kn <= N && ps[kn] ∉ ('\n', ' ', '\t', '*'))
+
+                tokens[i] = Token(:STRONG_OPEN, t.ss)
+
+            elseif (kn > N || ps[kn] ∈ ('\n', ' ', '\t')) && (
+                    kp >= 1 && ps[kp] ∉ ('\n', ' ', '\t', '*'))
+
+                tokens[i] = Token(:STRONG_CLOSE, t.ss)
+
+            else
+                push!(remove, i)
+            end
+        end
+    end
+    deleteat!(tokens, remove)
+    return
+end

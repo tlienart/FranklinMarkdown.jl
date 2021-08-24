@@ -1,3 +1,33 @@
+#=
+NOTE: a greedy match takes
+
+- head_chars::Vector{Vector{Char}}
+- tail_chars::Vector{Char}
+- check::Regex
+
+The head_chars indicate the accepted chars in order after the first triggering
+char (so the first vector is for the first character after trigger, second
+for second etc), as soon as we're beyond the range of head_chars, we check
+whether the characters are in `tail_chars`
+
+Finally the check regex allows to discard expressions that match the head
+and char but might not overall meet the required regex. This is only
+required for things where head/tail are insufficient.
+The regex includes the trigger character.
+=#
+
+"""
+F_LINE_RETURN
+
+Finder for a line return (`\n`) followed by any number of whitespaces or tabs.
+These will subsequently be checked to see if they are followed by something
+that constitutes a list item or not.
+"""
+const F_LINE_RETURN = greedy_match(
+    tail_chars=[' ', '\t']
+)
+
+
 """
 F_DIV_OPEN
 
@@ -15,13 +45,17 @@ const F_DIV_OPEN = greedy_match(
 """
 F_LX_COMMAND
 
-Finder for latex command. First character is `[a-zA-Z]`. '*' is only allowed
-once and at the end. We do allow numbers (there's no ambiguity because
-`\\com1` is not allowed to mean `\\com{1}` unlike in LaTeX).
+Finder for latex command. First character is `[a-zA-Z]`.
+We do allow numbers (there's no ambiguity because `\\com1` is not allowed to
+mean `\\com{1}` unlike in LaTeX).
+Underscores are allowed *inside* the command but not at the very start or very
+end to avoid confusion respectively with the escaped `_` character or the
+emphasis in markdown, `*` are not allowed anywhere (including at the end).
+See also the check pattern.
 """
 const F_LX_COMMAND = greedy_match(
-    head_chars=[ALPHA_LATIN],
-    tail_chars=vcat(ALPHANUM_LATIN, ['_', '*']),
+    head_chars=[vcat(ALPHA_LATIN, ['_'])],
+    tail_chars=vcat(ALPHANUM_LATIN, ['_']),
     check=LX_COMMAND_PAT
 )
 
@@ -74,26 +108,7 @@ F_FOOTNOTE
 Finder for footnotes.
 """
 const F_FOOTNOTE = greedy_match(
-    head_chars=[['^'], vcat(ALPHANUM_ALL)],
+    head_chars=[['^'], ALPHANUM_ALL],
     tail_chars=vcat(ALPHANUM_ALL, [']', ':', '_']),
     check=FOOTNOTE_PAT
-)
-
-"""
-F_HR
-"""
-const F_HR_1 = greedy_match(
-    head_chars=[['-']],
-    tail_chars=['-'],
-    check=r"-{3}-*"
-)
-const F_HR_2 = greedy_match(
-    head_chars=[['_']],
-    tail_chars=['_'],
-    check=r"_{3}_*"
-)
-const F_HR_3 = greedy_match(
-    head_chars=[['*']],
-    tail_chars=['*'],
-    check=r"\*{3}\**"
 )

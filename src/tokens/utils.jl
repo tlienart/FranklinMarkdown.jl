@@ -13,7 +13,7 @@ List of characters that correspond to a `\\s` regex + EOS.
 
 Ref: https://github.com/JuliaLang/julia/blob/master/base/strings/unicode.jl.
 """
-const SPACE_CHAR = [' ', '\n', '\t', '\v', '\f', '\r', '\u85', '\ua0', EOS]
+const SPACE_CHAR = [' ', '\r', '\n', '\t', '\f', '\v', EOS]
 
 """
 NUM_CHAR
@@ -98,6 +98,7 @@ TokenFinder(s::Int, c::Chomp) = TokenFinder(s, c, r"")
 $(SIGNATURES)
 
 Applies a fixed lookahead step corresponding to a token finder.
+This is used as a helper function in `find_tokens`.
 """
 function fixed_lookahead(tf::TokenFinder, candidate::SS, at_eos::Bool)
     c = tf.chomp
@@ -119,6 +120,7 @@ end
 $(SIGNATURES)
 
 Applies a greedy lookahead step corresponding to a token finder.
+This is used as a helper function in `find_tokens`.
 """
 function greedy_lookahead(tf::TokenFinder, nchars::Int, probe_char::Char)
     c = tf.chomp

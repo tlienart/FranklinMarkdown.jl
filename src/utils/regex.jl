@@ -3,9 +3,9 @@ HR*_PAT
 
 Pattern to match horizontal rule indicators.
 """
-const HR1_PAT = r"\-{3}\-*"
-const HR2_PAT = r"\_{3}\_*"
-const HR3_PAT = r"\*{3}\**"
+const HR1_PAT = r"\-{3}[ \t\-]*"
+const HR2_PAT = r"\_{3}[ \t\_]*"
+const HR3_PAT = r"\*{3}[ \t\*]*"
 
 
 """
@@ -17,17 +17,18 @@ Pattern to match the whitespaces (tabs or spaces) at the start of a line, see
 const LEADING_WHITESPACE_PAT = r"^([ \t]*)\S"
 const NEWLINE_WHITESPACE_PAT = r"\n([ \t]*)\S"
 
-
 """
 LX_COMMAND_PAT
 
 Allowed latex command name.
+Underscore are allowed inside the command but not at extremities.
+The star `*` is not allowed anywhere.
 
 ## Examples:
 * \\com
 * \\ab1_cd*
 """
-const LX_COMMAND_PAT = r"^\\[a-zA-Z][_a-zA-Z0-9]*\*?$"
+const LX_COMMAND_PAT = r"^\\[a-zA-Z](?:[_a-zA-Z0-9]*[a-zA-Z0-9])?$"
 
 """
 CODE_LANG*_PAT
