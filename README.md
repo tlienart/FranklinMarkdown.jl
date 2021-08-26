@@ -7,6 +7,9 @@
 
 * [ ] no requirements for `#+` to be at the beginning of a line, it will be taken as a header until the current end of line. The reason for this is so that we can avoid having to dedent `div` contents to check whether `#+` are at the beginning of the line at the div indentation level. Users who want to introduce `#+` "as is" should use `\#`.
 
+
+* dropping `@def` multiline support; there's ambiguity with line returns; better to use `+++...+++` blocks; `@def x = 5` is still allowed.
+
 ## Workflow (MD)
 
 ### Default init (original MD string -> first level partition)

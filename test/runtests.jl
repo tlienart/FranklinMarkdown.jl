@@ -1,8 +1,6 @@
 using Test, FranklinParser, OrderedCollections, Pkg
-import CommonMark
 FP = FranklinParser
 FPE = FP.FranklinParserException
-CM = CommonMark
 
 include("testutils.jl")
 
@@ -33,12 +31,8 @@ end
 end
 
 @testset "partition" begin
-    include("partition/md_partition.jl")
+    include("partition/md_partition.jl") # depr
+    include("partition/md_specs.jl")
     include("partition/html_partition.jl")
     include("partition/math_partition.jl")
-end
-
-@testset "integration" begin
-    include("integration/rules.jl")
-    include("integration/div_blocks.jl")
 end

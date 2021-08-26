@@ -90,6 +90,21 @@ function next_chars(o, n::Int=1)
 end
 
 
+function until_next_line_return(o)
+    ps = parent_string(o)
+    no = to(o)
+    j  = nextind(ps, no)
+    j1 = j
+    jk = j
+    while (j <= lastindex(ps)) && (ps[j] != '\n')
+        jk = j
+        j  = nextind(ps, j)
+    end
+    return subs(ps, j1, jk)
+end
+
+
+
 """
 $(SIGNATURES)
 

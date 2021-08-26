@@ -20,8 +20,8 @@ end
         <!--A<!--B-->C-->
         """
     blocks = s |> md_blockifier
-    @test length(blocks) == 1
     @test FP.content(blocks[1]) == "A<!--B"
+    @test blocks[2].name == :P_BREAK
 end
 
 @testset "Other - no nesting" begin
@@ -85,11 +85,12 @@ end
         @def a = 5
         """ |> md_blockifier
     @test strip(FP.content(blocks[1])) == "a = 5"
+    # XXX this is now two separate things and will error eventually
     blocks = """
         @def a = [1,
             2]
         """ |> md_blockifier
-    @test isapproxstr(FP.content(blocks[1]), "a=[1,2]")
+    @test isapproxstr(FP.content(blocks[1]), "a=[1,")
 end
 
 @testset "Double brace" begin
@@ -115,7 +116,7 @@ end
         ~~~<!--ABC-->~~~
         """
     blocks = s |> md_blockifier
-    @test length(blocks) == 2
+    @test length(blocks) == 3
     @test FP.content(blocks[1]) == "~~~ABC~~~"
     @test FP.content(blocks[2]) == "<!--ABC-->"
 
@@ -144,17 +145,8 @@ end
             {ABC}
         @@
         """ |> md_blockifier
-    @test length(b) == 1
+    @test length(b) == 2
     @test isapproxstr(FP.content(b[1]), "@@def ```julia hello```@@ {ABC}")
-end
-
-@testset "md def" begin
-    b = """
-        @def x = [
-            1, 2, 3
-            ]
-        """ |> md_blockifier
-    @test isapproxstr(FP.content(b[1]), "x = [1,2,3]")
 end
 
 @testset "maths" begin
@@ -197,4 +189,28 @@ end
     @test b[7].name == :LX_NEWENVIRONMENT
     @test b[8].name == :LXB
     @test b[9].name == :LX_COMMAND
+end
+
+# -----------------------------
+# Added to take over commonmark
+
+@testset "emphasis" begin
+    # no nest
+    b = """
+        a *b* c _d_ e _ f g * h
+        """ |> md_blockifier
+    @test b[1].name == :EMPH_EM
+    @test FP.content(b[1]) == "b"
+    @test b[2].name == :EMPH_EM
+    @test FP.content(b[2]) == "d"
+    @test b[3].name == :P_BREAK
+    @test length(b) == 3
+
+    # nest (we only recover the outer block of course)
+    b = """
+        **abc_def_ghi**
+        """ |> md_blockifier
+    @test b[1].name == :EMPH_STRONG
+    @test FP.content(b[1]) == "abc_def_ghi"
+    @test b[2].name == :P_BREAK
 end

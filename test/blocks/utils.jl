@@ -15,7 +15,7 @@ end
         \ \# \@ \` \{ \} \* \_
         Hello
         """ |> FP.default_md_partition
-    @test length(p) == 1
+    @test length(p) == 2
     s = FP.prepare_text(p[1])
     @test s isa String
     @test isapproxstr(s, """
@@ -33,16 +33,16 @@ end
     @test p[2].name == :HRULE
     @test p[3].name == :TEXT
     @test p[4].name == :LINEBREAK
-    @test p[5].name == :TEXT
+    @test p[5].name == :P_BREAK
 
-    # no clash with tables
-    p = raw"""
-    | x   | y   |
-    | --- | --- |
-    | 0 | 1 |
-    """ |> FP.default_md_partition
-    @test p[1].name == :TEXT
-    @test length(p) == 1
+    # # no clash with tables
+    # p = raw"""
+    # | x   | y   |
+    # | --- | --- |
+    # | 0 | 1 |
+    # """ |> FP.default_md_partition
+    # @test p[1].name == :TEXT
+    # @test length(p) == 1
 
     t = raw"""
         abc \\
@@ -51,9 +51,8 @@ end
         """ |> FP.default_md_partition
     @test t[1].name == :TEXT
     @test t[2].name == :LINEBREAK
-    @test t[3].name == :TEXT
-    @test t[4].name == :HRULE
-    @test FP.prepare_text(t[end]) == "\n&#60;\n"
+    @test t[3].name == :HRULE
+    @test FP.prepare_text(t[4]) == "\n&#60;"
 
     # emoji
     p = raw"""

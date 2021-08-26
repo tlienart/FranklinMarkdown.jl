@@ -1,18 +1,11 @@
-# CM fix // disable parsing of indented blocks
-struct SkipIndented end
-block_rule(::SkipIndented) = CM.Rule((p, c) -> 0, 8, "")
-cm_parser = CM.enable!(CM.disable!(CM.Parser(),
-                        CM.IndentedCodeBlockRule()), SkipIndented())
-
-# --------------------------------------------------------------------------------------
-
+using Test
 import Base.//
 
 isapproxstr(s1::AbstractString, s2::AbstractString) =
     isequal(map(s->replace(s, r"\s|\n"=>""), String.((s1, s2)))...)
 
 # stricter than isapproxstr, just strips the outside.
-(//)(s1::String, s2::String) = strip(s1) == strip(s2)
+(//)(s1::AbstractString, s2::AbstractString) = strip(s1) == strip(s2)
 
 # --------------------------------------------------------------------------------------
 
@@ -23,3 +16,11 @@ function check_tokens(tokens, idx, name)
     compl = [i for i in eachindex(tokens) if i ∉ idx]
     @test all([t.name for t in tokens[compl]] .!= name)
 end
+
+toks    = FP.default_md_tokenizer
+slice   = FP.default_md_partition
+text(b) = FP.prepare_text(b)
+ct(b)   = FP.content(b)
+ctf(b::FP.Group) = FP.content(first(b.blocks))
+grouper = FP.md_grouper ∘ slice
+isp(g)  = g.role == :paragraph

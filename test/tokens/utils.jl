@@ -114,30 +114,14 @@ end
     @test FP.check(tf, FP.subs("[^h1]"))
 end
 
-@testset "is_hr*" begin
-    tf = FP.F_HR_1
-    @test FP.greedy_lookahead(tf, 1, '-')
-    @test FP.greedy_lookahead(tf, 2, '-')
-    @test FP.greedy_lookahead(tf, 3, '-')
-    @test !FP.greedy_lookahead(tf, 3, '_')
-    tf = FP.F_HR_2
-    @test FP.greedy_lookahead(tf, 1, '_')
-    @test FP.greedy_lookahead(tf, 2, '_')
-    @test FP.greedy_lookahead(tf, 3, '_')
-    @test !FP.greedy_lookahead(tf, 3, '*')
-    tf = FP.F_HR_3
-    @test FP.greedy_lookahead(tf, 1, '*')
-    @test FP.greedy_lookahead(tf, 2, '*')
-    @test FP.greedy_lookahead(tf, 3, '*')
-    @test !FP.greedy_lookahead(tf, 3, '_')
-end
-
 @testset "regexes" begin
     tf = FP.F_LX_COMMAND
-    for c in (FP.subs(raw"\abc"), FP.subs(raw"\abc_def"), FP.subs(raw"\abc1_def*"))
+    for c in (FP.subs(raw"\abc"), FP.subs(raw"\abc_def"))
         @test FP.check(tf, c)
     end
-    for c in (FP.subs(raw"\abc "), FP.subs(raw"\abc**"), FP.subs(raw"\a*bc"))
+
+    for c in (FP.subs(raw"\abc "), FP.subs(raw"\abc1_def*"), FP.subs(raw"\abc**"),
+              FP.subs(raw"\a*bc"), FP.subs(raw"\abc1_"),  FP.subs(raw"\_abc1"))
         @test !FP.check(tf, c)
     end
 

@@ -18,6 +18,10 @@ function find_tokens(
     tokens = Token[]
     isempty(s) && return tokens
 
+    # start with a linereturn to allow proper treatment of blockquote lines
+    # items etc that would be right at the start
+    push!(tokens, Token(:LINE_RETURN, subs(s, 1:0)))
+
     head_idx = firstindex(s)
     end_idx  = lastindex(s)
 
@@ -89,11 +93,66 @@ function find_tokens(
         end
         head_idx = nextind(s, head_idx)
     end
+
     # finally push the end token on the stack observe that it can overlap a token
     # that would be at the end of the string.
     eos = Token(:EOS, subs(s, end_idx))
     push!(tokens, eos)
+
+    # validate or drop emphasis tokens
+    process_emphasis_tokens!(tokens)
     return tokens
 end
 
 @inline find_tokens(s::String, templates) = find_tokens(subs(s), templates)
+
+
+function process_emphasis_tokens!(tokens::Vector{Token})
+    isempty(tokens) && return
+    remove = Int[]
+    ps = parent_string(first(tokens))
+    N  = lastindex(ps)
+    for (i, t) in enumerate(tokens)
+
+        if t.name == :EM_CAND
+            _process_emph!(remove, tokens, i, ps,
+                           :EM_OPEN, :EM_CLOSE)
+
+        elseif t.name == :STRONG_CAND
+            _process_emph!(remove, tokens, i, ps,
+                           :STRONG_OPEN, :STRONG_CLOSE)
+
+        elseif t.name == :EM_STRONG_CAND
+            _process_emph!(remove, tokens, i, ps,
+                           :EM_STRONG_OPEN, :EM_STRONG_CLOSE)
+        end
+    end
+    deleteat!(tokens, remove)
+    return
+end
+
+function _process_emph!(remove::Vector{Int}, tokens::Vector{Token}, i::Int,
+                        ps::String, os::Symbol, cs::Symbol)
+    # ' _\S' => opening
+    # '\S_ ' => closing
+    # other => discard
+    t  = tokens[i]
+    ps = parent_string(t)
+    N  = lastindex(ps)
+    c  = first(t.ss)
+    kp = previous_index(t)
+    kn = next_index(t)
+    if (kp < 1 || ps[kp] ∈ ('\n', ' ', '\t')) && (
+        kn <= N && ps[kn] ∉ ('\n', ' ', '\t', c))
+
+        tokens[i] = Token(os, t.ss)
+
+    elseif (kn > N || ps[kn] ∈ ('\n', ' ', '\t')) && (
+            kp >= 1 && ps[kp] ∉ ('\n', ' ', '\t', c))
+
+        tokens[i] = Token(cs, t.ss)
+
+    else
+        push!(remove, i)
+    end
+end

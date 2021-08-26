@@ -1,8 +1,11 @@
 # see utils/types/BlockTemplate
 const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
-   BlockTemplate(:COMMENT,         :COMMENT_OPEN, :COMMENT_CLOSE),
-   BlockTemplate(:RAW_HTML,        :RAW_HTML,     :RAW_HTML     ),
-   BlockTemplate(:MD_DEF_BLOCK,    :MD_DEF_BLOCK, :MD_DEF_BLOCK ),
+   BlockTemplate(:COMMENT,         :COMMENT_OPEN,   :COMMENT_CLOSE  ),
+   BlockTemplate(:RAW_HTML,        :RAW_HTML,       :RAW_HTML       ),
+   BlockTemplate(:MD_DEF_BLOCK,    :MD_DEF_BLOCK,   :MD_DEF_BLOCK   ),
+   BlockTemplate(:EMPH_EM,         :EM_OPEN,        :EM_CLOSE       ),
+   BlockTemplate(:EMPH_STRONG,     :STRONG_OPEN,    :STRONG_CLOSE   ),
+   BlockTemplate(:EMPH_EM_STRONG,  :EM_STRONG_OPEN, :EM_STRONG_CLOSE),
    # code
    BlockTemplate(:CODE_BLOCK_LANG, :CODE_LANG3,   :CODE_TRIPLE  ),
    BlockTemplate(:CODE_BLOCK_LANG, :CODE_LANG4,   :CODE_QUAD    ),
