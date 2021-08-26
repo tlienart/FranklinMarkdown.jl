@@ -2,6 +2,7 @@
     t = """
         {{ A }} <script abc></script><script> <!-- -->
         """ |> FP.default_html_tokenizer
+    deleteat!(t, 1)
     @test t[1].name == :DBB_OPEN
     @test t[2].name == :DBB_CLOSE
     @test t[3].name == :SCRIPT_OPEN

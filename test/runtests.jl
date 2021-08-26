@@ -1,10 +1,3 @@
-# -----
-# TODO 24/8
-# --> test table rule, item cand
-# --> add aggregation of table rules, item cand
-# reactivate blocks of tests below
-# ----------------------------------------------
-
 using Test, FranklinParser, OrderedCollections, Pkg
 FP = FranklinParser
 FPE = FP.FranklinParserException
@@ -37,13 +30,9 @@ end
     include("blocks/utils.jl")
 end
 
-# @testset "partition" begin
-#     include("partition/md_partition.jl")
-#     include("partition/html_partition.jl")
-#     include("partition/math_partition.jl")
-# end
-#
-# @testset "integration" begin
-#     include("integration/rules.jl")
-#     include("integration/div_blocks.jl")
-# end
+@testset "partition" begin
+    include("partition/md_partition.jl") # depr
+    include("partition/md_specs.jl")
+    include("partition/html_partition.jl")
+    include("partition/math_partition.jl")
+end

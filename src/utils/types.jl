@@ -10,6 +10,7 @@ abstract type AbstractSpan end
 from(s::AbstractSpan)          = from(s.ss::SS)
 to(s::AbstractSpan)            = to(s.ss::SS)
 parent_string(s::AbstractSpan) = parent_string(s.ss::SS)
+content(s::AbstractSpan)       = s.ss
 
 
 """
@@ -119,3 +120,27 @@ BlockTemplate(a...; nesting=false) = BlockTemplate(a..., nesting)
 const NO_CLOSING = (:NONE,)
 
 SingleTokenBlockTemplate(name::Symbol) = BlockTemplate(name, name, NO_CLOSING, false)
+
+
+"""
+$(TYPEDEF)
+
+A Group contains 1 or more more Blocks and will map to either a Paragraph or
+something else like a code block.
+"""
+struct Group <: AbstractSpan
+    role::Symbol
+    blocks::Vector{Block}
+    ss::SS
+end
+
+function Group(blocks::Vector{Block}; role::Symbol=:none)
+    ps = parent_string(first(blocks))
+    return Group(
+        role,
+        blocks,
+        subs(ps, from(first(blocks)), to(last(blocks)))
+    )
+end
+
+Group(block::Block; kw...) = Group([block]; kw...)

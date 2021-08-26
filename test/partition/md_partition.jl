@@ -18,27 +18,27 @@
     @test all(parts[i].name == :COMMENT for i in (2, 4))
 end
 
-@testset "text tokens" begin
-    s = """
-        ABC &#x02316; DEF
-        @@dname
-        GHI
-        @@
-        KLM &Tab;
-        """
-    parts = FP.default_md_partition(s)
-    @test parts[1].inner_tokens[1].name == :CHAR_HTML_ENTITY
-    @test parts[1].inner_tokens[2].name == :LINE_RETURN
-    @test length(parts[1].inner_tokens) == 2
-    @test parts[2].name == :DIV
-    # EOS is stripped
-    @test parts[3].inner_tokens[1].name == :LINE_RETURN
-    @test parts[3].inner_tokens[2].name == :CHAR_HTML_ENTITY
-    @test parts[3].inner_tokens[3].name == :LINE_RETURN
-    @test length(parts[3].inner_tokens) == 3
-
-    # recursion
-    subparts = FP.default_md_partition(parts[2])
-    @test length(subparts) == 1
-    @test subparts[1].name == :TEXT
-end
+# @testset "text tokens" begin
+#     s = """
+#         ABC &#x02316; DEF
+#         @@dname
+#         GHI
+#         @@
+#         KLM &Tab;
+#         """
+#     parts = FP.default_md_partition(s)
+#     @test parts[1].inner_tokens[1].name == :CHAR_HTML_ENTITY
+#     @test parts[1].inner_tokens[2].name == :LINE_RETURN
+#     @test length(parts[1].inner_tokens) == 2
+#     @test parts[2].name == :DIV
+#     # EOS is stripped
+#     @test parts[3].inner_tokens[1].name == :LINE_RETURN
+#     @test parts[3].inner_tokens[2].name == :CHAR_HTML_ENTITY
+#     @test parts[3].inner_tokens[3].name == :LINE_RETURN
+#     @test length(parts[3].inner_tokens) == 3
+#
+#     # recursion
+#     subparts = FP.default_md_partition(parts[2])
+#     @test length(subparts) == 1
+#     @test subparts[1].name == :TEXT
+# end

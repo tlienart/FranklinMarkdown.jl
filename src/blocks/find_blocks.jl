@@ -53,7 +53,10 @@ function find_blocks(
         end
 
         if (closing_index == -1)
-            if opening ∈ (:EMPH_OPEN, :EMPH_CLOSE, :STRONG_OPEN, :STRONG_CLOSE)
+            # allow those to not be closed properly
+            if opening ∈ (:EM_OPEN, :EM_CLOSE,
+                          :STRONG_OPEN, :STRONG_CLOSE,
+                          :EM_STRONG_OPEN, :EM_STRONG_CLOSE)
                 continue
             end
             parser_exception(:BlockNotClosed, """
@@ -69,11 +72,6 @@ function find_blocks(
         is_active[i:closing_index] .= false
     end
     sort!(blocks, by=from)
-
-    # PostProcess ITEM_x_CAND and TABLE_ROW_CAND --> either validate them and
-    # extend them to their full span for ITEM_x_CAND or discard them
-    # XXX
-
     remove_inner!(blocks)
 
     # assemble double brace blocks; this has to be done here to avoid
@@ -93,7 +91,7 @@ re-processed at an ulterior step).
 """
 function remove_inner!(blocks::Vector{Block})
     isempty(blocks) && return
-    n_blocks = length(blocks)
+    n_blocks  = length(blocks)
     is_active = ones(Bool, n_blocks)
     for i in eachindex(blocks)
         is_active[i] || continue
@@ -132,6 +130,21 @@ function form_dbb!(b::Vector{Block})
 end
 
 
+"""
+$SIGNATURES
+
+Process a line return followed by any number of white spaces and X. Depending
+on `X`, it will lead to a different interpretation.
+
+* a paragraph break (double line skip)
+* a hrule (has --- or *** or ____ on the line)
+* an item candidate (starts with * or + or ...)
+* a table row candidate (startswith |)
+* a blockquote (startswith >).
+
+We disambiguate the different cases based on the two characters after the
+whitespaces of the line return (the line return token captures `\n[ \t]*`).
+"""
 function process_line_return!(b::Vector{Block}, tv::SubVector{Token}, i::Int)::Nothing
     t = tv[i]
     c = next_chars(t, 2)
@@ -141,6 +154,10 @@ function process_line_return!(b::Vector{Block}, tv::SubVector{Token}, i::Int)::N
         # otherwise if there's `\n` or `EOS` then it's a line skip
         push!(b, Block(:P_BREAK, t.ss))
 
+    # ------------------------------------------------------------------------
+    # Hrules
+    # NOTE the line MUST start with a triple followed only by
+    # the same character, whitespaces and the eventual line return.
     elseif c[1] == c[2] == '-'
         _hrule!(b, t, HR1_PAT)
 
@@ -150,31 +167,47 @@ function process_line_return!(b::Vector{Block}, tv::SubVector{Token}, i::Int)::N
     elseif c[1] == c[2] == '*'
         _hrule!(b, t, HR3_PAT)
 
+    # ------------------------------------------------------------------------
+    # List items
     # NOTE for an item candidate, the candidate might not capture
     # the full item if the full item is on several lines, this has to
     # be post-processed when assembling ITEM_x_CAND into lists.
-    elseif c[2] == ' ' && c[1] in ('+', '-', '*')
+    elseif c[1] in ('+', '-', '*') && c[2] in (' ', '\t')
         cand = until_next_line_return(t)
         ps   = parent_string(cand)
         push!(b, Block(:ITEM_U_CAND, subs(ps, from(t), to(cand))))
 
-    elseif c[1] ∈ NUM_CHAR && c[2] in vcat(NUM_CHAR, [' ', '.', ')'])
+    elseif c[1] ∈ NUM_CHAR && c[2] in vcat(NUM_CHAR, [' ', '\t', '.', ')'])
         cand = until_next_line_return(t)
         ps   = parent_string(cand)
         push!(b, Block(:ITEM_O_CAND, subs(ps, from(t), to(cand))))
 
+    # ------------------------------------------------------------------------
+    # Table Rows
     # NOTE we're stricter here than usual GFM, every row must start and end
     # with a pipe, every row must be on a single line.
-    elseif c[1] == '|' && c[2] == ' '
+    elseif c[1] == '|' && c[2] in (' ', '\t')
         # TABLE_ROW_CAND
         cand = until_next_line_return(t)
         ps   = parent_string(cand)
         push!(b, Block(:TABLE_ROW_CAND, subs(ps, from(t), to(cand))))
-    end
 
+    # ------------------------------------------------------------------------
+    # Blockquote
+    elseif c[1] == '>'
+        # Blockquote
+        cand = until_next_line_return(t)
+        ps   = parent_string(cand)
+        push!(b, Block(:BLOCKQUOTE_LINE, subs(ps, from(t), to(cand))))
+    end
     return
 end
 
+"""
+$SIGNATURES
+
+Helper function to match and process a hrule.
+"""
 function _hrule!(b, t, r)
     cand  = until_next_line_return(t)
     check = match(r, cand)

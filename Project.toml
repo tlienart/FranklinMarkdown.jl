@@ -1,7 +1,7 @@
 name = "FranklinParser"
 uuid = "796511e7-1510-466f-ad0c-1823c64bcafa"
 authors = ["Thibaut Lienart <tlienart@me.com>"]
-version = "0.1.10"
+version = "0.2"
 
 [deps]
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
