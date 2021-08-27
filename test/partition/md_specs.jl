@@ -9,13 +9,13 @@
 # 3 fencedcodeblock ✅
 # x htmlblock 🚫
 # x indentedcodeblock 🚫
-# 4 list ✅
+# 4 list ✅ (⚠️ validation done in Franklin)
 # x setextheading 🚫
-# 5 hrule
-# 6 paragraphs
-# 7 emphasis *, **, ***, _, __, ___
-# 8 autolink <..>
-# 9 htmlentity
+# 5 hrule ✅
+# 6 paragraphs --> 0 ✅
+# 7 emphasis *, **, ***, _, __, ___  ✅
+# 8 autolink <..> ✅ (⚠️ normalisation via URIs is done in Franklin)
+# 9 htmlentity ✅ (they're left as is)
 # x htmlinline 🚫
 # 10 image
 # 11 inlinecode
@@ -25,7 +25,7 @@
 # 13 comments
 # 14 backslash escapes ✅
 #
-# table blocks
+# 15 table blocks ✅ (⚠️ validation done in Franklin)
 #
 # -- Franklin
 #
@@ -38,7 +38,7 @@
 # f7 newcom
 # f8 com
 # f9 env
-# f10 lxb
+# f10 CU_BRACKET
 # f11 dbb
 # f12 emojis
 # f13 def line   @def ...
@@ -129,6 +129,12 @@ end
         """ |> grouper
     @test ctf(p[1]) // "a"
     @test ctf(p[2]) // "b"
+
+    # has to be at start of line
+    p = """
+        a # bc
+        """ |> grouper
+    @test ctf(p[1]) // "a # bc"
 end
 
 
@@ -298,6 +304,78 @@ end
 # XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
 
 
+@testset "6>paragraph" begin
+    # see 0>
+end
+
+
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+
+
+@testset "7>emph" begin
+    p = """
+        a *b* _c_ **d** __e__ ***f*** ___g___
+
+        **b _c_ d**
+        """ |> md_blockifier
+    @test p[1].name == :EMPH_EM
+    @test ct(p[1]) == "b"
+    @test p[2].name == :EMPH_EM
+    @test ct(p[2]) == "c"
+    @test p[3].name == :EMPH_STRONG
+    @test ct(p[3]) == "d"
+    @test p[4].name == :EMPH_STRONG
+    @test ct(p[4]) == "e"
+    @test p[5].name == :EMPH_EM_STRONG
+    @test ct(p[5]) == "f"
+    @test p[6].name == :EMPH_EM_STRONG
+    @test ct(p[6]) == "g"
+    @test p[end-2].name == :EMPH_STRONG
+    @test ct(p[end-2]) == "b _c_ d"
+end
+
+
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+
+
+@testset "8>autolink" begin
+    p = """
+        a <bc> def <http://example.com> and < done >>.
+        """ |> md_blockifier
+    @test p[1].name == :AUTOLINK
+    @test ct(p[1]) == "bc"
+    @test p[2].name == :AUTOLINK
+    @test ct(p[2]) == "http://example.com"
+    @test p[3].name == :P_BREAK
+end
+
+
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+
+
+@testset "9>entity" begin
+    p = """
+        abc & def &amp; but &amp. &#42;
+        """ |> grouper
+    @test ctf(p[1]) == "abc & def &amp; but &amp. &#42;"
+end
+
+
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+
+
+@testset "10>image" begin
+end
+
+
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+
+
 @testset "14>escapes" begin
     p = raw"abc \_ foo" |> slice
     @test Int('_') == 95
@@ -310,3 +388,40 @@ end
     p = "a \\ b" |> slice
     @test text(p[1]) // "a &#92; b"
 end#
+
+
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+
+
+@testset "15>table" begin
+    p = """
+        abc
+        | a | b | c |
+        | - | - | - |
+        | 1 | 2 | 3 |
+        def
+        """ |> grouper
+    @test p[1].ss // "abc"
+    @test p[3].ss // "def"
+end
+
+
+# ////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
+# ////////////////////////////////////////////////////////////////////////////
+
+@testset "xx corner cases" begin
+    s = "[`]`]"
+    b = s |> md_blockifier
+    @test b[1].ss == "[`]`]"
+
+    s = "*abc<!--d*-->"
+    b = s |> md_blockifier
+    @test ct(b[1]) == "d*"
+    g = s |> grouper
+    @test g[1].ss == s
+end

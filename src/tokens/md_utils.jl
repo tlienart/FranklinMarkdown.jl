@@ -17,7 +17,7 @@ The regex includes the trigger character.
 =#
 
 """
-F_LINE_RETURN
+    F_LINE_RETURN
 
 Finder for a line return (`\n`) followed by any number of whitespaces or tabs.
 These will subsequently be checked to see if they are followed by something
@@ -29,7 +29,7 @@ const F_LINE_RETURN = greedy_match(
 
 
 """
-F_DIV_OPEN
+    F_DIV_OPEN
 
 Finder for `@@div` checking that `div` matches a simplified rule for allowed
 CSS class names. The complete rule being `-?[_a-zA-Z]+[_a-zA-Z0-9-]*` which
@@ -43,7 +43,7 @@ const F_DIV_OPEN = greedy_match(
 )
 
 """
-F_LX_COMMAND
+    F_LX_COMMAND
 
 Finder for latex command. First character is `[a-zA-Z]`.
 We do allow numbers (there's no ambiguity because `\\com1` is not allowed to
@@ -60,7 +60,7 @@ const F_LX_COMMAND = greedy_match(
 )
 
 """
-F_LANG_*
+    F_LANG_*
 
 Finder for code blocks. I.e. something like a sequence of 3, 4 or 5 backticks
 followed by a valid combination of letter defining a language.
@@ -82,7 +82,7 @@ const F_LANG_5 = greedy_match(
 )
 
 """
-F_HTML_ENTITY
+    F_HTML_ENTITY
 
 Finder for html entities.
 """
@@ -92,7 +92,7 @@ const F_HTML_ENTITY = greedy_match(
 )
 
 """
-F_EMOJI
+    F_EMOJI
 
 Finder for emojis (those will have to be validated separately to check Julia
 recognises them).
@@ -103,7 +103,7 @@ const F_EMOJI = greedy_match(
 )
 
 """
-F_FOOTNOTE
+    F_FOOTNOTE
 
 Finder for footnotes.
 """

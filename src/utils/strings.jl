@@ -1,5 +1,5 @@
 """
-$(SIGNATURES)
+    subs(...)
 
 Facilitate taking a SubString of an AS. The bounds given are expected to be valid
 String indices.
@@ -13,7 +13,7 @@ subs(s::SS) = s
 subs(s::String, a...) = subs(SS(s), a...)
 
 """
-$(SIGNATURES)
+    parent_string(o)
 
 Returns the parent string corresponding to `s`; i.e. `s` itself if it is a String, or
 the parent string if `s` is a SubString.
@@ -23,7 +23,7 @@ parent_string(s::String) = s
 parent_string(s::SS)     = s.string
 
 """
-$(SIGNATURES)
+    from(o)
 
 Given a SubString `ss`, returns the position in the parent string where the substring
 starts. If `ss` is a String, return 1.
@@ -34,7 +34,7 @@ from(ss::SS)    = nextind(parent_string(ss), ss.offset)
 from(s::String) = 1
 
 """
-$(SIGNATURES)
+    to(o)
 
 Given a SubString `ss`, returns the position in the parent string where the substring
 ends. If `ss` is a String, return the last index.
@@ -44,21 +44,21 @@ to(ss::SS)    = ss.offset + ss.ncodeunits
 to(s::String) = lastindex(s)
 
 """
-$(SIGNATURES)
+    previous_index(o)
 
 Return the index just before the object `o`.
 """
 previous_index(o) = prevind(parent_string(o), from(o))
 
 """
-$(SIGNATURES)
+    next_index(o)
 
 Return the index just after the object `o`.
 """
 next_index(o) = nextind(parent_string(o), to(o))
 
 """
-$(SIGNATURES)
+    previous_chars(o, n)
 
 Return the characters just before the object. Empty vector if there isn't the number of
 characters required.
@@ -74,7 +74,7 @@ function previous_chars(o, n::Int=1)
 end
 
 """
-$(SIGNATURES)
+    next_chars(o, n)
 
 Return the characters just after the object. Empty vector if there isn't the number of
 characters required.
@@ -89,27 +89,54 @@ function next_chars(o, n::Int=1)
     return [ps[k] for k in ij]
 end
 
+"""
+    until_next_line_return(o)
 
+Return the substring following the object and until the next line return or end.
+"""
 function until_next_line_return(o)
     ps = parent_string(o)
     no = to(o)
     j  = nextind(ps, no)
+    j  > lastindex(ps) && return subs("")
     j1 = j
     jk = j
-    while (j <= lastindex(ps)) && (ps[j] != '\n')
+    # no need to match EOS, it's implicit with j <= lastindex
+    @inbounds while (j <= lastindex(ps)) && (ps[j] != '\n')
         jk = j
         j  = nextind(ps, j)
     end
     return subs(ps, j1, jk)
 end
 
+"""
+    until_previous_line_return(o)
+
+Return the substring preceding the object until the preceding line return if
+any.
+"""
+function until_previous_line_return(o)
+    ps = parent_string(o)
+    no = from(o)
+    j  = prevind(ps, no)
+    j  < 1 && return subs("")
+    jk = j
+    j1 = j
+    @inbounds while (j >= 1) && (ps[j] != '\n')
+        j1 = j
+        j  = prevind(ps, j)
+    end
+    return subs(ps, j1, jk)
+end
 
 
 """
-$(SIGNATURES)
+    dedent(s)
 
 Remove the common leading whitespace from each non-empty line. The returned text
 is decoupled from the original text (forced to String).
+
+This is used in the context of lxdef in Franklin for instance, see try_form_lxdef.
 """
 function dedent(s::SS)::String
     # initial whitespace if any

@@ -1,5 +1,5 @@
 """
-HR*_PAT
+    HR*_PAT
 
 Pattern to match horizontal rule indicators.
 """
@@ -9,7 +9,7 @@ const HR3_PAT = r"\*{3}[ \t\*]*"
 
 
 """
-*_WHITESPACE_PAT
+    *_WHITESPACE_PAT
 
 Pattern to match the whitespaces (tabs or spaces) at the start of a line, see
 [`dedent`](@ref).
@@ -18,7 +18,7 @@ const LEADING_WHITESPACE_PAT = r"^([ \t]*)\S"
 const NEWLINE_WHITESPACE_PAT = r"\n([ \t]*)\S"
 
 """
-LX_COMMAND_PAT
+    LX_COMMAND_PAT
 
 Allowed latex command name.
 Underscore are allowed inside the command but not at extremities.
@@ -31,14 +31,14 @@ The star `*` is not allowed anywhere.
 const LX_COMMAND_PAT = r"^\\[a-zA-Z](?:[_a-zA-Z0-9]*[a-zA-Z0-9])?$"
 
 """
-CODE_LANG*_PAT
+    CODE_LANG*_PAT
 """
 const CODE_LANG3_PAT = r"^`{3}[a-zA-Z][a-zA-Z0-9-]*$"
 const CODE_LANG4_PAT = r"^`{4}[a-zA-Z][a-zA-Z0-9-]*$"
 const CODE_LANG5_PAT = r"^`{5}[a-zA-Z][a-zA-Z0-9-]*$"
 
 """
-HTML_ENTITY_PAT
+    HTML_ENTITY_PAT
 
 Pattern for an html entity.
 Ref: https://dev.w3.org/html5/html-author/charref.

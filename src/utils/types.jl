@@ -1,5 +1,5 @@
 """
-$(TYPEDEF)
+    AbstractSpan
 
 Section of a parent String with a specific meaning for Franklin. All subtypes of
 `AbstractBlock` must have an `ss` field corresponding to the substring associated to the
@@ -14,7 +14,7 @@ content(s::AbstractSpan)       = s.ss
 
 
 """
-$(TYPEDEF)
+    Token <: AbstractSpan
 
 A token is a subtype of `AbstractSpan` which typically determines the start or end of
 a block. It can also be used for special characters.
@@ -32,7 +32,7 @@ const EMPTY_TOKEN_SVEC = @view (Token[])[1:0]
 
 
 """
-$(TYPEDEF)
+    Block <: AbstractSpan
 
 Blocks are defined by an opening and a closing `Token`, they may be nested. For instance
 braces block are formed of an opening `{` and a closing `}`.
@@ -63,7 +63,7 @@ end
 TokenBlock(t::Token) = Block(t.name, t, EMPTY_TOKEN, t.ss, EMPTY_TOKEN_SVEC)
 
 """
-$(SIGNATURES)
+    TextBlock
 
 Spans of text which should be left to the fallback engine (such as CommonMark for
 instance). Text blocks can also have inner tokens that are non-block delimiters such as
@@ -81,7 +81,7 @@ function TextBlock(ss::SS, it=EMPTY_TOKEN_SVEC)::Block
 end
 
 """
-$(SIGNATURES)
+    content(block)
 
 Return the content of a `Block`, for instance the content of a `{...}` block would be
 `...`. Note EOS is a special '0 length' case to  deal with the fact that a text can end
@@ -99,7 +99,7 @@ function content(b::Block)::SS
 end
 
 """
-$(TYPEDEF)
+    BlockTemplate
 
 Template for a block to find. A block goes from a token with a given `opening` name to
 one of several possible `closing` names. Blocks can allow or disallow nesting. For
@@ -123,7 +123,7 @@ SingleTokenBlockTemplate(name::Symbol) = BlockTemplate(name, name, NO_CLOSING, f
 
 
 """
-$(TYPEDEF)
+    Group <: AbstractSpan
 
 A Group contains 1 or more more Blocks and will map to either a Paragraph or
 something else like a code block.

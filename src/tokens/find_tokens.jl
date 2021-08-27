@@ -1,5 +1,5 @@
 """
-$(SIGNATURES)
+    find_tokens(s, templates)
 
 Go through a text left to right, one (valid) char at the time and keep track
 of sequences of chars that match specific tokens. The list of tokens found is
@@ -18,8 +18,9 @@ function find_tokens(
     tokens = Token[]
     isempty(s) && return tokens
 
-    # start with a linereturn to allow proper treatment of blockquote lines
-    # items etc that would be right at the start
+    # start with a LINERETURN to allow proper treatment of special lines
+    # such as blockquote lines or items that could be right at the start
+    # see "process_line_return!"
     push!(tokens, Token(:LINE_RETURN, subs(s, 1:0)))
 
     head_idx = firstindex(s)
@@ -99,20 +100,49 @@ function find_tokens(
     eos = Token(:EOS, subs(s, end_idx))
     push!(tokens, eos)
 
+    # discard header tokens that are not at the start of a line or
+    # only preceded by whitespaces
+    process_header_tokens!(tokens)
     # validate or drop emphasis tokens
     process_emphasis_tokens!(tokens)
+    # discard autolink_close tokens which are preceded by a space
+    process_autolink_close_tokens!(tokens)
     return tokens
 end
 
 @inline find_tokens(s::String, templates) = find_tokens(subs(s), templates)
 
 
+"""
+    process_header_tokens!(tokens)
+
+Discard header tokens that are not at the start of a line or only preceded by
+whitespaces.
+"""
+function process_header_tokens!(tokens::Vector{Token})
+    remove = Int[]
+    @inbounds for (i, t) in enumerate(tokens)
+        if t.name in MD_HEADERS
+            ss = until_previous_line_return(t)
+            isempty(strip(ss)) || push!(remove, i)
+        end
+    end
+    deleteat!(tokens, remove)
+end
+
+
+"""
+    process_emphasis_tokens!(tokens)
+
+Process emphasis token candidates and either take them or discard them if
+they don't look correct.
+"""
 function process_emphasis_tokens!(tokens::Vector{Token})
     isempty(tokens) && return
     remove = Int[]
     ps = parent_string(first(tokens))
     N  = lastindex(ps)
-    for (i, t) in enumerate(tokens)
+    @inbounds for (i, t) in enumerate(tokens)
 
         if t.name == :EM_CAND
             _process_emph!(remove, tokens, i, ps,
@@ -155,4 +185,23 @@ function _process_emph!(remove::Vector{Int}, tokens::Vector{Token}, i::Int,
     else
         push!(remove, i)
     end
+    return
+end
+
+
+"""
+    process_autolink_close_tokens!(tokens)
+
+Discard :AUTOLINK_CLOSE that are not preceded by an ALPHA_LATIN character.
+"""
+function process_autolink_close_tokens!(tokens::Vector{Token})
+    isempty(tokens) && return
+    remove = Int[]
+    @inbounds for (i, t) in enumerate(tokens)
+        t.name == :AUTOLINK_CLOSE || continue
+        c = previous_chars(t)
+        (isempty(c) || first(c) ∉ ALPHA_LATIN) && push!(remove, i)
+    end
+    deleteat!(tokens, remove)
+    return
 end

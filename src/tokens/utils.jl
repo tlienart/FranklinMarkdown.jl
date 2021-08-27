@@ -1,5 +1,5 @@
 """
-EOS
+    EOS
 
 Mark the end of the string to parse (helps with corner cases where a token
 ends a document without being followed by a space).
@@ -7,7 +7,7 @@ ends a document without being followed by a space).
 const EOS = '\0'
 
 """
-SPACE_CHARS
+    SPACE_CHARS
 
 List of characters that correspond to a `\\s` regex + EOS.
 
@@ -16,35 +16,35 @@ Ref: https://github.com/JuliaLang/julia/blob/master/base/strings/unicode.jl.
 const SPACE_CHAR = [' ', '\r', '\n', '\t', '\f', '\v', EOS]
 
 """
-NUM_CHAR
+    NUM_CHAR
 
 Convenience list of characters corresponding to digits.
 """
 const NUM_CHAR = ['0':'9'...]
 
 """
-ALPHA_LATIN
+    ALPHA_LATIN
 
 Convenience list of characters corresponding to letters a-zA-Z.
 """
 const ALPHA_LATIN = ['a':'z'..., 'A':'Z'...]
 
 """
-ALPHANUM_LATIN
+    ALPHANUM_LATIN
 
 Convenience list of characters corresponding to a-zA-Z0-9.
 """
 const ALPHANUM_LATIN = vcat(ALPHA_LATIN, NUM_CHAR)
 
 """
-ALPHA_ALL
+    ALPHA_ALL
 
 All 10_000 first characters.
 """
 const ALPHA_ALL = [Char(i) for i in 1:10_000 if isletter(Char(i))]
 
 """
-ALPHANUM_ALL
+    ALPHANUM_ALL
 
 ALPHA_ALL and digits.
 """
@@ -52,7 +52,7 @@ const ALPHANUM_ALL = vcat(ALPHA_ALL, NUM_CHAR)
 
 
 """
-Chomp
+    Chomp
 
 Structure to encapsulate rules around a token such as whether it's fine at the
 end of a string, what are allowed following characters and, in the greedy
@@ -81,7 +81,7 @@ function Chomp(;
 end
 
 """
-TokenFinder
+    TokenFinder
 
 Structure to find a token keeping track of how many characters should be seen,
 some rules with respect to positioning or following chars (see Chomp) and
@@ -95,7 +95,7 @@ end
 TokenFinder(s::Int, c::Chomp) = TokenFinder(s, c, r"")
 
 """
-$(SIGNATURES)
+    fixed_lookahead(tokenfinder, candidate, at_eos)
 
 Applies a fixed lookahead step corresponding to a token finder.
 This is used as a helper function in `find_tokens`.
@@ -117,7 +117,7 @@ function fixed_lookahead(tf::TokenFinder, candidate::SS, at_eos::Bool)
 end
 
 """
-$(SIGNATURES)
+    greedy_lookahead(tokenfinder, nchars, probe_char)
 
 Applies a greedy lookahead step corresponding to a token finder.
 This is used as a helper function in `find_tokens`.
@@ -129,7 +129,7 @@ function greedy_lookahead(tf::TokenFinder, nchars::Int, probe_char::Char)
 end
 
 """
-$(SIGNATURES)
+    check(tokenfinder, ss)
 
 Check whether a substring verifies the regex of a token finder.
 """
@@ -139,7 +139,7 @@ end
 
 
 """
-$(SIGNATURES)
+    forward_match(refstring, next_chars, is_followed)
 
 Return a TokenFinder corresponding to a forward lookup checking if a sequence
 of characters matches a `refstring` and is followed (or not followed if
@@ -163,7 +163,7 @@ of characters matches a `refstring` and is followed (or not followed if
 end
 
 """
-$(SIGNATURES)
+    greedy_match(head_chars, tail_chars, check)
 
 Lazily accept the next char and stop as soon as it fails to verify `λ(c)`.
 """

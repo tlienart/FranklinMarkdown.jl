@@ -5,8 +5,8 @@
         """
     tokens = FP.find_tokens(s, FP.MD_TOKENS)
     names = [t.name for t in tokens]
-    @test count(e -> e == :LXB_OPEN, names) == 2
-    @test count(e -> e == :LXB_CLOSE, names) == 2
+    @test count(e -> e == :CU_BRACKET_OPEN, names) == 2
+    @test count(e -> e == :CU_BRACKET_CLOSE, names) == 2
     @test count(e -> e == :LINE_RETURN, names) == 3
     @test names[end] == :EOS
     @test length(tokens) == 2 + 2 + 3 + 1
@@ -37,8 +37,8 @@ end
     tokens = FP.find_tokens(s, FP.MD_TOKENS)
     deleteat!(tokens, 1)
 
-    check_tokens(tokens, [1, 2, 4, 6, 7], :LXB_OPEN)
-    check_tokens(tokens, [3, 5, 8, 9, 10], :LXB_CLOSE)
+    check_tokens(tokens, [1, 2, 4, 6, 7], :CU_BRACKET_OPEN)
+    check_tokens(tokens, [3, 5, 8, 9, 10], :CU_BRACKET_CLOSE)
 
     check_tokens(tokens, [11, 13, 14, 15], :LINE_RETURN)
 
@@ -82,16 +82,6 @@ end
     deleteat!(tokens, 1)
     @test tokens[1].name == :RAW_HTML
 
-    tokens = """[^1]: [^ab]""" |> FP.default_md_tokenizer
-    deleteat!(tokens, 1)
-    @test tokens[1].name == :FOOTNOTE_REF
-    @test tokens[2].name == :FOOTNOTE_REF
-
-    tokens = """]: [^ab]:""" |> FP.default_md_tokenizer
-    deleteat!(tokens, 1)
-    @test tokens[1].name == :LINK_DEF
-    @test tokens[2].name == :FOOTNOTE_REF
-
     tokens = """:foobar: and: this: bar""" |> FP.default_md_tokenizer
     deleteat!(tokens, 1)
     @test length(tokens) == 2
@@ -118,12 +108,12 @@ end
     @test tokens[1].name == :MATH_C_OPEN
     @test tokens[2].name == :MATH_C_CLOSE
     @test tokens[3].name == :LX_NEWENVIRONMENT
-    @test tokens[4].name == :LXB_OPEN
+    @test tokens[4].name == :CU_BRACKET_OPEN
     tokens = raw"\newcommand{a}{b}\begin{a}\end{a}" |> FP.default_md_tokenizer
     deleteat!(tokens, 1)
     @test tokens[1].name == :LX_NEWCOMMAND
-    @test tokens[2].name == :LXB_OPEN
-    @test tokens[4].name == :LXB_OPEN
+    @test tokens[2].name == :CU_BRACKET_OPEN
+    @test tokens[4].name == :CU_BRACKET_OPEN
     @test tokens[6].name == :LX_BEGIN
     @test tokens[9].name == :LX_END
     tokens = raw"\foo\bar{a}" |> FP.default_md_tokenizer
@@ -132,7 +122,7 @@ end
     @test tokens[2].name == :LX_COMMAND
     @test tokens[1].ss == raw"\foo"
     @test tokens[2].ss == raw"\bar"
-    @test tokens[4].name == :LXB_CLOSE
+    @test tokens[4].name == :CU_BRACKET_CLOSE
 
     tokens = raw"@def @@d0 @@d1,d-2 @@" |> FP.default_md_tokenizer
     deleteat!(tokens, 1)
@@ -141,12 +131,6 @@ end
     @test tokens[3].name == :DIV_OPEN
     @test tokens[3].ss == "@@d1,d-2"
     @test tokens[4].name == :DIV_CLOSE
-
-    tokens = raw"# ### ####### " |> FP.default_md_tokenizer
-    deleteat!(tokens, 1)
-    @test tokens[1].name == :H1_OPEN
-    @test tokens[2].name == :H3_OPEN
-    @test tokens[3].name == :H6_OPEN
 
     tokens = raw"&amp; & foo" |> FP.default_md_tokenizer
     deleteat!(tokens, 1)
@@ -160,11 +144,11 @@ end
     @test tokens[3].name == :MATH_A
     @test tokens[4].name == :MATH_A
 
-    tokens = raw"_$>_ _$<_ ___ **** ---" |> FP.default_md_tokenizer
-    deleteat!(tokens, 1)
-    @test tokens[1].name == :MATH_I_OPEN
-    @test tokens[2].name == :MATH_I_CLOSE
-    @test tokens[3].name == :EOS
+    # tokens = raw"_$>_ _$<_ ___ **** ---" |> FP.default_md_tokenizer
+    # deleteat!(tokens, 1)
+    # @test tokens[1].name == :MATH_I_OPEN
+    # @test tokens[2].name == :MATH_I_CLOSE
+    # @test tokens[3].name == :EOS
 end
 
 @testset "MD-code" begin

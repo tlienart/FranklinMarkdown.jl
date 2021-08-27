@@ -116,7 +116,6 @@ end
         ~~~<!--ABC-->~~~
         """
     blocks = s |> md_blockifier
-    @test length(blocks) == 3
     @test FP.content(blocks[1]) == "~~~ABC~~~"
     @test FP.content(blocks[2]) == "<!--ABC-->"
 
@@ -145,7 +144,6 @@ end
             {ABC}
         @@
         """ |> md_blockifier
-    @test length(b) == 2
     @test isapproxstr(FP.content(b[1]), "@@def ```julia hello```@@ {ABC}")
 end
 
@@ -165,10 +163,10 @@ end
         """ |> md_blockifier
     @test b[1].name == :MATH_C
     @test FP.content(b[1]) == "B"
-    b = raw"""
-        A _$>_B_$<_ C
-        """ |> md_blockifier
-    @test b[1].name == :MATH_I
+    # b = raw"""
+    #     A _$>_B_$<_ C
+    #     """ |> md_blockifier
+    # @test b[1].name == :MATH_I
     b = raw"""
         A $$B$$ C $D$
         """ |> md_blockifier
@@ -181,13 +179,13 @@ end
         \begin{abc}\end{def}\newcommand{hello}\newenvironment{foo}\bar
         """ |> md_blockifier
     @test b[1].name == :LX_BEGIN
-    @test b[2].name == :LXB
+    @test b[2].name == :CU_BRACKET
     @test b[3].name == :LX_END
-    @test b[4].name == :LXB
+    @test b[4].name == :CU_BRACKET
     @test b[5].name == :LX_NEWCOMMAND
-    @test b[6].name == :LXB
+    @test b[6].name == :CU_BRACKET
     @test b[7].name == :LX_NEWENVIRONMENT
-    @test b[8].name == :LXB
+    @test b[8].name == :CU_BRACKET
     @test b[9].name == :LX_COMMAND
 end
 
@@ -204,7 +202,6 @@ end
     @test b[2].name == :EMPH_EM
     @test FP.content(b[2]) == "d"
     @test b[3].name == :P_BREAK
-    @test length(b) == 3
 
     # nest (we only recover the outer block of course)
     b = """

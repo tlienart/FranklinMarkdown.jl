@@ -1,5 +1,5 @@
 """
-$(SIGNATURES)
+    partition(s, tokenizer, blockifier, tokens; postproc)
 
 Go through a piece of text, either with an existing tokenization or an empty
 one, tokenize if needed with the given tokenizer, blockify with the given
@@ -45,6 +45,7 @@ function partition(
     if to(s) > to(last_block)
         push!(parts, TextBlock(subs(parent, next_index(last_block), to(s)), tokens))
     end
+
     return postproc(parts)
 end
 @inline partition(s::String, a...; kw...) = partition(subs(s), a...; kw...)
@@ -52,12 +53,12 @@ end
 
 
 """
-$SIGNATURES
+    tokenizer_factory(; templates, postproc)
 
 Arguments:
 ----------
     templates: a dictionary or matchers to find tokens.
-    postprocess: a function to apply on tokens after they've been found e.g. to merge
+    postproc: a function to apply on tokens after they've been found e.g. to merge
         them or filter them etc.
 
 Returns:
@@ -66,9 +67,9 @@ Returns:
 """
 @inline function tokenizer_factory(;
             templates::LittleDict=MD_TOKENS,
-            postprocess::Function=identity
+            postproc::Function=identity
             )::Function
-    return s -> postprocess(find_tokens(s, templates))
+    return s -> postproc(find_tokens(s, templates))
 end
 
 default_md_tokenizer   = tokenizer_factory()
@@ -76,23 +77,31 @@ default_html_tokenizer = tokenizer_factory(templates=HTML_TOKENS)
 default_math_tokenizer = tokenizer_factory(templates=MD_MATH_TOKENS)
 
 """
-$SIGNATURES
+    blockifier(; templates)
 
 Arguments:
 ----------
     templates: a dictionary or matchers to find blocks.
-    postprocess: a function to apply on the blocks after they've been found.
+    postproc: a function to apply on the blocks after they've been found.
 
 Returns:
 --------
     A function that takes tokens and returns a vector of blocks.
 """
-@inline function blockifier_factory(; templates::LittleDict=MD_BLOCKS)::Function
-    return t -> find_blocks(t, templates)
+@inline function blockifier_factory(;
+                    first_pass_templates=LittleDict{Symbol, BlockTemplate}(),
+                    second_pass_templates=LittleDict{Symbol, BlockTemplate}()
+                    )::Function
+    return t -> find_blocks(t, first_pass_templates, second_pass_templates)
 end
 
-default_md_blockifier   = blockifier_factory()
-default_html_blockifier = blockifier_factory(templates=HTML_BLOCKS)
+default_md_blockifier = blockifier_factory(;
+    first_pass_templates=MD_FIRST_PASS_TEMPLATES,
+    second_pass_templates=MD_SECOND_PASS_TEMPLATES
+)
+default_html_blockifier = blockifier_factory(;
+    first_pass_templates=HTML_TEMPLATES
+)
 
 @inline default_md_partition(e; kw...) =
     partition(e, default_md_tokenizer, default_md_blockifier;
@@ -108,14 +117,14 @@ default_html_blockifier = blockifier_factory(templates=HTML_BLOCKS)
 function default_md_postproc!(blocks::Vector{Block})
     form_blockquotes!(blocks)
     form_lists!(blocks)
-    form_tables!(blocks)    
+    form_tables!(blocks)
     remove_inner!(blocks)
     return blocks
 end
 
 
 """
-$SIGNATURES
+    md_grouper(blocks, cases, skip)
 
 Groups text and inline blocks; this helps in forming paragraphs.
 """
@@ -138,13 +147,13 @@ function md_grouper(
 
     groups   = Group[]
     cur_role = :none
-    cur_head = 1
+    cur_head = 0
     i        = 1
 
     while i <= length(blocks)
         bi = blocks[i]
-        # does the block correspond to a role?
         br = :none
+        # does the block correspond to a role? [:paragraph, :table, :list]
         for (role, names) in cases
             if bi.name in names
                 br = role
@@ -152,26 +161,35 @@ function md_grouper(
             end
         end
 
-        switch = !(br == cur_role != :none)
-        if switch
-            if cur_head <= i-1
-                push!(groups, Group(blocks[cur_head:i-1]; role=cur_role))
-            end
-            cur_role = br
-            cur_head = i
-        end
-        if i == length(blocks)
-            if switch
+        if br == :none
+            _close_open_group!(groups, blocks, cur_head, i, cur_role)
+            push!(groups, Group(blocks[i]; role=:none))
+            cur_head = 0
+            cur_role = :none
+
+        elseif br != cur_role
+            # role is different and not 'none'
+            _close_open_group!(groups, blocks, cur_head, i, cur_role)
+            if i == length(blocks)
                 push!(groups, Group(blocks[i]; role=br))
-            else
-                push!(groups[end].blocks, blocks[i])
             end
+            cur_head = i
+            cur_role = br
+        elseif i == length(blocks)
+            _close_open_group!(groups, blocks, cur_head, i+1, cur_role)
         end
 
         i += 1
     end
 
-
     # finalise removing blocks to skip (p-break).
     return filter!(g -> first(g.blocks).name ∉ skip, groups)
+end
+
+
+function _close_open_group!(groups, blocks, cur_head, i, cur_role)
+    if cur_head != 0
+        push!(groups, Group(blocks[cur_head:i-1]; role=cur_role))
+    end
+    return
 end

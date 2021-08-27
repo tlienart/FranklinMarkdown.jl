@@ -1,5 +1,5 @@
 """
-HTML_TOKENS
+    HTML_TOKENS
 
 Dictionary of tokens for HTML. See also [`MD_TOKENS`](@ref).
 """

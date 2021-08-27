@@ -1,5 +1,5 @@
 """
-MD_TOKENS
+    MD_TOKENS
 
 Dictionary of tokens for Markdown. Note that for each, there may be several
 possibilities to consider in which case the order is important: the first case
@@ -10,18 +10,28 @@ Dev: F_* are greedy match, see `md_utils.jl`.
 Try: https://spec.commonmark.org/dingus
 """
 const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
+    '(' => [
+        forward_match("(") => :BRACKET_OPEN
+        ],
+    ')' => [
+        forward_match(")") => :BRACKET_CLOSE
+        ],
     '{' => [
-        forward_match("{")  => :LXB_OPEN
+        forward_match("{")  => :CU_BRACKET_OPEN
         ],
     '}' => [
-        forward_match("}")  => :LXB_CLOSE,
+        forward_match("}")  => :CU_BRACKET_CLOSE,
         ],
     '\n' => [
         F_LINE_RETURN       => :LINE_RETURN,
         forward_match("\n") => :LINE_RETURN,
         ],
     '<' => [
-        forward_match("<!--") => :COMMENT_OPEN
+        forward_match("<!--")           => :COMMENT_OPEN,
+        forward_match("<", ALPHA_LATIN) => :AUTOLINK_OPEN
+        ],
+    '>' => [
+        forward_match(">") => :AUTOLINK_CLOSE
         ],
     '-' => [
         forward_match("-->") => :COMMENT_CLOSE,
@@ -33,10 +43,10 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("~~~") => :RAW_HTML
         ],
     '[' => [
-        F_FOOTNOTE => :FOOTNOTE_REF, # [^...](:)? defs will be separated after
+        forward_match("[") => :SQ_BRACKET_OPEN,
         ],
     ']' => [
-        forward_match("]: ") => :LINK_DEF,
+        forward_match("]")  => :SQ_BRACKET_CLOSE,
         ],
     ':' => [
         F_EMOJI => :CAND_EMOJI,
@@ -107,8 +117,8 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("\$\$")             => :MATH_B,  # $$⎵*
         ],
     '_' => [
-        forward_match("_\$>_")             => :MATH_I_OPEN,  # internal when resolving a lx command
-        forward_match("_\$<_")             => :MATH_I_CLOSE, # within mathenv (e.g. \R <> \mathbb R)
+        # forward_match("_\$>_")             => :MATH_I_OPEN,  # internal when resolving a lx command
+        # forward_match("_\$<_")             => :MATH_I_CLOSE, # within mathenv (e.g. \R <> \mathbb R)
         forward_match("___", ['_'], false) => :EM_STRONG_CAND,
         forward_match("__",  ['_'], false) => :STRONG_CAND,
         forward_match("_",   ['_'], false) => :EM_CAND,
@@ -140,10 +150,10 @@ Tokens that should be considered within a math environment.
 """
 const MD_MATH_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
     '{' => [
-        forward_match("{") => :LXB_OPEN
+        forward_match("{") => :CU_BRACKET_OPEN
         ],
     '}' => [
-        forward_match("}") => :LXB_CLOSE,
+        forward_match("}") => :CU_BRACKET_CLOSE,
         ],
     '\\' => [
         forward_match("\\begin", ['{']) => :LX_BEGIN,
@@ -154,15 +164,29 @@ const MD_MATH_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
 
 
 """
-END_OF_LINE
+    END_OF_LINE
 
 All tokens that indicate the end of a line.
 """
 const END_OF_LINE = (:LINE_RETURN, :EOS)
 
 """
-MD_IGNORE
+    MD_IGNORE
 
 Tokens that may be left over after partition but should be ignored in text blocks.
 """
 const MD_IGNORE = (:LINE_RETURN,)
+
+"""
+    MD_HEADERS
+
+Tokens for headers.
+"""
+const MD_HEADERS = (
+    :H1_OPEN,
+    :H2_OPEN,
+    :H3_OPEN,
+    :H4_OPEN,
+    :H5_OPEN,
+    :H6_OPEN,
+)

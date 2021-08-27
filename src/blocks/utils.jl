@@ -1,5 +1,5 @@
 """
-$(SIGNATURES)
+    get_classes(divblock)
 
 Return the classe(s) of a div block. E.g. `@@c1,c2` will return `"c1 c2"` so
 that it can be injected in a `<div class="..."`.
@@ -9,7 +9,7 @@ function get_classes(b::Block)::String
 end
 
 """
-$(SIGNATURES)
+    prepare_text(blocks)
 
 For a text block, replace the remaining tokens for special characters.
 """
@@ -33,7 +33,7 @@ function prepare_text(b::Block)::String
 end
 
 """
-$(SIGNATURES)
+    insert(token)
 
 For tokens representing special characters, insert the relevant string.
 """

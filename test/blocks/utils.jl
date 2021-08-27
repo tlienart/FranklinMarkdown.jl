@@ -15,7 +15,6 @@ end
         \ \# \@ \` \{ \} \* \_
         Hello
         """ |> FP.default_md_partition
-    @test length(p) == 2
     s = FP.prepare_text(p[1])
     @test s isa String
     @test isapproxstr(s, """
