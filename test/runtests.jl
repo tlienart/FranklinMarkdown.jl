@@ -4,15 +4,6 @@ FPE = FP.FranklinParserException
 
 include("testutils.jl")
 
-@testset "concrete" begin
-    @test isconcretetype(FP.SS)
-    @test isconcretetype(FP.SubVector{FP.Token})
-    @test isconcretetype(typeof(FP.EMPTY_TOKEN_SVEC))
-    @test isconcretetype(FP.Token)
-    @test isconcretetype(FP.Block)
-    @test isconcretetype(Vector{FP.Block})
-end
-
 @testset "utils" begin
     include("utils/strings.jl")
     include("utils/types.jl")
@@ -41,3 +32,10 @@ end
 #
 # -- links
 #
+# testing specs: *[foo*](url) should be a link
+# --> brackets should be done on first pass without
+# deactivating tokens, then links should be formed and
+# tokens that are inside links should be deactivated
+
+# XXX emphasis is incorrect, it won't capture a*b*c correctly; we should use something like maths
+# basically only when it's surrounded by spaces on both sides is it not valid.

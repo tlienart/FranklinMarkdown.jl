@@ -6,33 +6,59 @@ matching templates. The blocks are sorted by order of appearance and inner
 blocks are weeded out.
 """
 function find_blocks(
-            tokens::SubVector{Token},
-            first_pass_templates::T,
-            second_pass_templates::T
+            tokens::SubVector{Token};
+            is_md::Bool=true
             )::Vector{Block} where T <: LittleDict{Symbol, BlockTemplate}
 
     blocks = Block[]
     isempty(tokens) && return blocks
     is_active = ones(Bool, length(tokens))
 
-    _find_blocks!(blocks, tokens, first_pass_templates, is_active)
-    _find_blocks!(blocks, tokens, second_pass_templates, is_active)
+    # ------------------------------------------------------------------------
+    if is_md
+        # ======== PASS 1 ==============
+        # basically all container blocks
+        _find_blocks!(blocks, tokens, MD_PASS1_TEMPLATES, is_active,
+                      process_linereturn=true)
 
-    # remove blocks inside larger blocks, leave that to the recursive process
-    # the exception is if the outer block is a bracket
+        # ======== PASS 2 ==============
+        # brackets which may form a link
+        dt = _find_blocks!(blocks, tokens, MD_PASS2_TEMPLATES, is_active)
+        form_links!(blocks)
+        # leftover :bracket blocks can be discarded and the tokens inside them
+        # reactivated;
+        reactivate = Vector{Pair{Int}}()
+        for b in blocks
+            if b.name == :BRACKET
+                push!(reactivate, from(b), to(b))
+            end
+        end
+        for i in dt
+            # is the token inside one of the reactivated range?
+            toki = tokens[i]
+            fi   = from(toki)
+            ti   = to(toki)
+            is_active[i] = any(r -> r.first < fi && ti < r.second, reactivate)
+        end
+
+        # ======== PASS 3 ==============
+        # remaining stuff e.g. emphasis tokens
+        _find_blocks!(blocks, tokens, MD_PASS3_TEMPLATES, is_active)
+
+    # ------------------------------------------------------------------------
+    else
+        # for HTML we barely do anything, a single pass is plenty enough
+        _find_blocks!(blocks, tokens, HTML_TEMPLATES, is_active)
+    end
+
+    # remove blocks inside larger blocks (recursion)
     sort!(blocks, by=from)
     remove_inner!(blocks)
 
-    # # assemble links/imgs/refs and discard brackets that are left and not
-    # # part of such
-    # form_links!(blocks)
+    # forming of double braces is done here to avoid clash with latex curly braces
+    is_md && form_dbb!(blocks)
 
-    # assemble double brace blocks; this has to be done here to avoid
-    # ambiguity with stray {{ or }} in Lx context. Note that we don't
-    # need to re-call `remove_inner!` as they've already been removed
-    # as part of the CU_BRACKET formation.
-    form_dbb!(blocks)
-    return sort!(blocks, by=from)
+    return blocks
 end
 
 @inline find_blocks(t::Vector{Token}, a...) = find_blocks(subv(t), a...)
@@ -42,16 +68,27 @@ function _find_blocks!(
             blocks::Vector{Block},
             tokens::SubVector{Token},
             templates::LittleDict{Symbol, BlockTemplate},
-            is_active::Vector{Bool}
-            )
-    isempty(templates) && return
+            is_active::Vector{Bool};
+            process_linereturn::Bool=false
+            )::Vector{Int}
+    #
+    # keep track of what was deactivated, this is useful for md parsing
+    # when discarding BRACKET tokens and re-enabling the tokens inside them;
+    # only the tokens deactivated by it should be re-enabled.
+    # so for instance:
+    #   (abc _@@d *g* @@_ ef) --> first pass will deactivate `*`
+    #   --> we should only re-enable `_`.
+    #
+    deactivated_tokens = Int[]
+
+    isempty(templates) && return deactivated_tokens
     template_keys = keys(templates)
     n_tokens = length(tokens)
     @inbounds for i in eachindex(tokens)
         is_active[i] || continue
         opening = tokens[i].name
 
-        if opening == :LINE_RETURN
+        if process_linereturn && opening == :LINE_RETURN
             process_line_return!(blocks, tokens, i)
             continue
         elseif opening ∉ template_keys
@@ -100,8 +137,11 @@ function _find_blocks!(
         push!(blocks, new_block)
 
         # deactivate all tokens in the span of the block
-        is_active[i:closing_index] .= false
+        to_deactivate = i:closing_index
+        is_active[to_deactivate] .= false
+        append!(deactivated_tokens, collect(to_deactivate))
     end
+    return deactivated_tokens
 end
 
 
@@ -194,16 +234,97 @@ end
 
 
 """
-    form_links(blocks)
+    form_links!(blocks)
 
-img: ![1](2)
-    ...
-link: [1](2) or [1](2 3)
-    1 can be empty, can contain inline elements
+Here we catch the following:
+
+    * [A]     LINK_A   for <a href="ref(A)">html(A)</a>
+    * [A](B)  LINK_AB  for <a href="escape(B)">html(A)</a>
+    * ![A]    IMG_A    <img src="ref(A)" alt="esc(A)" />
+    * ![A](B) IMG_AB   <img src="escape(B)" alt="esc(A)" />
+    * [A]: B  REF      (--> aggregate B, will need to distinguish later)
+
+where 'A' is necessarily non empty, 'B' may be empty.
+
+Note: currently we don't support links with titles such as the following out of simplicity:
+
+* [A]: B C
+* [A](B C)
+
+this allows to not have to check whether B is a link and C is text. If the user wants
+links with titles, they should create a command for it.
+
+We also do not support link destinations between <...>.
 """
 function form_links!(blocks::Vector{Block})
-    # finalise: brackets that are not part of links should be removed
-    filter!(b.name ∉ (:BRACKET, :SQ_BRACKET), blocks)
+    isempty(blocks) && return
+    # 1. look for sq brackets
+    # 2. see whether they're preceded by ! XOR followed by : --> ![] / []:
+    # 3. for [...]: reform the block as a REF and done
+    # 4. for ![] or [], check if there's a bracket immediately after it
+    #   4.a ![]() or []() --> IMG_AB, LINK_AB
+    #   4.b ![] or []     --> IMG_A, LINK_A
+    nblocks = length(blocks)
+    remove  = Int[]
+    i       = 1
+    nb      = blocks[i]
+    ps      = parent_string(nb)
+
+    while i < nblocks
+        b  = nb
+        nb = blocks[i+1]
+        if b.name == :SQ_BRACKETS
+            pchar = previous_chars(b)
+            nchar = next_chars(b)
+
+            # NOTE: ![]: --> ![] takes precedence.
+            img = pchar === ['!']
+            ref = !img && nchar === [':']
+            lnk = nchar === ['('] && nb.name == :BRACKET
+
+            # ref ==> REF, stop
+            #
+            # img  & !lnk => IMG_A
+            # img  & lnk  => IMG_AB
+            # !img & !lnk => LINK_A
+            # !img & lnk  => LINK_AB
+
+            if ref
+                # [...]:
+                blocks[i] = Block(
+                    :REF,
+                    subs(ps, from(b), next_index(b))
+                )
+            else
+                if img
+                    if lnk
+                        blocks[i] = Block(
+                            :IMG_AB,
+                            subs(ps, prev_index(b), to(nb))
+                        )
+                    else
+                        blocks[i] = Block(
+                            :IMG_A,
+                            subs(ps, prev_index(b), to(b))
+                        )
+                    end
+                else
+                    if lnk
+                        blocks[i] = Block(
+                            :LINK_AB,
+                            subs(ps, from(b), to(nb))
+                        )
+                    else
+                        blocks[i] = Block(
+                            :LINK_A,
+                            subs(ps, from(b), to(b))
+                        )
+                    end
+                end
+            end
+        end
+        i += 1
+    end
     return
 end
 

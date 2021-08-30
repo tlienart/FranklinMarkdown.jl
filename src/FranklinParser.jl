@@ -7,7 +7,7 @@ const SS = SubString{String}
 const SubVector{T} = SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}
 
 subv(v::Vector{T}) where T = @view v[1:length(v)]
-
+subv(v::SubVector{T}) where T = v
 
 include("utils/strings.jl")
 include("utils/types.jl")
@@ -20,7 +20,6 @@ include("tokens/md_utils.jl")
 include("tokens/_md_tokens.jl")
 include("tokens/_html_tokens.jl")
 
-
 # see partition, we put this here because it's also used in 'form.jl'
 const INLINE_BLOCKS = [
     :TEXT,
@@ -31,7 +30,8 @@ const INLINE_BLOCKS = [
     :CODE_INLINE,                             # `...`
     :MATH_A,                                  # $...$
     # :MATH_I,                                # _\$>_..._\$<_
-    :AUTOLINK, :LINK, :IMG,                   # <...> [...](...) ![...](...)
+    :AUTOLINK,                                # <...>
+    :LINK_A, :LINK_AB, :IMG_A, :IMG_AB,       # [...](...) ![...](...)
     :CU_BRACKET, :LX_COMMAND,
     :DBB,
     # derived by reconstructing commands (Franklin)

@@ -119,9 +119,9 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
     '_' => [
         # forward_match("_\$>_")             => :MATH_I_OPEN,  # internal when resolving a lx command
         # forward_match("_\$<_")             => :MATH_I_CLOSE, # within mathenv (e.g. \R <> \mathbb R)
-        forward_match("___", ['_'], false) => :EM_STRONG_CAND,
-        forward_match("__",  ['_'], false) => :STRONG_CAND,
-        forward_match("_",   ['_'], false) => :EM_CAND,
+        forward_match("___", ['_'], false) => :EM_STRONG,
+        forward_match("__",  ['_'], false) => :STRONG,
+        forward_match("_",   ['_'], false) => :EM,
         ],
     '`' => [
         forward_match("`",  ['`'], false)   => :CODE_SINGLE,  # `⎵
@@ -137,9 +137,9 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         F_LANG_5 => :CODE_LANG5,   # `````lang*
         ],
     '*' => [
-        forward_match("***", ['*'], false) => :EM_STRONG_CAND,
-        forward_match("**",  ['*'], false) => :STRONG_CAND,
-        forward_match("*",   ['*'], false) => :EM_CAND,
+        forward_match("***", ['*'], false) => :EM_STRONG,
+        forward_match("**",  ['*'], false) => :STRONG,
+        forward_match("*",   ['*'], false) => :EM,
         ]
     )  # end dict
 

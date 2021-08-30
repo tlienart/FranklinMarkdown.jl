@@ -136,7 +136,7 @@ cm_parser = CM.enable!(CM.disable!(CM.Parser(), CM.IndentedCodeBlockRule()), Ski
   * [ ] parsing
   * [ ] processing
   * [ ] tests
-* Entities
+* Entities https://www.amp-what.com/unicode/search/
   * [ ] parsing
   * [ ] processing
   * [ ] tests

@@ -50,3 +50,6 @@ form_lists!(blocks::Vector{Block}) =
 
 form_tables!(blocks::Vector{Block}) =
     aggregate!(blocks, [:TABLE_ROW_CAND], TABLE_ACC, :TABLE)
+
+form_refs!(blocks::Vector{Block}) =
+    aggregate!(blocks, [:REF], INLINE_BLOCKS, :REF)

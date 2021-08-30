@@ -24,7 +24,7 @@ function prepare_text(b::Block)::String
     head = from(c)
     for t in b.inner_tokens
         t.name in MD_IGNORE && continue
-        write(io, subs(parent, head, previous_index(t)))
+        write(io, subs(parent, head, prev_index(t)))
         write(io, insert(t))
         head = next_index(t)
     end

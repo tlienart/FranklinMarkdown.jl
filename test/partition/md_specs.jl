@@ -331,8 +331,12 @@ end
     @test ct(p[5]) == "f"
     @test p[6].name == :EMPH_EM_STRONG
     @test ct(p[6]) == "g"
-    @test p[end-2].name == :EMPH_STRONG
-    @test ct(p[end-2]) == "b _c_ d"
+    @test p[end-1].name == :EMPH_STRONG
+    @test ct(p[end-1]) == "b _c_ d"
+
+    p = "a*b*c*" |> md_blockifier
+    @test ct(p[1]) == "b"
+    @test length(p) == 1  # last * is left dangling
 end
 
 

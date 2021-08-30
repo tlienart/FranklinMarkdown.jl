@@ -18,7 +18,7 @@ function check_tokens(tokens, idx, name)
 end
 
 toks    = FP.default_md_tokenizer
-slice   = FP.default_md_partition
+slice   = FP.md_partition
 text(b) = FP.prepare_text(b)
 ct(b)   = FP.content(b)
 ctf(b::FP.Group) = FP.content(first(b.blocks))

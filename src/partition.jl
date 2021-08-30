@@ -1,15 +1,23 @@
 """
-    partition(s, tokenizer, blockifier, tokens; postproc)
+    partition(s, tokenizer, blockifier, tokens; discard, postproc)
 
 Go through a piece of text, either with an existing tokenization or an empty
 one, tokenize if needed with the given tokenizer, blockify with the given
 blockifier, and return a partition of the text into a vector of Blocks.
+
+## Args
+
+## KwArgs
+
+    * discard:  list of token names to ignore (e.g. if want to allow math)
+    * postproc: postprocessing to
 """
 function partition(
             s::SS,
             tokenizer::Function,
             blockifier::Function,
             tokens::SubVector{Token}=EMPTY_TOKEN_SVEC;
+            discard::Vector{Symbol}=Symbol[],
             postproc::Function=identity
             )::Vector{Block}
 
@@ -21,31 +29,41 @@ function partition(
     if length(tokens) == 1   # only the EOS token
         return [TextBlock(s)]
     end
+
+    # Discard tokens if desired
+    isempty(discard) || filter!(t -> t.name ∈ discard, tokens)
+
+    # form Blocks
     blocks = blockifier(tokens)
     isempty(blocks) && return [TextBlock(s, tokens)]
 
+    # Form a full partition with text blocks and blocks.
     parent = parent_string(s)
+    first_block = blocks[1]
+    last_block  = blocks[end]
 
     # add Text at beginning if first block is not there
-    first_block = blocks[1]
-    last_block = blocks[end]
     if from(s) < from(first_block)
-        tb = TextBlock(subs(parent, from(s), previous_index(first_block)), tokens)
+        tb = TextBlock(subs(parent, from(s), prev_index(first_block)), tokens)
         push!(parts, tb)
     end
+
+    # Go through blocks and add text with what's between them
     for i in 1:length(blocks)-1
         bi   = blocks[i]
         bip1 = blocks[i+1]
         push!(parts, blocks[i])
-        inter = subs(parent, next_index(bi), previous_index(bip1))
+        inter = subs(parent, next_index(bi), prev_index(bip1))
         isempty(inter) || push!(parts, TextBlock(inter, tokens))
     end
     push!(parts, last_block)
+
     # add Text at the end if last block is not there
     if to(s) > to(last_block)
         push!(parts, TextBlock(subs(parent, next_index(last_block), to(s)), tokens))
     end
 
+    # Postprocessing (e.g. forming blockquotes, lists etc)
     return postproc(parts)
 end
 @inline partition(s::String, a...; kw...) = partition(subs(s), a...; kw...)
@@ -66,58 +84,34 @@ Returns:
     A function that takes a string and returns a vector of tokens.
 """
 @inline function tokenizer_factory(;
-            templates::LittleDict=MD_TOKENS,
-            postproc::Function=identity
+            templates::LittleDict=MD_TOKENS
             )::Function
-    return s -> postproc(find_tokens(s, templates))
+    return s -> find_tokens(s, templates)
 end
 
 default_md_tokenizer   = tokenizer_factory()
-default_html_tokenizer = tokenizer_factory(templates=HTML_TOKENS)
 default_math_tokenizer = tokenizer_factory(templates=MD_MATH_TOKENS)
+default_html_tokenizer = tokenizer_factory(templates=HTML_TOKENS)
 
-"""
-    blockifier(; templates)
+default_md_blockifier   = t -> find_blocks(subv(t), is_md=true)
+default_html_blockifier = t -> find_blocks(subv(t), is_md=false)
 
-Arguments:
-----------
-    templates: a dictionary or matchers to find blocks.
-    postproc: a function to apply on the blocks after they've been found.
-
-Returns:
---------
-    A function that takes tokens and returns a vector of blocks.
-"""
-@inline function blockifier_factory(;
-                    first_pass_templates=LittleDict{Symbol, BlockTemplate}(),
-                    second_pass_templates=LittleDict{Symbol, BlockTemplate}()
-                    )::Function
-    return t -> find_blocks(t, first_pass_templates, second_pass_templates)
-end
-
-default_md_blockifier = blockifier_factory(;
-    first_pass_templates=MD_FIRST_PASS_TEMPLATES,
-    second_pass_templates=MD_SECOND_PASS_TEMPLATES
-)
-default_html_blockifier = blockifier_factory(;
-    first_pass_templates=HTML_TEMPLATES
-)
-
-@inline default_md_partition(e; kw...) =
+@inline md_partition(e; kw...) =
     partition(e, default_md_tokenizer, default_md_blockifier;
               postproc=default_md_postproc!, kw...)
 
-@inline default_html_partition(e; kw...) =
-    partition(e, default_html_tokenizer, default_html_blockifier; kw...)
-
-@inline default_math_partition(e; kw...) =
+@inline math_partition(e; kw...) =
     partition(e, default_math_tokenizer, default_md_blockifier; kw...)
+
+@inline html_partition(e; kw...) =
+    partition(e, default_html_tokenizer, default_html_blockifier; kw...)
 
 
 function default_md_postproc!(blocks::Vector{Block})
     form_blockquotes!(blocks)
     form_lists!(blocks)
     form_tables!(blocks)
+    # form_refs!(blocks)
     remove_inner!(blocks)
     return blocks
 end
@@ -126,7 +120,7 @@ end
 """
     md_grouper(blocks, cases, skip)
 
-Groups text and inline blocks; this helps in forming paragraphs.
+Groups text and inline blocks after partition, this helps in forming paragraphs.
 """
 function md_grouper(
             blocks::Vector{Block},
@@ -138,7 +132,7 @@ function md_grouper(
                 ],
                 :table => [
                     :TABLE_ROW_CAND
-                ]
+                ],
             ),
             skip::Vector{Symbol}=[
                 :P_BREAK

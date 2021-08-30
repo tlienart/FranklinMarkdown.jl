@@ -28,3 +28,12 @@ end
     @test isa(t, FP.AbstractSpan)
     @test t.ss == "def"
 end
+
+@testset "concrete" begin
+    @test isconcretetype(FP.SS)
+    @test isconcretetype(FP.SubVector{FP.Token})
+    @test isconcretetype(typeof(FP.EMPTY_TOKEN_SVEC))
+    @test isconcretetype(FP.Token)
+    @test isconcretetype(FP.Block)
+    @test isconcretetype(Vector{FP.Block})
+end

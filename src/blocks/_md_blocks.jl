@@ -1,21 +1,11 @@
-const CAN_BE_LEFT_OPEN = (
-    :EM_OPEN,
-    :STRONG_OPEN,
-    :EM_STRONG_OPEN,
-    :BRACKET_OPEN,
-    # :CU_BRACKET_OPEN,  ==> user must use \{
-    :SQ_BRACKET_OPEN,
-    :AUTOLINK_OPEN
-)
-
 # see utils/types/BlockTemplate
 const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
    BlockTemplate(:COMMENT,         :COMMENT_OPEN,   :COMMENT_CLOSE  ),
    BlockTemplate(:RAW_HTML,        :RAW_HTML,       :RAW_HTML       ),
    BlockTemplate(:MD_DEF_BLOCK,    :MD_DEF_BLOCK,   :MD_DEF_BLOCK   ),
-   BlockTemplate(:EMPH_EM,         :EM_OPEN,        :EM_CLOSE       ),
-   BlockTemplate(:EMPH_STRONG,     :STRONG_OPEN,    :STRONG_CLOSE   ),
-   BlockTemplate(:EMPH_EM_STRONG,  :EM_STRONG_OPEN, :EM_STRONG_CLOSE),
+   BlockTemplate(:EMPH_EM,         :EM,             :EM             ),
+   BlockTemplate(:EMPH_STRONG,     :STRONG,         :STRONG         ),
+   BlockTemplate(:EMPH_EM_STRONG,  :EM_STRONG,      :EM_STRONG      ),
    BlockTemplate(:AUTOLINK,        :AUTOLINK_OPEN,  :AUTOLINK_CLOSE ),
    # these blocks are disabled in find_blocks if they're not attached in
    # a link/img/... context
@@ -59,9 +49,20 @@ const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
    SingleTokenBlockTemplate(:LX_END)
    ])
 
+#
 # NOTE: {{...}} blocks (DBB_BLOCK) are processed separately, see find_blocks
+#
 
-const MD_FIRST_PASS_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
+const CAN_BE_LEFT_OPEN = (
+    :EM,
+    :STRONG,
+    :EM_STRONG,
+    :BRACKET_OPEN,
+    :AUTOLINK_OPEN
+)
+
+# First pass: container blocks etc
+const MD_PASS1_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
    o => bt for (o, bt) in MD_BLOCKS
    if bt.name in (
          :COMMENT,
@@ -70,12 +71,23 @@ const MD_FIRST_PASS_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
          :CODE_BLOCK_LANG, :CODE_BLOCK!, :CODE_BLOCK, :CODE_INLINE,
          :MATH_A, :MATH_B, :MATH_C,
          :DIV,
+         :AUTOLINK,
          :CU_BRACKET,
          :H1, :H2, :H3, :H4, :H5, :H6,
       )
 )
 
-const MD_SECOND_PASS_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
+# Second pass: links etc
+const MD_PASS2_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
    o => bt for (o, bt) in MD_BLOCKS
-   if o ∉ keys(MD_FIRST_PASS_TEMPLATES)
+   if bt.name in (
+         :BRACKET,
+         :SQ_BRACKET
+      )
+)
+
+# Last pass: the rest
+const MD_PASS3_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
+   o => bt for (o, bt) in MD_BLOCKS
+   if o ∉ union(keys(MD_PASS1_TEMPLATES), keys(MD_PASS2_TEMPLATES))
 )

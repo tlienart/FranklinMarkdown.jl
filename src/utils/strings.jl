@@ -44,11 +44,11 @@ to(ss::SS)    = ss.offset + ss.ncodeunits
 to(s::String) = lastindex(s)
 
 """
-    previous_index(o)
+    prev_index(o)
 
 Return the index just before the object `o`.
 """
-previous_index(o) = prevind(parent_string(o), from(o))
+prev_index(o) = prevind(parent_string(o), from(o))
 
 """
     next_index(o)

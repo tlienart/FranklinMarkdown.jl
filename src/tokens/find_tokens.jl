@@ -136,6 +136,8 @@ end
 
 Process emphasis token candidates and either take them or discard them if
 they don't look correct.
+
+`xTy` with token `T` is invalid if both `x` and `y` are space characters.
 """
 function process_emphasis_tokens!(tokens::Vector{Token})
     isempty(tokens) && return
@@ -144,50 +146,18 @@ function process_emphasis_tokens!(tokens::Vector{Token})
     N  = lastindex(ps)
     @inbounds for (i, t) in enumerate(tokens)
 
-        if t.name == :EM_CAND
-            _process_emph!(remove, tokens, i, ps,
-                           :EM_OPEN, :EM_CLOSE)
-
-        elseif t.name == :STRONG_CAND
-            _process_emph!(remove, tokens, i, ps,
-                           :STRONG_OPEN, :STRONG_CLOSE)
-
-        elseif t.name == :EM_STRONG_CAND
-            _process_emph!(remove, tokens, i, ps,
-                           :EM_STRONG_OPEN, :EM_STRONG_CLOSE)
+        if t.name in (:EM, :STRONG, :EM_STRONG)
+            prev_char = previous_chars(t)
+            next_char = next_chars(t)
+            # if the token is surrounded by spaces, discard it
+            bad = !isempty(prev_char) && first(prev_char) in (' ', '\t') &&
+                  !isempty(next_char) && first(next_char) in (' ', '\t')
+            bad && push!(remove, i)
         end
     end
     deleteat!(tokens, remove)
     return
 end
-
-function _process_emph!(remove::Vector{Int}, tokens::Vector{Token}, i::Int,
-                        ps::String, os::Symbol, cs::Symbol)
-    # ' _\S' => opening
-    # '\S_ ' => closing
-    # other => discard
-    t  = tokens[i]
-    ps = parent_string(t)
-    N  = lastindex(ps)
-    c  = first(t.ss)
-    kp = previous_index(t)
-    kn = next_index(t)
-    if (kp < 1 || ps[kp] ∈ ('\n', ' ', '\t')) && (
-        kn <= N && ps[kn] ∉ ('\n', ' ', '\t', c))
-
-        tokens[i] = Token(os, t.ss)
-
-    elseif (kn > N || ps[kn] ∈ ('\n', ' ', '\t')) && (
-            kp >= 1 && ps[kp] ∉ ('\n', ' ', '\t', c))
-
-        tokens[i] = Token(cs, t.ss)
-
-    else
-        push!(remove, i)
-    end
-    return
-end
-
 
 """
     process_autolink_close_tokens!(tokens)

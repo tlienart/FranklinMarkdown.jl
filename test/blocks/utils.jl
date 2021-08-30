@@ -14,7 +14,7 @@ end
     p = raw"""
         \ \# \@ \` \{ \} \* \_
         Hello
-        """ |> FP.default_md_partition
+        """ |> FP.md_partition
     s = FP.prepare_text(p[1])
     @test s isa String
     @test isapproxstr(s, """
@@ -25,7 +25,7 @@ end
         &#42;
          ----
         \\
-        """ |> FP.default_md_partition
+        """ |> FP.md_partition
 
     @test eltype(p) == FP.Block
     @test p[1].name == :TEXT
@@ -39,7 +39,7 @@ end
     # | x   | y   |
     # | --- | --- |
     # | 0 | 1 |
-    # """ |> FP.default_md_partition
+    # """ |> FP.md_partition
     # @test p[1].name == :TEXT
     # @test length(p) == 1
 
@@ -47,7 +47,7 @@ end
         abc \\
           --------
         &#60;
-        """ |> FP.default_md_partition
+        """ |> FP.md_partition
     @test t[1].name == :TEXT
     @test t[2].name == :LINEBREAK
     @test t[3].name == :HRULE
@@ -56,6 +56,6 @@ end
     # emoji
     p = raw"""
         A :ghost: and :smile: but :foo:
-        """ |> FP.default_md_partition
+        """ |> FP.md_partition
     @test FP.prepare_text(p[1]) // "A 👻 and 😄 but :foo:"
 end
