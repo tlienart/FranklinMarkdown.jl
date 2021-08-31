@@ -246,24 +246,22 @@ Here we catch the following:
 
 where 'A' is necessarily non empty, 'B' may be empty.
 
-Note: currently we don't support links with titles such as the following out of simplicity:
+Note: currently we DO NOT support links with titles such as the following out
+of simplicity:
 
 * [A]: B C
 * [A](B C)
 
-this allows to not have to check whether B is a link and C is text. If the user wants
-links with titles, they should create a command for it.
+this allows to not have to check whether B is a link and C is text. If the
+user wants links with titles, they should create a command for it. We also do
+not support link destinations between <...>.
 
-We also do not support link destinations between <...>.
+Note: in the case of a LINK_A, we check around if the previous non whitespace
+character and the next non whitespace character don't happen to be } {. In
+that specific case, the link is
 """
 function form_links!(blocks::Vector{Block})
     isempty(blocks) && return
-    # 1. look for sq brackets
-    # 2. see whether they're preceded by ! XOR followed by : --> ![] / []:
-    # 3. for [...]: reform the block as a REF and done
-    # 4. for ![] or [], check if there's a bracket immediately after it
-    #   4.a ![]() or []() --> IMG_AB, LINK_AB
-    #   4.b ![] or []     --> IMG_A, LINK_A
     nblocks = length(blocks)
     remove  = Int[]
     i       = 1

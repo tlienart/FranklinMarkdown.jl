@@ -18,27 +18,29 @@
 # 9 htmlentity ✅ (they're left as is)
 # x htmlinline 🚫
 # 10 inlinecode ✅
-# 11 image, links, footnotes
+# 11 image, links, footnotes ✅ (⚠️ no check that ref exists)
 #
 # x hard line breaks 🚫
-# 12 comments
+# 12 comments ✅
 # 13 backslash escapes ✅
 #
 # 14 table blocks ✅ (⚠️ validation done in Franklin)
 #
 # -- Franklin
 #
-# f1 inline math
-# f2 block math
-# f3 code block  ✅
+# f1 inline math ✅ (including switchoff)
+# f2 block math ✅
+# f3 code block ✅
 # f4 code block with lang ✅
-# f5 code block eval ✅
-# f6 newenv
-# f7 newcom
-# f8 com
+# f5 code block eval ✅ (see 3)
+# f6 newcom ✅ (⚠️ assembly done in Franklin, needs the def)
+# f7 com ✅
+# f7i internal coms
+# f8 newenv
 # f9 env
-# f10 CU_BRACKETS
-# f11 dbb
+# f9i internal envs (e.g. eqs)
+# f10 cu brackets  ✅ (see f7 etc)
+# f11 dbb ✅
 # f12 emojis
 # f13 def line   @def ...
 # f14 def block  +++...+++
@@ -434,6 +436,20 @@ end
 # XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
 
 
+@testset "12>comment" begin
+    p = "Hello <!--bar--> baz foo `<!--aa-->`" |> grouper
+    @test length(p) == 1
+    @test p[1].blocks[1].ss // "Hello"
+    @test p[1].blocks[2].ss // "<!--bar-->"
+    @test p[1].blocks[3].ss // "baz foo"
+    @test p[1].blocks[4].ss // "`<!--aa-->`"
+end
+
+
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+
+
 @testset "13>escapes" begin
     p = raw"abc \_ foo" |> slice
     @test Int('_') == 95
@@ -445,7 +461,7 @@ end
     end
     p = "a \\ b" |> slice
     @test text(p[1]) // "a &#92; b"
-end#
+end
 
 
 # XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
@@ -462,15 +478,109 @@ end#
         """ |> grouper
     @test p[1].ss // "abc"
     @test p[3].ss // "def"
+    p = "abc | def" |> md_blockifier
+    @test length(p) == 0
+end
+
+
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+# ===========================================================================
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+# ===========================================================================
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+
+
+@testset "f1>inline math" begin
+    s = raw"abc $ghi$ mkl"
+    b = s |> md_blockifier
+    @test ct(b[1]) == "ghi"
+    p = s |> grouper
+    @test p[1].ss // s
+    @test p[1].blocks[2].ss // raw"$ghi$"
+
+    # disable math
+    s = raw"foo $800"
+    p = FP.md_partition(s, discard=[:MATH_A])
+    @test p[1].name == :TEXT
+    @test ct(p[1]) == s
+end
+
+
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+
+
+@testset "f2>block math" begin
+    p = raw"""
+        abc $$x = 1+1$$ end
+        """ |> grouper
+    @test length(p) == 3
+    @test ctf(p[2]) // "x = 1+1"
+    p = raw"""
+        abc \[x = 1+1\] end
+        """ |> grouper
+    @test length(p) == 3
+    @test ctf(p[2]) // "x = 1+1"
+end
+
+
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+
+
+@testset "f6+f7>newcoms,coms" begin
+    s = raw"""
+        \newcommand{\foo}{abc}
+        \newcommand{\bar}[1]{abc#1}
+        \foo \bar{def}
+        """
+    p = s |> grouper
+    @test p[1].ss // raw"\newcommand"
+    @test p[2].ss // raw"{\foo}{abc}"
+    @test p[2].blocks[1].name == :CU_BRACKETS
+    @test p[2].blocks[2].name == :CU_BRACKETS
+    @test p[3].ss // raw"\newcommand"
+    @test p[4].ss // "{\\bar}[1]{abc#1}\n\\foo \\bar{def}"
+    @test ct(p[4].blocks[1]) // raw"\bar"
+    @test p[4].blocks[2].ss // "[1]"
+
+    p = raw"\newcommand{\foo}  [1 ] {abc}" |> grouper
+    @test p[1].ss // raw"\newcommand"
+    @test p[2].blocks[1].ss // raw"{\foo}"
+    @test p[2].blocks[2].ss // "[1 ]"
+    @test p[2].blocks[3].ss // "{abc}"
+end
+
+
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+
+
+@testset "f10>cu_brackets" begin
+    # see f6,f7
+end
+
+
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+
+
+@testset "f11>dbb" begin
+    p = "abc {{def}} ghi" |> grouper
+    @test length(p) == 1
+    @test p[1].blocks[2].name == :DBB
+    @test ct(p[1].blocks[2]) // "def"
 end
 
 
 # ////////////////////////////////////////////////////////////////////////////
 # ////////////////////////////////////////////////////////////////////////////
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+# ////////////////////////////////////////////////////////////////////////////
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
 # ////////////////////////////////////////////////////////////////////////////
 # ////////////////////////////////////////////////////////////////////////////
-# ////////////////////////////////////////////////////////////////////////////
-# ////////////////////////////////////////////////////////////////////////////
+
 
 @testset "xx corner cases" begin
     s = "[`]`]"

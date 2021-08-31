@@ -31,7 +31,7 @@ function partition(
     end
 
     # Discard tokens if desired
-    isempty(discard) || filter!(t -> t.name ∈ discard, tokens)
+    isempty(discard) || filter!(t -> t.name ∉ discard, tokens)
 
     # form Blocks
     blocks = blockifier(tokens)
@@ -133,10 +133,7 @@ function md_grouper(
                 :table => [
                     :TABLE_ROW_CAND
                 ],
-            ),
-            skip::Vector{Symbol}=[
-                :P_BREAK
-            ]
+            )
         )::Vector{Group}
 
     groups   = Group[]
@@ -157,18 +154,19 @@ function md_grouper(
 
         if br == :none
             _close_open_group!(groups, blocks, cur_head, i, cur_role)
-            push!(groups, Group(blocks[i]; role=:none))
+            isempty(bi) || push!(groups, Group(bi; role=:none))
             cur_head = 0
             cur_role = :none
 
         elseif br != cur_role
             # role is different and not 'none'
             _close_open_group!(groups, blocks, cur_head, i, cur_role)
-            if i == length(blocks)
-                push!(groups, Group(blocks[i]; role=br))
+            if i == length(blocks) && !isempty(bi)
+                push!(groups, Group(bi; role=br))
             end
             cur_head = i
             cur_role = br
+
         elseif i == length(blocks)
             _close_open_group!(groups, blocks, cur_head, i+1, cur_role)
         end
@@ -176,14 +174,15 @@ function md_grouper(
         i += 1
     end
 
-    # finalise removing blocks to skip (p-break).
-    return filter!(g -> first(g.blocks).name ∉ skip, groups)
+    # finalise by removing empty blocks (e.g. P_BREAK)
+    return filter!(g -> !isempty(strip(g.ss)), groups)
 end
 
 
 function _close_open_group!(groups, blocks, cur_head, i, cur_role)
     if cur_head != 0
-        push!(groups, Group(blocks[cur_head:i-1]; role=cur_role))
+        bs = filter!(!isempty, blocks[cur_head:i-1])
+        isempty(bs) || push!(groups, Group(bs; role=cur_role))
     end
     return
 end

@@ -2,6 +2,7 @@ module FranklinParser
 
 import OrderedCollections: LittleDict
 import REPL.REPLCompletions: emoji_symbols
+import Base.isempty
 
 const SS = SubString{String}
 const SubVector{T} = SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}

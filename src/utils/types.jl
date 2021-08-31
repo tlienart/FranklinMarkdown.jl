@@ -98,6 +98,10 @@ function content(b::Block)::SS
     return subs(s, idxo, idxc)
 end
 
+
+Base.isempty(b::Block) = isempty(strip(b.ss))
+
+
 """
     BlockTemplate
 
