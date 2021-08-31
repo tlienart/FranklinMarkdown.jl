@@ -9,8 +9,8 @@ const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
    BlockTemplate(:AUTOLINK,        :AUTOLINK_OPEN,  :AUTOLINK_CLOSE ),
    # these blocks are disabled in find_blocks if they're not attached in
    # a link/img/... context
-   BlockTemplate(:BRACKET,    :BRACKET_OPEN,    :BRACKET_CLOSE,    nesting=true),
-   BlockTemplate(:SQ_BRACKET, :SQ_BRACKET_OPEN, :SQ_BRACKET_CLOSE, nesting=true),
+   BlockTemplate(:BRACKETS,    :BRACKET_OPEN,    :BRACKET_CLOSE,    nesting=true),
+   BlockTemplate(:SQ_BRACKETS, :SQ_BRACKET_OPEN, :SQ_BRACKET_CLOSE, nesting=true),
    # code
    BlockTemplate(:CODE_BLOCK_LANG, :CODE_LANG3,   :CODE_TRIPLE  ),
    BlockTemplate(:CODE_BLOCK_LANG, :CODE_LANG4,   :CODE_QUAD    ),
@@ -29,8 +29,8 @@ const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
    # md def one line
    BlockTemplate(:MD_DEF, :MD_DEF_OPEN, END_OF_LINE),
    # div and braces
-   BlockTemplate(:DIV,        :DIV_OPEN, :DIV_CLOSE,               nesting=true),
-   BlockTemplate(:CU_BRACKET, :CU_BRACKET_OPEN, :CU_BRACKET_CLOSE, nesting=true),
+   BlockTemplate(:DIV,         :DIV_OPEN, :DIV_CLOSE,               nesting=true),
+   BlockTemplate(:CU_BRACKETS, :CU_BRACKET_OPEN, :CU_BRACKET_CLOSE, nesting=true),
    # headers
    BlockTemplate(:H1, :H1_OPEN, END_OF_LINE),
    BlockTemplate(:H2, :H2_OPEN, END_OF_LINE),
@@ -72,7 +72,7 @@ const MD_PASS1_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
          :MATH_A, :MATH_B, :MATH_C,
          :DIV,
          :AUTOLINK,
-         :CU_BRACKET,
+         :CU_BRACKETS,
          :H1, :H2, :H3, :H4, :H5, :H6,
       )
 )
@@ -81,8 +81,8 @@ const MD_PASS1_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
 const MD_PASS2_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
    o => bt for (o, bt) in MD_BLOCKS
    if bt.name in (
-         :BRACKET,
-         :SQ_BRACKET
+         :BRACKETS,
+         :SQ_BRACKETS
       )
 )
 

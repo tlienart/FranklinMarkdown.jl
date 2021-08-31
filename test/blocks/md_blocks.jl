@@ -179,13 +179,13 @@ end
         \begin{abc}\end{def}\newcommand{hello}\newenvironment{foo}\bar
         """ |> md_blockifier
     @test b[1].name == :LX_BEGIN
-    @test b[2].name == :CU_BRACKET
+    @test b[2].name == :CU_BRACKETS
     @test b[3].name == :LX_END
-    @test b[4].name == :CU_BRACKET
+    @test b[4].name == :CU_BRACKETS
     @test b[5].name == :LX_NEWCOMMAND
-    @test b[6].name == :CU_BRACKET
+    @test b[6].name == :CU_BRACKETS
     @test b[7].name == :LX_NEWENVIRONMENT
-    @test b[8].name == :CU_BRACKET
+    @test b[8].name == :CU_BRACKETS
     @test b[9].name == :LX_COMMAND
 end
 

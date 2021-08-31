@@ -32,7 +32,7 @@ const INLINE_BLOCKS = [
     # :MATH_I,                                # _\$>_..._\$<_
     :AUTOLINK,                                # <...>
     :LINK_A, :LINK_AB, :IMG_A, :IMG_AB,       # [...](...) ![...](...)
-    :CU_BRACKET, :LX_COMMAND,
+    :CU_BRACKETS, :LX_COMMAND,
     :DBB,
     # derived by reconstructing commands (Franklin)
     :RAW_INLINE

@@ -17,15 +17,14 @@
 # 8 autolink <..> ✅ (⚠️ normalisation via URIs is done in Franklin)
 # 9 htmlentity ✅ (they're left as is)
 # x htmlinline 🚫
-# 10 image
-# 11 inlinecode
-# 12 links and footnotes
+# 10 inlinecode ✅
+# 11 image, links, footnotes
 #
 # x hard line breaks 🚫
-# 13 comments
-# 14 backslash escapes ✅
+# 12 comments
+# 13 backslash escapes ✅
 #
-# 15 table blocks ✅ (⚠️ validation done in Franklin)
+# 14 table blocks ✅ (⚠️ validation done in Franklin)
 #
 # -- Franklin
 #
@@ -38,7 +37,7 @@
 # f7 newcom
 # f8 com
 # f9 env
-# f10 CU_BRACKET
+# f10 CU_BRACKETS
 # f11 dbb
 # f12 emojis
 # f13 def line   @def ...
@@ -360,6 +359,7 @@ end
 # XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
 
 
+# entities are just left 'as is'.
 @testset "9>entity" begin
     p = """
         abc & def &amp; but &amp. &#42;
@@ -372,7 +372,20 @@ end
 # XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
 
 
-@testset "10>image" begin
+@testset "10>inline code" begin
+    s = """
+        abc `def` and `` ` `` and *`fo*o`*.
+        """
+    p = s |> slice
+    @test ct(p[1]) // "abc"
+    @test ct(p[2]) // "def"  # `def`
+    @test ct(p[3]) // "and"
+    @test ct(p[4]) // " ` "
+    @test ct(p[5]) // "and"
+    @test ct(p[6]) // "`fo*o`"
+    @test ct(p[7]) // "."
+    g = s |> grouper
+    @test length(g) == 1  # all inline blocks
 end
 
 
@@ -380,7 +393,48 @@ end
 # XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
 
 
-@testset "14>escapes" begin
+@testset "11>img, links, footnotes" begin
+    s = """
+        [abc] [def](ghi) ![jkl] ![mno](pqr)
+        [ref]: aaa
+        """
+    b = s |> md_blockifier
+    @test b[1].name == :LINK_A
+    @test b[1].ss // "[abc]"
+    @test b[2].name == :LINK_AB
+    @test b[2].ss // "[def](ghi)"
+    @test b[3].name == :IMG_A
+    @test b[3].ss // "![jkl]"
+    @test b[4].name == :IMG_AB
+    @test b[4].ss // "![mno](pqr)"
+    @test b[5].name == :REF
+    @test b[5].ss // "[ref]:"
+
+    # not ok because not at the start of a line bar spaces
+    s = "abc [def]: hello" |> md_blockifier
+    @test length(s) == 0
+
+    # aggregation over multiline for ref
+    s = """
+        abc
+        [def]: foo
+        bar
+
+        baz
+        """
+    p = s |> grouper
+    @test ctf(p[1]) // "abc"
+    @test length(p[2].blocks) == 1
+    @test p[2].blocks[1].ss // "[def]: foo\nbar"
+    @test ctf(p[3]) // "baz"
+end
+
+
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+# XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
+
+
+@testset "13>escapes" begin
     p = raw"abc \_ foo" |> slice
     @test Int('_') == 95
     @test text(p[1]) // "abc &#95; foo"
@@ -398,7 +452,7 @@ end#
 # XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
 
 
-@testset "15>table" begin
+@testset "14>table" begin
     p = """
         abc
         | a | b | c |

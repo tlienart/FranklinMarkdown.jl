@@ -29,8 +29,8 @@ function find_blocks(
         # reactivated;
         reactivate = Vector{Pair{Int}}()
         for b in blocks
-            if b.name == :BRACKET
-                push!(reactivate, from(b), to(b))
+            if b.name == :BRACKETS
+                push!(reactivate, from(b) => to(b))
             end
         end
         for i in dt
@@ -273,14 +273,15 @@ function form_links!(blocks::Vector{Block})
     while i < nblocks
         b  = nb
         nb = blocks[i+1]
+
         if b.name == :SQ_BRACKETS
             pchar = previous_chars(b)
             nchar = next_chars(b)
 
             # NOTE: ![]: --> ![] takes precedence.
-            img = pchar === ['!']
-            ref = !img && nchar === [':']
-            lnk = nchar === ['('] && nb.name == :BRACKET
+            img = isempty(pchar) ? false : pchar[1] == '!'
+            ref = (isempty(nchar) || img) ? false : nchar[1] == ':'
+            lnk = isempty(nchar) ? false : (nchar[1] == '(' && nb.name == :BRACKETS)
 
             # ref ==> REF, stop
             #
@@ -290,41 +291,54 @@ function form_links!(blocks::Vector{Block})
             # !img & lnk  => LINK_AB
 
             if ref
-                # [...]:
-                blocks[i] = Block(
-                    :REF,
-                    subs(ps, from(b), next_index(b))
-                )
+                # [...]: block
+                # check if the block is at the start of line, otherwise discard
+                ss = until_previous_line_return(b)
+                if isempty(strip(ss))
+                    blocks[i] = Block(:REF, subs(ps, from(b), next_index(b)))
+                else
+                    push!(remove, i)
+                end
             else
                 if img
                     if lnk
-                        blocks[i] = Block(
-                            :IMG_AB,
-                            subs(ps, prev_index(b), to(nb))
-                        )
+                        blocks[i] = Block(:IMG_AB, subs(ps, prev_index(b), to(nb)))
+                        push!(remove, i+1)
                     else
-                        blocks[i] = Block(
-                            :IMG_A,
-                            subs(ps, prev_index(b), to(b))
-                        )
+                        blocks[i] = Block(:IMG_A, subs(ps, prev_index(b), to(b)))
                     end
                 else
                     if lnk
-                        blocks[i] = Block(
-                            :LINK_AB,
-                            subs(ps, from(b), to(nb))
-                        )
+                        blocks[i] = Block(:LINK_AB, subs(ps, from(b), to(nb)))
+                        push!(remove, i+1)
                     else
-                        blocks[i] = Block(
-                            :LINK_A,
-                            subs(ps, from(b), to(b))
-                        )
+                        blocks[i] = Block(:LINK_A, subs(ps, from(b), to(b)))
                     end
                 end
             end
         end
         i += 1
     end
+    # check if the last block is maybe a standalone `[]`.
+    i = nblocks
+    b = blocks[i]
+    if b.name == :SQ_BRACKETS
+        pchar = previous_chars(b)
+        nchar = next_chars(b)
+        img   = isempty(pchar) ? false : pchar[1] == '!'
+        ref   = (isempty(nchar) || img) ? false : nchar[1] == ':'
+        if ref
+            ss = until_previous_line_return(b)
+            if isempty(strip(ss))
+                blocks[i] = Block(:REF, subs(ps, from(b), next_index(b)))
+            else
+                push!(remove, i)
+            end
+        else
+            blocks[i] = Block(:LINK_A, subs(ps, from(b), to(b)))
+        end
+    end
+    deleteat!(blocks, remove)
     return
 end
 
@@ -359,11 +373,11 @@ end
 """
     form_dbb!(blocks)
 
-Find CU_BRACKET blocks that start with `{{` and and with `}}` and mark them as :DBB.
+Find CU_BRACKETS blocks that start with `{{` and and with `}}` and mark them as :DBB.
 """
 function form_dbb!(b::Vector{Block})
     @inbounds for i in eachindex(b)
-        b[i].name === :CU_BRACKET || continue
+        b[i].name === :CU_BRACKETS || continue
         ss = b[i].ss
         (startswith(ss, "{{") && endswith(ss, "}}")) || continue
 

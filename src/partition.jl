@@ -111,7 +111,7 @@ function default_md_postproc!(blocks::Vector{Block})
     form_blockquotes!(blocks)
     form_lists!(blocks)
     form_tables!(blocks)
-    # form_refs!(blocks)
+    form_refs!(blocks)
     remove_inner!(blocks)
     return blocks
 end

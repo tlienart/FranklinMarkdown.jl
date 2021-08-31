@@ -6,7 +6,7 @@
     parts = FP.math_partition(FP.content(mathb))
     @test parts[1].name == :TEXT
     @test parts[2].name == :LX_COMMAND
-    @test parts[3].name == :CU_BRACKET
+    @test parts[3].name == :CU_BRACKETS
     @test FP.content(parts[1]) == "B "
     @test FP.content(parts[3]) == "C"
 end
