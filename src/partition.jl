@@ -118,7 +118,7 @@ end
 
 
 """
-    md_grouper(blocks, cases, skip)
+    md_grouper(blocks, cases)
 
 Groups text and inline blocks after partition, this helps in forming paragraphs.
 """
