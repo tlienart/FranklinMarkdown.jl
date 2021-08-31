@@ -28,6 +28,7 @@
 #
 # -- Franklin
 #
+# f0 raw
 # f1 inline math ✅ (including switchoff)
 # f2 block math ✅
 # f3 code block ✅
@@ -490,6 +491,17 @@ end
 # XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
 
 
+@testset "f0>raw" begin
+    # doesn't fail because we don't inspect what goes on in `???`.
+    p = """
+        foo bar ??? <!-- etc __ ??? baz
+        """ |> grouper
+    @test p[1].ss // "foo bar"
+    @test p[2].ss // "??? <!-- etc __ ???"
+    @test p[3].ss // "baz"
+end
+
+
 @testset "f1>inline math" begin
     s = raw"abc $ghi$ mkl"
     b = s |> md_blockifier
@@ -500,7 +512,7 @@ end
 
     # disable math
     s = raw"foo $800"
-    p = FP.md_partition(s, discard=[:MATH_A])
+    p = FP.md_partition(s, disable=[:MATH_A])
     @test p[1].name == :TEXT
     @test ct(p[1]) == s
 end

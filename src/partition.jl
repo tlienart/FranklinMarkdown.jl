@@ -1,5 +1,5 @@
 """
-    partition(s, tokenizer, blockifier, tokens; discard, postproc)
+    partition(s, tokenizer, blockifier, tokens; disable, postproc)
 
 Go through a piece of text, either with an existing tokenization or an empty
 one, tokenize if needed with the given tokenizer, blockify with the given
@@ -9,7 +9,7 @@ blockifier, and return a partition of the text into a vector of Blocks.
 
 ## KwArgs
 
-    * discard:  list of token names to ignore (e.g. if want to allow math)
+    * disable:  list of token names to ignore (e.g. if want to allow math)
     * postproc: postprocessing to
 """
 function partition(
@@ -17,7 +17,7 @@ function partition(
             tokenizer::Function,
             blockifier::Function,
             tokens::SubVector{Token}=EMPTY_TOKEN_SVEC;
-            discard::Vector{Symbol}=Symbol[],
+            disable::Vector{Symbol}=Symbol[],
             postproc::Function=identity
             )::Vector{Block}
 
@@ -30,8 +30,8 @@ function partition(
         return [TextBlock(s)]
     end
 
-    # Discard tokens if desired
-    isempty(discard) || filter!(t -> t.name ∉ discard, tokens)
+    # disable tokens if desired
+    isempty(disable) || filter!(t -> t.name ∉ disable, tokens)
 
     # form Blocks
     blocks = blockifier(tokens)

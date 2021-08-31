@@ -10,6 +10,9 @@ Dev: F_* are greedy match, see `md_utils.jl`.
 Try: https://spec.commonmark.org/dingus
 """
 const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
+    '?' => [
+        forward_match("???") => :RAW
+    ],
     '(' => [
         forward_match("(") => :BRACKET_OPEN
         ],
@@ -117,8 +120,6 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("\$\$")             => :MATH_B,  # $$⎵*
         ],
     '_' => [
-        # forward_match("_\$>_")             => :MATH_I_OPEN,  # internal when resolving a lx command
-        # forward_match("_\$<_")             => :MATH_I_CLOSE, # within mathenv (e.g. \R <> \mathbb R)
         forward_match("___", ['_'], false) => :EM_STRONG,
         forward_match("__",  ['_'], false) => :STRONG,
         forward_match("_",   ['_'], false) => :EM,

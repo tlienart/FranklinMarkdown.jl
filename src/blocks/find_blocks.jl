@@ -16,6 +16,9 @@ function find_blocks(
 
     # ------------------------------------------------------------------------
     if is_md
+        # ======== PASS 0 ==============
+        _find_blocks!(blocks, tokens, MD_PASS0, is_active)
+
         # ======== PASS 1 ==============
         # basically all container blocks
         _find_blocks!(blocks, tokens, MD_PASS1_TEMPLATES, is_active,

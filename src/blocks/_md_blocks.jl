@@ -25,7 +25,6 @@ const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
    BlockTemplate(:MATH_A, :MATH_A,      :MATH_A      ),
    BlockTemplate(:MATH_B, :MATH_B,      :MATH_B      ),
    BlockTemplate(:MATH_C, :MATH_C_OPEN, :MATH_C_CLOSE),
-   # BlockTemplate(:MATH_I, :MATH_I_OPEN, :MATH_I_CLOSE),
    # md def one line
    BlockTemplate(:MD_DEF, :MD_DEF_OPEN, END_OF_LINE),
    # div and braces
@@ -59,6 +58,10 @@ const CAN_BE_LEFT_OPEN = (
     :EM_STRONG,
     :BRACKET_OPEN,
     :AUTOLINK_OPEN
+)
+
+const MD_PASS0 = LittleDict{Symbol,BlockTemplate}(
+   :RAW => BlockTemplate(:RAW, :RAW, :RAW),
 )
 
 # First pass: container blocks etc
