@@ -547,20 +547,19 @@ end
         \foo \bar{def}
         """
     p = s |> grouper
-    @test p[1].ss // raw"\newcommand"
-    @test p[2].ss // raw"{\foo}{abc}"
-    @test p[2].blocks[1].name == :CU_BRACKETS
-    @test p[2].blocks[2].name == :CU_BRACKETS
-    @test p[3].ss // raw"\newcommand"
-    @test p[4].ss // "{\\bar}[1]{abc#1}\n\\foo \\bar{def}"
-    @test ct(p[4].blocks[1]) // raw"\bar"
-    @test p[4].blocks[2].ss // "[1]"
+    @test p[1].ss // s
+    @test p[1].blocks[1].ss // raw"\newcommand"
+    @test p[1].blocks[2].ss // raw"{\foo}"
+    @test p[1].blocks[3].ss // raw"{abc}"
+    @test p[1].blocks[4].ss // raw"\newcommand"
+    @test p[1].blocks[5].ss // raw"{\bar}"
+    @test p[1].blocks[6].ss // raw"[1]"
+    @test p[1].blocks[7].ss // raw"{abc#1}"
 
     p = raw"\newcommand{\foo}  [1 ] {abc}" |> grouper
-    @test p[1].ss // raw"\newcommand"
-    @test p[2].blocks[1].ss // raw"{\foo}"
-    @test p[2].blocks[2].ss // "[1 ]"
-    @test p[2].blocks[3].ss // "{abc}"
+    @test p[1].blocks[2].ss // raw"{\foo}"
+    @test p[1].blocks[3].ss // "[1 ]"
+    @test p[1].blocks[4].ss // "{abc}"
 end
 
 

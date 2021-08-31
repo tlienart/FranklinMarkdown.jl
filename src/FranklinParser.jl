@@ -34,6 +34,7 @@ const INLINE_BLOCKS = [
     :AUTOLINK,                                # <...>
     :LINK_A, :LINK_AB, :IMG_A, :IMG_AB,       # [...](...) ![...](...)
     :CU_BRACKETS, :LX_COMMAND,
+    :LX_NEWENVIRONMENT, :LX_NEWCOMMAND,
     :DBB,
     # derived by reconstructing commands (Franklin)
     :RAW_INLINE
