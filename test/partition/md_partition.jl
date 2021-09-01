@@ -27,9 +27,9 @@ end
     p = "abc @@d ef *AA* g @@ end" |> FP.md_partition
     @test p[2] isa FP.Block
     c = p[2] |> FP.md_partition
-    @test c[1].ss // "ef"
-    @test c[2].ss // "*AA*"
-    @test c[3].ss // "g"
+    @test c[1] // "ef"
+    @test c[2] // "*AA*"
+    @test c[3] // "g"
 end
 
 @testset "group" begin

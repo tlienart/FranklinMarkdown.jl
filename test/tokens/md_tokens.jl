@@ -62,11 +62,11 @@ end
     s = """* *a _ b_ **a b**"""
     tokens = FP.find_tokens(s, FP.MD_TOKENS)
     deleteat!(tokens, 1)
-    @test tokens[1].name == :EM
-    @test tokens[2].name == :EM
-    @test tokens[3].name == :EM
-    @test tokens[4].name == :STRONG
-    @test tokens[5].name == :STRONG
+    @test tokens[1].name == :EM_OPEN
+    @test tokens[2].name == :EM_OPEN
+    @test tokens[3].name == :EM_CLOSE
+    @test tokens[4].name == :STRONG_OPEN
+    @test tokens[5].name == :STRONG_CLOSE
     @test tokens[6].name == :EOS
     s = """--> ----"""
     tokens = FP.find_tokens(s, FP.MD_TOKENS)

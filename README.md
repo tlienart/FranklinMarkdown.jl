@@ -3,147 +3,69 @@
 [![CI Actions Status](https://github.com/tlienart/FranklinParser.jl/workflows/CI/badge.svg)](https://github.com/tlienart/FranklinParser.jl/actions)
 [![codecov](https://codecov.io/gh/tlienart/FranklinParser.jl/branch/main/graph/badge.svg?token=mNry6r2aIn)](https://codecov.io/gh/tlienart/FranklinParser.jl)
 
-## Warning notes
+## Why not just CommonMark.jl?
 
-* dropping `@def` multiline support; there's ambiguity with line returns; better to use `+++...+++` blocks; `@def x = 5` is still allowed.
+[CommonMark.jl](https://github.com/MichaelHatherly/CommonMark.jl) is great, well coded, and aims to respect the [commonmark specs](https://commonmark.org).
 
-## Workflow (MD)
+At its core, Franklin also uses markdown and so leveraging CommonMark.jl seemed a natural step, possibly with additions.
+At some point however, it turned out that it was more difficult (for me) to work _with_ CommonMark than re-write some of its functionalities.
+This is by no means related to the quality of CommonMark.jl but rather to how some of the additions in "Franklin-Markdown" require specific parsing rules, specifically to handle nesting and latex-like commands.
 
-### Default init (original MD string -> first level partition)
+One big difference in the specs is that Franklin does **not** support indented lines for code blocks, only fenced code blocks are allowed and indentation is not significant.
+In CommonMark, allowing this requires a number of checks that some special markers start after at most 3 whitespaces after a line return, in Franklin this is irrelevant and, among other things, allows nesting with indentation which helps with readability e.g.:
 
-1. input text `s::String`
-1. call `default_md_partition(s)`
-1. obtain a partition of `s` formed of `Text` or `Block` elements
-
-1. input text `s` (either `String` or `SubString`)
-1. call `partition(s, t)` where `t` is optionally given as the vector of tokens for `s` if it had been obtained from a previous pass
-1. a partition of `s` is returned as a vector of `Text` or `Block` objects
-
-The recursion would happen upon treatment of `Block` objects where the `partition_md` can be called again.
-
----------------------------------------
-
-## Work in progress
-
-WIP
-
-* get all tokens and all blocks
-  * [x] markdown tokenization
-    * [ ] add validator for emoji, footnote (e.g. `abc]:]:`)
-      * [ ] validate emoji
-      * [ ] validate footnote
-    * [ ] check specific token are at start of line (`+++`, `###`, `@def`, hrules) (this would be done after dedent)
-    * [ ] mark empty lines between two indented lines as indented (see footnote definition, and https://www.markdownguide.org/extended-syntax/#footnotes)
-  * [x] find markdown definitions (needs indented lines)
-  * [ ] markdown blocks
-    * [x] basic
-    * [x] double brace blocks, headers, ...
-    * [x] math parsing
-    * [ ] footnote definitions over multiple lines
-  * [ ] html tokenization
-  * [ ] html blocks
-  * [ ] latex-like elements
-    * [ ] dedent definitions
-* [ ] context of errors / warnings (would be caught)
-
-DOCSTRINGS
-
-* [ ] add documentation for partition
-
-RULES
-
-* [ ] rule factory (in / out, context etc)
-* [ ] allow passing rules dictionary for special blocks (test this in tests with CommonMark dependency)
-* [ ] find a way to enable/disable rules etc. so that users can reuse the rules they want and disable or re-define the ones they don't want.
-
-
-INTEGRATION
-
-* [ ]
-
-**Warning**
-
-* [ ] what if user writes a line with `## abc ## def`; the second block should be ignored (this should be done at the re-processing of the content of the first block, should deactivate finding extra headers in it)
-
-## Workflow
-
-* input MD, return output lowered MD + remaining special blocks to treat by Franklin (e.g. code)
-
-In Franklin:
-
-```julia
-import CommonMark
-const CM = CommonMark
-# ----------------------------------------
-# Disable the parsing of indented blocks
-# see https://github.com/MichaelHatherly/CommonMark.jl/issues/1#issuecomment-735990126)
-struct SkipIndented end
-block_rule(::SkipIndented) = CM.Rule((p, c) -> 0, 8, "")
-cm_parser = CM.enable!(CM.disable!(CM.Parser(), CM.IndentedCodeBlockRule()), SkipIndented())
-# ----------------------------------------
+```
+@@class1
+  @@class2
+    ## section
+  @@
+  Some text
+@@
 ```
 
-## Notes on changes
+In the example above the fact that the ATXHeading starts on an idented line does not matter.
 
-* [x] AbstractBlock -> Span
-* [x] Token
-* [x] `str` -> `parent_str`
-* [ ] from, to
-* [ ] indented code blocks are explicitly not allowed
-* [ ] indentation in a `@def` is any line that starts with a space
+For more details, check out `test/partition/md_specs.jl` and `cmark/cmark.jl`, where things are discussed in a bit more details on a case-by-case basis.
 
-## Check
+### CM specs that are +- respected
 
-* [ ] if need to do our own  stuff with links and footnote ref
+Note: sometimes the parser is more, sometimes less tolerant, usually there's a good reason.
 
-### More serious
+* atxheadings (`# ...`)
+* blockquote (`> ...`)
+* fenced code blocks (```` ```julia ... ``` ````)
+* lists
+* hrules (`---`, ...)
+* emphasis (`*a*`, `_a_`, `**a**`, ...)
+* autolink (`<...>`)
+* htmlentity (`&amp;`)
+* inlinecode (`` `a` ``)
+* image, links (`![...](...)`, `[...](...)`, `[...]: ...`)
 
-* [ ] context (needs to be overhauled quite a bit... idea is good)
+Notes:
+* for links, putting the destination between `<...>` is not supported
+* for links, the format `[A](B C)` is not supported, for refs, the format `[A]: B C` with `B` a link is not supported
 
-### Tests
+### CM specs that are not respected
 
-* should be able to  parse ```` ```! ```` (seems like it's  failing in Franklin now)
+* setextheading
+* indented code blocks
+* html not inside `~~~...~~~`
+* hard line breaks (use `\\`)
 
-# RULES
+### Additional "Franklin" specs
 
-## CommonMark basics
+* raw blocks `??? ... ???` (the content will be passed "as is" to X)
+* html blocks `~~~ ... ~~~` (the content will be passed "as is" to HTML)
+* math `$...$`, `$$...$$`, `\[...\]` etc
+* ...
 
-* Bold, Italic
-  * [ ] tests
-* Images
-  * [ ] tests (notes: check different types of links)
-* Tables
-  * [ ] tests (notes: check nesting with commands inside)
+## Specs
 
-## Franklin specials -- basics
+For the specs with respect to CommonMark, see `test/partition/md_specs.jl`.
 
-* Comments
-  * [ ] parsing
-  * [ ] processing
-  * [ ] tests
-* Raw HTML
-  * [ ] parsing
-  * [ ] processing
-  * [ ] tests
-* Headers
-  * [ ] parsing
-  * [ ] processing
-  * [ ] tests
-* Footnotes
-  * [ ] parsing
-  * [ ] processing
-  * [ ] tests
-* Entities https://www.amp-what.com/unicode/search/
-  * [ ] parsing
-  * [ ] processing
-  * [ ] tests
-* Emojis
-  * [ ] parsing
-  * [ ] processing
-  * [ ] tests
-* Div blocks
-  * [ ] parsing
-  * [ ] processing
-  * [ ] tests
+(ONGOING) additional test suite following CommonMark.jl.
 
-## Franklin specials -- code blocks
+## Note
+
+* dropping `@def` multiline support; there's ambiguity with line returns; better to use `+++...+++` blocks; `@def x = 5` is still allowed.

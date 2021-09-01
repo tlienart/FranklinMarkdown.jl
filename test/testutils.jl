@@ -6,6 +6,7 @@ isapproxstr(s1::AbstractString, s2::AbstractString) =
 
 # stricter than isapproxstr, just strips the outside.
 (//)(s1::AbstractString, s2::AbstractString) = strip(s1) == strip(s2)
+(//)(o::FP.AbstractSpan, s::AbstractString)  = o.ss // s
 
 # --------------------------------------------------------------------------------------
 
@@ -24,3 +25,4 @@ ct(b)   = FP.content(b)
 ctf(b::FP.Group) = FP.content(first(b.blocks))
 grouper = FP.md_grouper ∘ slice
 isp(g)  = g.role == :PARAGRAPH
+printel(bv) = foreach(e -> println(strip(e.ss)), bv)

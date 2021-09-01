@@ -3,9 +3,9 @@
 
 Pattern to match horizontal rule indicators.
 """
-const HR1_PAT = r"\-{3}[ \t\-]*"
-const HR2_PAT = r"\_{3}[ \t\_]*"
-const HR3_PAT = r"\*{3}[ \t\*]*"
+const HR1_PAT = r"\-{3}[ \t\-]*$"
+const HR2_PAT = r"\_{3}[ \t\_]*$"
+const HR3_PAT = r"\*{3}[ \t\*]*$"
 
 
 """
@@ -48,8 +48,11 @@ Ref: https://dev.w3.org/html5/html-author/charref.
 * &SquareIntersection;
 * &#x02293;
 * &#8851;
+
+Note: longest entity is &CounterClockwiseContourIntegral; so capping the max
+number of characters to 32.
 """
-const HTML_ENTITY_PAT = r"^&(?:[a-zA-Z]+[0-9]{0,2}|#[0-9]{1,6}|#x[0-9a-f]{1,6});$"
+const HTML_ENTITY_PAT = r"^&(?:[a-zA-Z]{1,32}[0-9]{0,2}|#[0-9]{1,6}|#x[0-9a-f]{1,6});$"
 
 
 const EMOJI_PAT = r"^\:[a-zA-Z0-9+-_]+\:$"

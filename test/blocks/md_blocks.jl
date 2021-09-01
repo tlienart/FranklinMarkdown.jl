@@ -215,6 +215,6 @@ end
 @testset "cov" begin
     t = "a *bc* d _ef_ g" |> toks
     b = FP.find_blocks(t)
-    @test b[1].ss // "*bc*"
-    @test b[2].ss // "_ef_"
+    @test b[1] // "*bc*"
+    @test b[2] // "_ef_"
 end

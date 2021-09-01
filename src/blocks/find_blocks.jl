@@ -36,7 +36,7 @@ function find_blocks(
                 push!(reactivate, from(b) => to(b))
             end
         end
-        for i in dt
+        @inbounds for i in dt
             # is the token inside one of the reactivated range?
             toki = tokens[i]
             fi   = from(toki)
@@ -88,6 +88,7 @@ function _find_blocks!(
     template_keys = keys(templates)
     n_tokens = length(tokens)
     @inbounds for i in eachindex(tokens)
+
         is_active[i] || continue
         opening = tokens[i].name
 
@@ -114,10 +115,11 @@ function _find_blocks!(
             # the tokens ahead might be inactive due to first pass
             is_active[j] || continue
             candidate = tokens[j].name
-            if nesting && (candidate == opening)
-                open_depth += 1
-            elseif (candidate in closing)
+            # has to happen before opener to avoid ambiguity in emphasis tokens
+            if candidate in closing
                 open_depth -= 1
+            elseif candidate == opening && nesting
+                open_depth += 1
             end
             if open_depth == 0
                 closing_index = j

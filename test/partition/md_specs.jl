@@ -148,21 +148,21 @@ end
     p = """
         > abc
         """ |> grouper
-    @test p[1].ss // "> abc"
+    @test p[1] // "> abc"
     p = """
         > abc
         > def
         > ghi
         """ |> grouper
-    @test p[1].ss // "> abc\n> def\n> ghi"
+    @test p[1] // "> abc\n> def\n> ghi"
     p = """
         > abc
         def
 
         ghi
         """ |> grouper
-    @test p[1].ss // "> abc\ndef"
-    @test p[2].ss // "ghi"
+    @test p[1] // "> abc\ndef"
+    @test p[2] // "ghi"
     p = """
         > abc
         > def
@@ -170,15 +170,15 @@ end
         >ghi
         > jkl
         """ |> grouper
-    @test p[1].ss // "> abc\n> def"
-    @test p[2].ss // ">ghi\n> jkl"
+    @test p[1] // "> abc\n> def"
+    @test p[2] // ">ghi\n> jkl"
 
     p = """
         > abc
         > > def
         > > ghi
         """ |> grouper
-    @test p[1].ss // "> abc\n> > def\n> > ghi"
+    @test p[1] // "> abc\n> > def\n> > ghi"
 end
 
 
@@ -209,9 +209,9 @@ end
         ````
         mno
         """ |> grouper
-    @test p[1].ss // "abc"
+    @test p[1] // "abc"
     @test ctf(p[2]) // "def\n```\nghi\n```\njkl"
-    @test p[3].ss // "mno"
+    @test p[3] // "mno"
 
     p = """
         abc
@@ -244,8 +244,8 @@ end
         * j
             * k
         """ |> grouper
-    @test p[1].ss // "abc"
-    @test p[2].ss // "* i\n* j\n    * k"
+    @test p[1] // "abc"
+    @test p[2] // "* i\n* j\n    * k"
 
     p = """
         abc
@@ -254,8 +254,8 @@ end
         still part of j
           * k
         """ |> grouper
-    @test p[1].ss // "abc"
-    @test p[2].ss // "* i\n  * j\nstill part of j\n  * k"
+    @test p[1] // "abc"
+    @test p[2] // "* i\n  * j\nstill part of j\n  * k"
 
     p = """
         abc
@@ -263,7 +263,7 @@ end
         1) j
         1 k
         """ |> grouper
-    @test p[2].ss // "1. i\n1) j\n1 k"
+    @test p[2] // "1. i\n1) j\n1 k"
 end
 
 
@@ -278,7 +278,7 @@ end
         def
         """ |> grouper
     @test isp(p[1])
-    @test p[2].ss // "---"
+    @test p[2] // "---"
     @test isp(p[3])
 
     p = """
@@ -286,9 +286,9 @@ end
         ***
         > def
         """ |> grouper
-    @test p[1].ss // "> abc"
-    @test p[2].ss // "***"
-    @test p[3].ss // "> def"
+    @test p[1] // "> abc"
+    @test p[2] // "***"
+    @test p[3] // "> def"
 
     p = """
         > abc
@@ -296,9 +296,9 @@ end
         ___
         > def
         """ |> grouper
-    @test p[1].ss // "> abc\nxxx"
-    @test p[2].ss // "___"
-    @test p[3].ss // "> def"
+    @test p[1] // "> abc\nxxx"
+    @test p[2] // "___"
+    @test p[3] // "> def"
 end
 
 
@@ -336,9 +336,11 @@ end
     @test p[end-1].name == :EMPH_STRONG
     @test ct(p[end-1]) == "b _c_ d"
 
-    p = "a*b*c*" |> md_blockifier
-    @test ct(p[1]) == "b"
-    @test length(p) == 1  # last * is left dangling
+    s = "a*b*c*"
+    t = s |> toks
+    b = s |> md_blockifier
+    @test ct(b[1]) == "b"
+    @test length(b) == 1
 end
 
 
@@ -403,15 +405,15 @@ end
         """
     b = s |> md_blockifier
     @test b[1].name == :LINK_A
-    @test b[1].ss // "[abc]"
+    @test b[1] // "[abc]"
     @test b[2].name == :LINK_AB
-    @test b[2].ss // "[def](ghi)"
+    @test b[2] // "[def](ghi)"
     @test b[3].name == :IMG_A
-    @test b[3].ss // "![jkl]"
+    @test b[3] // "![jkl]"
     @test b[4].name == :IMG_AB
-    @test b[4].ss // "![mno](pqr)"
+    @test b[4] // "![mno](pqr)"
     @test b[5].name == :REF
-    @test b[5].ss // "[ref]:"
+    @test b[5] // "[ref]:"
 
     # not ok because not at the start of a line bar spaces
     s = "abc [def]: hello" |> md_blockifier
@@ -428,7 +430,7 @@ end
     p = s |> grouper
     @test ctf(p[1]) // "abc"
     @test length(p[2].blocks) == 1
-    @test p[2].blocks[1].ss // "[def]: foo\nbar"
+    @test p[2].blocks[1] // "[def]: foo\nbar"
     @test ctf(p[3]) // "baz"
 end
 
@@ -440,10 +442,10 @@ end
 @testset "12>comment" begin
     p = "Hello <!--bar--> baz foo `<!--aa-->`" |> grouper
     @test length(p) == 1
-    @test p[1].blocks[1].ss // "Hello"
-    @test p[1].blocks[2].ss // "<!--bar-->"
-    @test p[1].blocks[3].ss // "baz foo"
-    @test p[1].blocks[4].ss // "`<!--aa-->`"
+    @test p[1].blocks[1] // "Hello"
+    @test p[1].blocks[2] // "<!--bar-->"
+    @test p[1].blocks[3] // "baz foo"
+    @test p[1].blocks[4] // "`<!--aa-->`"
 end
 
 
@@ -477,8 +479,8 @@ end
         | 1 | 2 | 3 |
         def
         """ |> grouper
-    @test p[1].ss // "abc"
-    @test p[3].ss // "def"
+    @test p[1] // "abc"
+    @test p[3] // "def"
     p = "abc | def" |> md_blockifier
     @test length(p) == 0
 end
@@ -496,9 +498,9 @@ end
     p = """
         foo bar ??? <!-- etc __ ??? baz
         """ |> grouper
-    @test p[1].ss // "foo bar"
-    @test p[2].ss // "??? <!-- etc __ ???"
-    @test p[3].ss // "baz"
+    @test p[1] // "foo bar"
+    @test p[2] // "??? <!-- etc __ ???"
+    @test p[3] // "baz"
 end
 
 
@@ -507,8 +509,8 @@ end
     b = s |> md_blockifier
     @test ct(b[1]) == "ghi"
     p = s |> grouper
-    @test p[1].ss // s
-    @test p[1].blocks[2].ss // raw"$ghi$"
+    @test p[1] // s
+    @test p[1].blocks[2] // raw"$ghi$"
 
     # disable math
     s = raw"foo $800"
@@ -547,19 +549,19 @@ end
         \foo \bar{def}
         """
     p = s |> grouper
-    @test p[1].ss // s
-    @test p[1].blocks[1].ss // raw"\newcommand"
-    @test p[1].blocks[2].ss // raw"{\foo}"
-    @test p[1].blocks[3].ss // raw"{abc}"
-    @test p[1].blocks[4].ss // raw"\newcommand"
-    @test p[1].blocks[5].ss // raw"{\bar}"
-    @test p[1].blocks[6].ss // raw"[1]"
-    @test p[1].blocks[7].ss // raw"{abc#1}"
+    @test p[1] // s
+    @test p[1].blocks[1] // raw"\newcommand"
+    @test p[1].blocks[2] // raw"{\foo}"
+    @test p[1].blocks[3] // raw"{abc}"
+    @test p[1].blocks[4] // raw"\newcommand"
+    @test p[1].blocks[5] // raw"{\bar}"
+    @test p[1].blocks[6] // raw"[1]"
+    @test p[1].blocks[7] // raw"{abc#1}"
 
     p = raw"\newcommand{\foo}  [1 ] {abc}" |> grouper
-    @test p[1].blocks[2].ss // raw"{\foo}"
-    @test p[1].blocks[3].ss // "[1 ]"
-    @test p[1].blocks[4].ss // "{abc}"
+    @test p[1].blocks[2] // raw"{\foo}"
+    @test p[1].blocks[3] // "[1 ]"
+    @test p[1].blocks[4] // "{abc}"
 end
 
 

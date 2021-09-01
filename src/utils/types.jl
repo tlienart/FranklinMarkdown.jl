@@ -11,7 +11,7 @@ from(s::AbstractSpan)          = from(s.ss::SS)
 to(s::AbstractSpan)            = to(s.ss::SS)
 parent_string(s::AbstractSpan) = parent_string(s.ss::SS)
 content(s::AbstractSpan)       = s.ss
-
+Base.isempty(o::AbstractSpan)  = isempty(strip(o.ss))
 
 """
     Token <: AbstractSpan
@@ -97,9 +97,6 @@ function content(b::Block)::SS
     # return the substring corresponding to the range
     return subs(s, idxo, idxc)
 end
-
-
-Base.isempty(b::Block) = isempty(strip(b.ss))
 
 
 """

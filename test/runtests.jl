@@ -27,3 +27,11 @@ end
     include("partition/html_partition.jl")
     include("partition/math_partition.jl")
 end
+
+@testset "cmark" begin
+    # all the tests here are directly taken from
+    # https://github.com/MichaelHatherly/CommonMark.jl/tree/master/test/samples/cmark
+    include("cmark/inlines.jl")
+    include("cmark/blocks.jl")
+    include("cmark/misc.jl")
+end

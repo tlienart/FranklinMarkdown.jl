@@ -137,7 +137,10 @@ end
 Process emphasis token candidates and either take them or discard them if
 they don't look correct.
 
-`xTy` with token `T` is invalid if both `x` and `y` are space characters.
+* `sTs` with token `T` is `s` is a space
+* `xTs` with token `T` is a valid CLOSE if `x` is a character and `s` a space
+* `sTx` with token `T` is a valid OPEN if `x` is a character and `s` a space
+* `xTy` with token `T` is a valid MIXED if `x`, `y` are characters
 """
 function process_emphasis_tokens!(tokens::Vector{Token})
     isempty(tokens) && return
@@ -145,14 +148,27 @@ function process_emphasis_tokens!(tokens::Vector{Token})
     ps = parent_string(first(tokens))
     N  = lastindex(ps)
     @inbounds for (i, t) in enumerate(tokens)
-
         if t.name in (:EM, :STRONG, :EM_STRONG)
             prev_char = previous_chars(t)
             next_char = next_chars(t)
             # if the token is surrounded by spaces, discard it
-            bad = !isempty(prev_char) && first(prev_char) in (' ', '\t') &&
-                  !isempty(next_char) && first(next_char) in (' ', '\t')
-            bad && push!(remove, i)
+            bad = !isempty(prev_char) && first(prev_char) in SPACE_CHAR &&
+                  !isempty(next_char) && first(next_char) in SPACE_CHAR
+            # sTs
+            if bad
+                push!(remove, i)
+            # Tx or sTx
+            elseif isempty(prev_char) || first(prev_char) in SPACE_CHAR
+                n = Symbol(string(t.name) * "_OPEN")
+                tokens[i] = Token(n, t.ss)
+            # xT or xTs
+            elseif isempty(next_char) || first(next_char) in SPACE_CHAR
+                n = Symbol(string(t.name) * "_CLOSE")
+                tokens[i] = Token(n, t.ss)
+            else # xTy
+                n = Symbol(string(t.name) * "_MX")
+                tokens[i] = Token(n, t.ss)
+            end
         end
     end
     deleteat!(tokens, remove)
@@ -162,7 +178,7 @@ end
 """
     process_autolink_close_tokens!(tokens)
 
-Discard :AUTOLINK_CLOSE that are not preceded by an ALPHA_LATIN character.
+Discard :AUTOLINK_CLOSE that are preceded by a space.
 """
 function process_autolink_close_tokens!(tokens::Vector{Token})
     isempty(tokens) && return
@@ -170,7 +186,7 @@ function process_autolink_close_tokens!(tokens::Vector{Token})
     @inbounds for (i, t) in enumerate(tokens)
         t.name == :AUTOLINK_CLOSE || continue
         c = previous_chars(t)
-        (isempty(c) || first(c) ∉ ALPHA_LATIN) && push!(remove, i)
+        (isempty(c) || first(c) ∈ SPACE_CHAR) && push!(remove, i)
     end
     deleteat!(tokens, remove)
     return

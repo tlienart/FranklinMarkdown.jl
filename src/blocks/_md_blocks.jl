@@ -1,11 +1,16 @@
 # see utils/types/BlockTemplate
 const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
-   BlockTemplate(:COMMENT,         :COMMENT_OPEN,   :COMMENT_CLOSE  ),
-   BlockTemplate(:RAW_HTML,        :RAW_HTML,       :RAW_HTML       ),
-   BlockTemplate(:MD_DEF_BLOCK,    :MD_DEF_BLOCK,   :MD_DEF_BLOCK   ),
-   BlockTemplate(:EMPH_EM,         :EM,             :EM             ),
-   BlockTemplate(:EMPH_STRONG,     :STRONG,         :STRONG         ),
-   BlockTemplate(:EMPH_EM_STRONG,  :EM_STRONG,      :EM_STRONG      ),
+   BlockTemplate(:COMMENT,         :COMMENT_OPEN,   :COMMENT_CLOSE),
+   BlockTemplate(:RAW_HTML,        :RAW_HTML,       :RAW_HTML     ),
+   BlockTemplate(:MD_DEF_BLOCK,    :MD_DEF_BLOCK,   :MD_DEF_BLOCK ),
+   #
+   BlockTemplate(:EMPH_EM,        :EM_OPEN,        (:EM_CLOSE,        :EM_MX),        nesting=true),
+   BlockTemplate(:EMPH_EM,        :EM_MX,          (:EM_CLOSE,        :EM_MX),        nesting=true),
+   BlockTemplate(:EMPH_STRONG,    :STRONG_OPEN,    (:STRONG_CLOSE,    :STRONG_MX),    nesting=true),
+   BlockTemplate(:EMPH_STRONG,    :STRONG_MX,      (:STRONG_CLOSE,    :STRONG_MX),    nesting=true),
+   BlockTemplate(:EMPH_EM_STRONG, :EM_STRONG_OPEN, (:EM_STRONG_CLOSE, :EM_STRONG_MX), nesting=true),
+   BlockTemplate(:EMPH_EM_STRONG, :EM_STRONG_MX,   (:EM_STRONG_CLOSE, :EM_STRONG_MX), nesting=true),
+   #
    BlockTemplate(:AUTOLINK,        :AUTOLINK_OPEN,  :AUTOLINK_CLOSE ),
    # these blocks are disabled in find_blocks if they're not attached in
    # a link/img/... context
@@ -53,9 +58,9 @@ const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
 #
 
 const CAN_BE_LEFT_OPEN = (
-    :EM,
-    :STRONG,
-    :EM_STRONG,
+    :EM_OPEN, :EM_MX,
+    :STRONG_OPEN, :STRONG_MX,
+    :EM_STRONG_OPEN, :EM_STRONG_MX,
     :BRACKET_OPEN,
     :AUTOLINK_OPEN
 )
