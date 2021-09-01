@@ -58,3 +58,5 @@ const HTML_ENTITY_PAT = r"^&(?:[a-zA-Z]{1,32}[0-9]{0,2}|#[0-9]{1,6}|#x[0-9a-f]{1
 const EMOJI_PAT = r"^\:[a-zA-Z0-9+-_]+\:$"
 
 const FOOTNOTE_PAT = r"^\[\^[\p{L}0-9][\p{L}0-9_]*\](:)?$"
+
+const OL_ITEM_PAT = r"^[0-9]{1,9}(?:[\.\)])[ \t]"

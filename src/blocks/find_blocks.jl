@@ -28,8 +28,7 @@ function find_blocks(
         # brackets which may form a link
         dt = _find_blocks!(blocks, tokens, MD_PASS2_TEMPLATES, is_active)
         form_links!(blocks)
-        # leftover :bracket blocks can be discarded and the tokens inside them
-        # reactivated;
+        # reactivated tokens inside remaining brackets
         reactivate = Vector{Pair{Int}}()
         for b in blocks
             if b.name == :BRACKETS
@@ -43,6 +42,8 @@ function find_blocks(
             ti   = to(toki)
             is_active[i] = any(r -> r.first < fi && ti < r.second, reactivate)
         end
+        # discard leftover bracket blocks
+        filter!(b -> b.name != :BRACKETS, blocks)
 
         # ======== PASS 3 ==============
         # remaining stuff e.g. emphasis tokens
@@ -198,20 +199,24 @@ function process_line_return!(b::Vector{Block}, tv::SubVector{Token},
         ps   = parent_string(cand)
         push!(b, Block(:ITEM_U_CAND, subs(ps, from(t), to(cand))))
 
-    elseif c[1] ∈ NUM_CHAR && c[2] in vcat(NUM_CHAR, [' ', '\t', '.', ')'])
+    elseif c[1] ∈ NUM_CHAR && c[2] in vcat(NUM_CHAR, ['.', ')'])
         cand = until_next_line_return(t)
-        ps   = parent_string(cand)
-        push!(b, Block(:ITEM_O_CAND, subs(ps, from(t), to(cand))))
+        if match(OL_ITEM_PAT, cand) !== nothing
+            ps   = parent_string(cand)
+            push!(b, Block(:ITEM_O_CAND, subs(ps, from(t), to(cand))))
+        end
 
     # ------------------------------------------------------------------------
     # Table Rows
     # NOTE we're stricter here than usual GFM, every row must start and end
     # with a pipe, every row must be on a single line.
-    elseif c[1] == '|' && c[2] in (' ', '\t')
+    elseif c[1] == '|'
         # TABLE_ROW_CAND
         cand = until_next_line_return(t)
-        ps   = parent_string(cand)
-        push!(b, Block(:TABLE_ROW_CAND, subs(ps, from(t), to(cand))))
+        if strip(cand)[end] == '|'
+            ps   = parent_string(cand)
+            push!(b, Block(:TABLE_ROW_CAND, subs(ps, from(t), to(cand))))
+        end
 
     # ------------------------------------------------------------------------
     # Blockquote

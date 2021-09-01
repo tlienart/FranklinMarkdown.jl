@@ -33,9 +33,9 @@ Note: sometimes the parser is more, sometimes less tolerant, usually there's a g
 
 * atxheadings (`# ...`)
 * blockquote (`> ...`)
-* fenced code blocks (```` ```julia ... ``` ````)
-* lists
-* hrules (`---`, ...)
+* fenced code blocks (```` ```julia ... ``` ````) no more than 5 backticks allowed
+* lists (only tight lists are allowed)
+* hrules (`---`, ...) requires a triple
 * emphasis (`*a*`, `_a_`, `**a**`, ...)
 * autolink (`<...>`)
 * htmlentity (`&amp;`)

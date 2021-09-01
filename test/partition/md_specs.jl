@@ -483,6 +483,12 @@ end
     @test p[3] // "def"
     p = "abc | def" |> md_blockifier
     @test length(p) == 0
+    p = "| abc | def |" |> md_blockifier
+    @test p[1].name == :TABLE_ROW_CAND
+    p = "|abc|def|" |> md_blockifier
+    @test p[1].name == :TABLE_ROW_CAND
+    p = "|abc|def" |> md_blockifier   # doesn't end with '|'
+    @test length(p) == 0
 end
 
 
