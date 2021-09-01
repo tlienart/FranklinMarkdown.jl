@@ -43,4 +43,9 @@ end
         @@d klm @@""" |> grouper
     @test g[1].role == :PARAGRAPH
     @test g[2].role == :DIV
+    g = """
+        @@d klm @@
+        abc *def* ghi""" |> grouper
+    @test g[2].role == :PARAGRAPH
+    @test g[1].role == :DIV
 end

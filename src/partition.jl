@@ -131,30 +131,24 @@ function md_grouper(blocks::Vector{Block})::Vector{Group}
     cur_role = :NONE
     cur_head = 0
     i        = 1
+    n_blocks = length(blocks)
 
-    while i <= length(blocks)
+    while i <= n_blocks
         bi = blocks[i]
         br = bi.name in INLINE_BLOCKS ? :PARAGRAPH : bi.name
 
         if br != :PARAGRAPH
-            _close_open_group!(groups, blocks, cur_head, i, cur_role)
+            _close_open_paragraph!(groups, blocks, cur_head, i)
             isempty(bi) || push!(groups, Group(bi; role=br))
             cur_head = 0
             cur_role = br
 
-        elseif br != cur_role
-            # role is different and not 'none'
-            _close_open_group!(groups, blocks, cur_head, i, cur_role)
-            if i == length(blocks) && !isempty(bi)
-                push!(groups, Group(bi; role=br))
-            end
-            cur_head = i
-            cur_role = br
-
         elseif i == length(blocks)
-            _close_open_group!(groups, blocks, cur_head, i+1, cur_role)
-        end
+            _close_open_paragraph!(groups, blocks, cur_head, i+1)
 
+        else
+            cur_head = ifelse(cur_head == 0, i, cur_head)
+        end
         i += 1
     end
 
@@ -163,10 +157,10 @@ function md_grouper(blocks::Vector{Block})::Vector{Group}
 end
 
 
-function _close_open_group!(groups, blocks, cur_head, i, cur_role)
+function _close_open_paragraph!(groups, blocks, cur_head, i)
     if cur_head != 0
         bs = filter!(!isempty, blocks[cur_head:i-1])
-        isempty(bs) || push!(groups, Group(bs; role=cur_role))
+        isempty(bs) || push!(groups, Group(bs; role=:PARAGRAPH))
     end
     return
 end
