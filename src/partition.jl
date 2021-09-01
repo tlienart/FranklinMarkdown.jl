@@ -26,7 +26,10 @@ function partition(
     if isempty(tokens)
         tokens = tokenizer(s)
     end
-    if length(tokens) == 1   # only the EOS token
+    # NOTE: we need to be explicit here as in the recursive case, when partitioning
+    # a block, there will not be a LR and EOS token, we're just getting the blocks'
+    # inner token (and so checking the length of the tokens is insufficient)
+    if length(tokens) == 2 && tokens[1].name == :LINE_RETURN && tokens[2].name == :EOS
         return [TextBlock(s)]
     end
 
