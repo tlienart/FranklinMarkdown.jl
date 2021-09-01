@@ -38,4 +38,9 @@ end
         | a | b | c |""" |> grouper
     @test g[1].role == :PARAGRAPH
     @test g[2].role == :TABLE
+    g = """
+        abc *def* ghi
+        @@d klm @@""" |> grouper
+    @test g[1].role == :PARAGRAPH
+    @test g[2].role == :DIV
 end
