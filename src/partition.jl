@@ -15,8 +15,8 @@ blockifier, and return a partition of the text into a vector of Blocks.
 function partition(
             s::SS,
             tokenizer::Function,
-            blockifier::Function,
-            tokens::SubVector{Token}=EMPTY_TOKEN_SVEC;
+            blockifier::Function;
+            tokens::SubVector{Token}=EMPTY_TOKEN_SVEC,
             disable::Vector{Symbol}=Symbol[],
             postproc::Function=identity
             )::Vector{Block}
@@ -118,45 +118,26 @@ end
 
 
 """
-    md_grouper(blocks, cases)
+    md_grouper(blocks)
 
 Groups text and inline blocks after partition, this helps in forming paragraphs.
 """
-function md_grouper(
-            blocks::Vector{Block},
-            cases::LittleDict{Symbol, Vector{Symbol}}=LittleDict(
-                :paragraph => INLINE_BLOCKS,
-                :list => [
-                    :ITEM_U_CAND,
-                    :ITEM_O_CAND
-                ],
-                :table => [
-                    :TABLE_ROW_CAND
-                ],
-            )
-        )::Vector{Group}
+function md_grouper(blocks::Vector{Block})::Vector{Group}
 
     groups   = Group[]
-    cur_role = :none
+    cur_role = :NONE
     cur_head = 0
     i        = 1
 
     while i <= length(blocks)
         bi = blocks[i]
-        br = :none
-        # does the block correspond to a role? [:paragraph, :table, :list]
-        for (role, names) in cases
-            if bi.name in names
-                br = role
-                break
-            end
-        end
+        br = bi.name in INLINE_BLOCKS ? :PARAGRAPH : bi.name
 
-        if br == :none
+        if br != :PARAGRAPH
             _close_open_group!(groups, blocks, cur_head, i, cur_role)
-            isempty(bi) || push!(groups, Group(bi; role=:none))
+            isempty(bi) || push!(groups, Group(bi; role=br))
             cur_head = 0
-            cur_role = :none
+            cur_role = br
 
         elseif br != cur_role
             # role is different and not 'none'

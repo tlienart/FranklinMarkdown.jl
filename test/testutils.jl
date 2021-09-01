@@ -23,4 +23,4 @@ text(b) = FP.prepare_text(b)
 ct(b)   = FP.content(b)
 ctf(b::FP.Group) = FP.content(first(b.blocks))
 grouper = FP.md_grouper ∘ slice
-isp(g)  = g.role == :paragraph
+isp(g)  = g.role == :PARAGRAPH

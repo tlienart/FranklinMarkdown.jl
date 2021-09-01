@@ -37,3 +37,11 @@ end
     @test isconcretetype(FP.Block)
     @test isconcretetype(Vector{FP.Block})
 end
+
+@testset "subv" begin
+    a = [1,2,3,4]
+    va = FP.subv(a)
+    @test length(va) == length(a)
+    @test va isa SubArray
+    @test va === FP.subv(va)
+end

@@ -75,7 +75,7 @@ function TextBlock(ss::SS, it=EMPTY_TOKEN_SVEC)::Block
     tss = to(ss)
     i = findfirst(t -> fss <= from(t), it)
     j = findlast(t -> to(t) <= tss && !is_eos(t), it)
-    i === nothing || j === nothing && return Block(:TEXT, ss)
+    any(isnothing, (i, j)) && return Block(:TEXT, ss)
     inner_tokens = @view it[i:j]
     return Block(:TEXT, ss, inner_tokens)
 end

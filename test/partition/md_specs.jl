@@ -70,7 +70,7 @@
     @test ct(p[1]) // "abc"
     @test ct(p[2]) // "def"
     @test ct(p[3]) // "ghi"
-    @test all(p_i.role == :paragraph for p_i in p)
+    @test all(p_i.role == :PARAGRAPH for p_i in p)
 
     p = """
         abc
@@ -80,9 +80,9 @@
         ghi
         """ |> grouper
     @test ct(p[1]) // "abc"
-    @test p[2].role == :none
+    @test p[2].role == :CODE_BLOCK
     @test ctf(p[2]) // "def"
-    @test p[3].role == :paragraph
+    @test p[3].role == :PARAGRAPH
     @test ct(p[3]) // "ghi"
 
     p = raw"""
@@ -194,9 +194,9 @@ end
         ```
         ghi
         """ |> grouper
-    @test p[1].role == :paragraph
+    @test p[1].role == :PARAGRAPH
     @test ctf(p[2]) // "def"
-    @test p[3].role == :paragraph
+    @test p[3].role == :PARAGRAPH
 
     p = """
         abc

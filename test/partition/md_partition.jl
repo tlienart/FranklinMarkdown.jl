@@ -18,27 +18,24 @@
     @test all(parts[i].name == :COMMENT for i in (2, 4))
 end
 
-# @testset "text tokens" begin
-#     s = """
-#         ABC &#x02316; DEF
-#         @@dname
-#         GHI
-#         @@
-#         KLM &Tab;
-#         """
-#     parts = FP.md_partition(s)
-#     @test parts[1].inner_tokens[1].name == :CHAR_HTML_ENTITY
-#     @test parts[1].inner_tokens[2].name == :LINE_RETURN
-#     @test length(parts[1].inner_tokens) == 2
-#     @test parts[2].name == :DIV
-#     # EOS is stripped
-#     @test parts[3].inner_tokens[1].name == :LINE_RETURN
-#     @test parts[3].inner_tokens[2].name == :CHAR_HTML_ENTITY
-#     @test parts[3].inner_tokens[3].name == :LINE_RETURN
-#     @test length(parts[3].inner_tokens) == 3
-#
-#     # recursion
-#     subparts = FP.md_partition(parts[2])
-#     @test length(subparts) == 1
-#     @test subparts[1].name == :TEXT
-# end
+@testset "cov" begin
+    s = "abc"
+    p = FP.md_partition(s)
+    @test length(p) == 1
+    @test p[1].name == :TEXT
+
+    p = "abc @@d ef *AA* g @@ end" |> FP.md_partition
+    @test p[2] isa FP.Block
+    c = p[2] |> FP.md_partition
+    @test c[1].ss // "ef"
+    @test c[2].ss // "*AA*"
+    @test c[3].ss // "g"
+end
+
+@testset "group" begin
+    g = """
+        abc *def* ghi
+        | a | b | c |""" |> grouper
+    @test g[1].role == :PARAGRAPH
+    @test g[2].role == :TABLE
+end
