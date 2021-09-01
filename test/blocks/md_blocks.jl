@@ -211,3 +211,10 @@ end
     @test FP.content(b[1]) == "abc_def_ghi"
     @test b[2].name == :P_BREAK
 end
+
+@testset "cov" begin
+    t = "a *bc* d _ef_ g" |> toks
+    b = FP.find_blocks(t)
+    @test b[1].ss // "*bc*"
+    @test b[2].ss // "_ef_"
+end
