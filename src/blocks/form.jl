@@ -1,5 +1,5 @@
 const BLOCKQUOTE_ACC = union((:BLOCKQUOTE_LINE,), INLINE_BLOCKS)
-const ITEM_ACC       = union((:ITEM_U_CAND, :ITEM_O_CAND), INLINE_BLOCKS)
+const LIST_ACC       = union((:ITEM_U_CAND, :ITEM_O_CAND), INLINE_BLOCKS)
 const TABLE_ACC      = union((:TABLE_ROW_CAND,), [b for b in INLINE_BLOCKS if b != :TEXT])
 
 """
@@ -46,7 +46,7 @@ form_blockquotes!(blocks::Vector{Block}) =
     aggregate!(blocks, [:BLOCKQUOTE_LINE], BLOCKQUOTE_ACC, :BLOCKQUOTE)
 
 form_lists!(blocks::Vector{Block}) =
-    aggregate!(blocks, [:ITEM_U_CAND, :ITEM_O_CAND], ITEM_ACC, :LIST)
+    aggregate!(blocks, [:ITEM_U_CAND, :ITEM_O_CAND], LIST_ACC, :LIST)
 
 form_tables!(blocks::Vector{Block}) =
     aggregate!(blocks, [:TABLE_ROW_CAND], TABLE_ACC, :TABLE)

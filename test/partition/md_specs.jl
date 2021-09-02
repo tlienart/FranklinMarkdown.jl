@@ -49,17 +49,6 @@
 # f16 html block
 
 @testset "0>paragraphs" begin
-    # XXX: need to think a bit, when are paragraphs "constructed"?
-    # if we construct them early on we might add a level of recursion
-    # a bit needlessly also this can only be done a posteriori once all
-    # blocks have been figured out. So maybe a good way is to construct
-    # a specific AbstractSpan "paragraph" that groups inline blocks into
-    # paragraphs
-    # ==> this is the distinction between "container" blocks and inline btw
-    # --> [ParagraphBlock, Block, Block, ParagraphBlock, ...]
-    # ParagraphBlock is an AbstractSpan and contains a bunch of subblocks (text/inline)
-    # Block is everything else that's not inline (e.g. code)
-
     p = """
         abc
 
@@ -520,7 +509,7 @@ end
 
     # disable math
     s = raw"foo $800"
-    p = FP.md_partition(s, disable=[:MATH_A])
+    p = FP.md_partition(s, disable=[:MATH_INLINE])
     @test p[1].name == :TEXT
     @test ct(p[1]) == s
 end

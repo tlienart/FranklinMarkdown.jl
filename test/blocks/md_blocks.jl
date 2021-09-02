@@ -151,17 +151,17 @@ end
     b = raw"""
         A $B$ C
         """ |> md_blockifier
-    @test b[1].name == :MATH_A
+    @test b[1].name == :MATH_INLINE
     @test FP.content(b[1]) == "B"
     b = raw"""
         A $$B$$ C
         """ |> md_blockifier
-    @test b[1].name == :MATH_B
+    @test b[1].name == :MATH_DISPL_A
     @test FP.content(b[1]) == "B"
     b = raw"""
         A \[B\] C
         """ |> md_blockifier
-    @test b[1].name == :MATH_C
+    @test b[1].name == :MATH_DISPL_B
     @test FP.content(b[1]) == "B"
     # b = raw"""
     #     A _$>_B_$<_ C
@@ -170,8 +170,8 @@ end
     b = raw"""
         A $$B$$ C $D$
         """ |> md_blockifier
-    @test b[1].name == :MATH_B
-    @test b[2].name == :MATH_A
+    @test b[1].name == :MATH_DISPL_A
+    @test b[2].name == :MATH_INLINE
 end
 
 @testset "lx-obj" begin

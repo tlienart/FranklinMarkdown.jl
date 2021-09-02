@@ -106,8 +106,8 @@ end
     @test tokens[7].name == :CHAR_35
     tokens = raw"\[ \] \newenvironment{foo}{a}{b}" |> FP.default_md_tokenizer
     deleteat!(tokens, 1)
-    @test tokens[1].name == :MATH_C_OPEN
-    @test tokens[2].name == :MATH_C_CLOSE
+    @test tokens[1].name == :MATH_DISPL_B_OPEN
+    @test tokens[2].name == :MATH_DISPL_B_CLOSE
     @test tokens[3].name == :LX_NEWENVIRONMENT
     @test tokens[4].name == :CU_BRACKET_OPEN
     tokens = raw"\newcommand{a}{b}\begin{a}\end{a}" |> FP.default_md_tokenizer
@@ -140,10 +140,10 @@ end
 
     tokens = raw"$ $$ $a$" |> FP.default_md_tokenizer
     deleteat!(tokens, 1)
-    @test tokens[1].name == :MATH_A
-    @test tokens[2].name == :MATH_B
-    @test tokens[3].name == :MATH_A
-    @test tokens[4].name == :MATH_A
+    @test tokens[1].name == :MATH_INLINE
+    @test tokens[2].name == :MATH_DISPL_A
+    @test tokens[3].name == :MATH_INLINE
+    @test tokens[4].name == :MATH_INLINE
 
     # tokens = raw"_$>_ _$<_ ___ **** ---" |> FP.default_md_tokenizer
     # deleteat!(tokens, 1)

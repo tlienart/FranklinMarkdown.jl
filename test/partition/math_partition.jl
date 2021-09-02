@@ -2,7 +2,7 @@
     s = raw"A $B \com{C}$ D"
     parts = FP.md_partition(s)
     mathb = parts[2]
-    @test mathb.name == :MATH_A
+    @test mathb.name == :MATH_INLINE
     parts = FP.math_partition(FP.content(mathb))
     @test parts[1].name == :TEXT
     @test parts[2].name == :LX_COMMAND

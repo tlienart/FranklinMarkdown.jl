@@ -27,9 +27,9 @@ const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
    BlockTemplate(:CODE_INLINE,     :CODE_DOUBLE,  :CODE_DOUBLE  ),
    BlockTemplate(:CODE_INLINE,     :CODE_SINGLE,  :CODE_SINGLE  ),
    # maths
-   BlockTemplate(:MATH_A, :MATH_A,      :MATH_A      ),
-   BlockTemplate(:MATH_B, :MATH_B,      :MATH_B      ),
-   BlockTemplate(:MATH_C, :MATH_C_OPEN, :MATH_C_CLOSE),
+   BlockTemplate(:MATH_INLINE,  :MATH_INLINE,       :MATH_INLINE       ),
+   BlockTemplate(:MATH_DISPL_A, :MATH_DISPL_A,      :MATH_DISPL_A      ),
+   BlockTemplate(:MATH_DISPL_B, :MATH_DISPL_B_OPEN, :MATH_DISPL_B_CLOSE),
    # md def one line
    BlockTemplate(:MD_DEF, :MD_DEF_OPEN, END_OF_LINE),
    # div and braces
@@ -77,7 +77,7 @@ const MD_PASS1_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
          :RAW_HTML,
          :MD_DEF_BLOCK, :MD_DEF,
          :CODE_BLOCK_LANG, :CODE_BLOCK!, :CODE_BLOCK, :CODE_INLINE,
-         :MATH_A, :MATH_B, :MATH_C,
+         :MATH_INLINE, :MATH_DISPL_A, :MATH_DISPL_B,
          :DIV,
          :AUTOLINK,
          :CU_BRACKETS,

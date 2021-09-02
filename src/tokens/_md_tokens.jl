@@ -62,8 +62,8 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("\\\\") => :LINEBREAK,         # --> <br/>
         forward_match("\\", SPACE_CHAR) => :CHAR_92,
         # -- maths
-        forward_match("\\[")  => :MATH_C_OPEN,      # \[ ...
-        forward_match("\\]")  => :MATH_C_CLOSE,     #    ... \]
+        forward_match("\\[")  => :MATH_DISPL_B_OPEN,      # \[ ...
+        forward_match("\\]")  => :MATH_DISPL_B_CLOSE,     #    ... \]
         # -- latex
         forward_match("\\newenvironment", ['{']) => :LX_NEWENVIRONMENT,
         forward_match("\\newcommand", ['{'])     => :LX_NEWCOMMAND,
@@ -116,8 +116,8 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         F_HTML_ENTITY => :CHAR_HTML_ENTITY,
         ],
     '$' => [
-        forward_match("\$", ['$'], false) => :MATH_A,  # $⎵*
-        forward_match("\$\$")             => :MATH_B,  # $$⎵*
+        forward_match("\$", ['$'], false) => :MATH_INLINE,   # $⎵*
+        forward_match("\$\$")             => :MATH_DISPL_A,  # $$⎵*
         ],
     '_' => [
         forward_match("___", ['_'], false) => :EM_STRONG,
