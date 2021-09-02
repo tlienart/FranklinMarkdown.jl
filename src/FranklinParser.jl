@@ -29,7 +29,7 @@ const INLINE_BLOCKS = [
     :EMPH_EM, :EMPH_STRONG, :EMPH_EM_STRONG,  # * ** ***, _ __ ____
     :LINEBREAK,                               # \\
     :CODE_INLINE,                             # `...`
-    :MATH_INLINE,                                  # $...$
+    :MATH_INLINE,                             # $...$
     :AUTOLINK,                                # <...>
     :LINK_A, :LINK_AB, :IMG_A, :IMG_AB,       # [...](...) ![...](...)
     :CU_BRACKETS, :LX_COMMAND,
