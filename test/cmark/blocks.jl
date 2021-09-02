@@ -379,3 +379,42 @@ end
         [[[[[[[[[[[[[[[[[[[[ this should not slow down anything ]]]]]]]]]]]]]]]]]]]]: q
          (as long as it is not referenced anywhere)"""
 end
+
+@testset "12|nestedref" begin
+    s = """
+        [[[[[[[foo]]]]]]]
+
+        [[[[[[[foo]]]]]]]: bar
+        [[[[[[foo]]]]]]: bar
+        [[[[[foo]]]]]: bar
+        [[[[foo]]]]: bar
+        [[[foo]]]: bar
+        [[foo]]: bar
+        [foo]: bar
+
+        [*[*[*[*[foo]*]*]*]*]
+
+        [*[*[*[*[foo]*]*]*]*]: bar
+        [*[*[*[foo]*]*]*]: bar
+        [*[*[foo]*]*]: bar
+        [*[foo]*]: bar
+        [foo]: bar
+        """
+    g = s |> grouper
+    @test g[1] // "[[[[[[[foo]]]]]]]"
+    @test g[2] // "[[[[[[[foo]]]]]]]: bar"
+    @test g[3] // "[[[[[[foo]]]]]]: bar"
+    @test g[4] // "[[[[[foo]]]]]: bar"
+
+    @test g[5] // "[[[[foo]]]]: bar"
+    @test g[6] // "[[[foo]]]: bar"
+    @test g[7] // "[[foo]]: bar"
+    @test g[8] // "[foo]: bar"
+    @test g[9] // "[*[*[*[*[foo]*]*]*]*]"
+
+    @test g[10] // "[*[*[*[*[foo]*]*]*]*]: bar"
+    @test g[11] // "[*[*[*[foo]*]*]*]: bar"
+    @test g[12] // "[*[*[foo]*]*]: bar"
+    @test g[13] // "[*[foo]*]: bar"
+    @test g[14] // "[foo]: bar"
+end
