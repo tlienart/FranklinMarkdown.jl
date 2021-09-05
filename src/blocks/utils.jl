@@ -15,9 +15,9 @@ For a text block, replace the remaining tokens for special characters.
 """
 function prepare_text(b::Block)::String
     # in a text block the substring is the content
-    c = b.ss
+    c = strip(b.ss)
     # if there's no tokens over that content, return
-    isempty(b.inner_tokens) && return String(c)
+    (isempty(c) || isempty(b.inner_tokens)) && return String(c)
     # otherwise inject as appropriate
     parent = parent_string(c)
     io = IOBuffer()
