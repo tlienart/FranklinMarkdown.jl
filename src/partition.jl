@@ -164,3 +164,59 @@ function _close_open_paragraph!(groups, blocks, cur_head, i)
     end
     return
 end
+
+
+"""
+    split_args(s)
+
+Take a string like 'foo "bar baz" 1' and return a string that is split along
+whitespaces preserving quoted strings. So ["foo", "\"bar baz\"", "1"].
+"""
+function split_args(s::SS)
+    # 1. find single-quoted / triply-quoted strings
+    # 2. split the string outside of the quoted strings
+    # 3. return the list of strings
+    #
+    # Ex:   foo "bar baz" 1
+    #
+    # expected output is ["foo", "\"bar baz\"", "1"]
+    #
+    # (specific parsing/processing is then left to the user, the
+    # contract is that the user can then join(output, " ") and
+    # get something equivalent in terms of how Franklin parses it)
+    #
+    parts = partition(
+        s,
+        _s -> find_tokens(_s, ARGS_TOKENS),
+        _t -> (b = Block[]; _find_blocks!(b, subv(_t), ARGS_BLOCKS); b),
+    )
+
+    # form a dummy string with |__STR__| --> "foo |__STR__| 1"
+    dummy   = IOBuffer()
+    insert  = "|__STR__|"
+    strings = String[]
+    for p in parts
+        if p.name == :TEXT
+            write(dummy, content(p))
+        else
+            write(dummy, insert)
+            push!(strings, content(p))
+        end
+    end
+    # split the dummy string along white spaces
+    splits = split(String(take!(dummy)))
+
+    # reform the arguments in which |__STR__| appears.
+    i = 1
+    args = String[]
+    for sp in splits
+        if occursin(insert, sp)
+            push!(args, replace(sp, insert => "\"" * strings[i] * "\""))
+            i += 1
+        else
+            push!(args, sp)
+        end
+    end
+    return args
+end
+split_args(s::String) = split_args(subs(s))

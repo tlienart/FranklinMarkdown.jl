@@ -26,6 +26,7 @@ end
     include("partition/md_specs.jl")
     include("partition/html_partition.jl")
     include("partition/math_partition.jl")
+    include("partition/split_args.jl")
 end
 
 @testset "cmark" begin

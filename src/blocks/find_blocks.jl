@@ -72,7 +72,7 @@ function _find_blocks!(
             blocks::Vector{Block},
             tokens::SubVector{Token},
             templates::LittleDict{Symbol, BlockTemplate},
-            is_active::Vector{Bool};
+            is_active::Vector{Bool}=ones(Bool, length(tokens));
             process_linereturn::Bool=false
             )::Vector{Int}
     #
