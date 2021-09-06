@@ -123,7 +123,8 @@ end
 """
     md_grouper(blocks)
 
-Groups text and inline blocks after partition, this helps in forming paragraphs.
+Form begin-end spans keeping track of tokens and group text and inline blocks
+after partition, this helps in forming paragraphs.
 """
 function md_grouper(blocks::Vector{Block})::Vector{Group}
 
@@ -133,17 +134,58 @@ function md_grouper(blocks::Vector{Block})::Vector{Group}
     i        = 1
     n_blocks = length(blocks)
 
-    while i <= n_blocks
+    @inbounds while i <= n_blocks
         bi = blocks[i]
         br = bi.name in INLINE_BLOCKS ? :PARAGRAPH : bi.name
 
         if br != :PARAGRAPH
             _close_open_paragraph!(groups, blocks, cur_head, i)
-            isempty(bi) || push!(groups, Group(bi; role=br))
+            if br == :LX_BEGIN
+                blocks[i+1].name == :CU_BRACKETS || enverr()
+                env_name = content(blocks[i+1])
+                # look ahead trying to find the proper closing \end{...}
+                open_depth    = 1
+                closing_index = -1
+                probe = blocks[i+1]
+                for j in i+1:n_blocks-1
+                    cand  = probe.name
+                    probe = blocks[j+1]
+                    if (
+                        cand == :LX_END &&
+                        probe.name == :CU_BRACKETS &&
+                        content(probe) == env_name
+                        )
+                        open_depth -= 1
+                    elseif (
+                            cand == :LX_BEGIN &&
+                            probe.name == :CU_BRACKETS &&
+                            content(probe) == env_name
+                            )
+                        open_depth += 1
+                    end
+                    if open_depth == 0
+                        closing_index = j+1  # take the brace
+                        break
+                    end
+                end
+                closing_index == -1 && enverr("{$env_name}")
+                # here we have a range of blocks from i -> closing which form a
+                # complete begin{...} --> end{...}
+                bs = filter!(!isempty, blocks[i:closing_index])
+                # it can't be empty as first and last are necessarily begin/end
+                br = Symbol("ENV_$(env_name)")
+                push!(groups, Group(bs; role=br))
+                # move the head to the end
+                i = closing_index
+
+            elseif !isempty(bi)
+                push!(groups, Group(bi; role=br))
+            end
             cur_head = 0
             cur_role = br
 
         elseif i == length(blocks)
+            cur_head = ifelse(cur_head == 0, i, cur_head)
             _close_open_paragraph!(groups, blocks, cur_head, i+1)
 
         else
@@ -164,6 +206,11 @@ function _close_open_paragraph!(groups, blocks, cur_head, i)
     end
     return
 end
+
+enverr(n="") = parser_exception(:BlockNotClosed, """
+    An opening \\begin$n was found but either not followed by a brace or
+    left open.
+    """)
 
 
 """

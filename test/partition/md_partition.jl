@@ -49,3 +49,16 @@ end
     @test g[2].role == :PARAGRAPH
     @test g[1].role == :DIV
 end
+
+@testset "environment" begin
+    g = raw"abc \begin{foo} bar @@d baz @@ and \end{foo} hello" |> grouper
+    @test g[1] // "abc"
+    @test g[2] // raw"\begin{foo} bar @@d baz @@ and \end{foo}"
+    @test g[3] // "hello"
+
+    g = raw"abc \begin{foo} bar @@d baz @@ \begin{foo} a \end{foo} and \end{foo} hello" |> grouper
+    @test g[1] // "abc"
+    @test g[3] // "hello"
+
+    @test_throws FP.FranklinParserException raw"abc \begin{foo}" |> grouper
+end
