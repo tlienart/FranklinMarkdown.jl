@@ -36,3 +36,8 @@ end
     include("cmark/blocks.jl")
     include("cmark/misc.jl")
 end
+
+@testset "misc" begin
+    @test FP.content("abc") == "abc"
+    @test FP.content(FP.subs("abc")) == "abc"
+end

@@ -11,6 +11,8 @@ from(s::AbstractSpan)          = from(s.ss::SS)
 to(s::AbstractSpan)            = to(s.ss::SS)
 parent_string(s::AbstractSpan) = parent_string(s.ss::SS)
 content(s::AbstractSpan)       = s.ss
+content(s::SS)                 = s
+content(s::String)             = subs(s)
 Base.isempty(o::AbstractSpan)  = isempty(strip(o.ss))
 
 """
