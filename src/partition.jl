@@ -171,14 +171,12 @@ function md_grouper(blocks::Vector{Block})::Vector{Group}
                 closing_index == -1 && enverr("{$env_name}")
                 # here we have a range of blocks from i -> closing which form a
                 # complete begin{...} --> end{...}
-                bs = filter!(!isempty, blocks[i:closing_index])
                 # it can't be empty as first and last are necessarily begin/end
                 br = Symbol("ENV_$(env_name)")
-                push!(groups, Group(bs; role=br))
+                push!(groups, Group(blocks[i:closing_index]; role=br))
                 # move the head to the end
                 i = closing_index
-
-            elseif !isempty(bi)
+            else
                 push!(groups, Group(bi; role=br))
             end
             cur_head = 0
@@ -194,15 +192,15 @@ function md_grouper(blocks::Vector{Block})::Vector{Group}
         i += 1
     end
 
-    # finalise by removing empty blocks (e.g. P_BREAK)
-    return filter!(g -> !isempty(strip(g.ss)), groups)
+    # finalise by removing P_BREAK
+    filter!(g -> g.role != :P_BREAK, groups)
+    return groups
 end
 
 
 function _close_open_paragraph!(groups, blocks, cur_head, i)
     if cur_head != 0
-        bs = filter!(!isempty, blocks[cur_head:i-1])
-        isempty(bs) || push!(groups, Group(bs; role=:PARAGRAPH))
+        push!(groups, Group(blocks[cur_head:i-1]; role=:PARAGRAPH))
     end
     return
 end

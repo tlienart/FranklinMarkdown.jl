@@ -51,7 +51,7 @@ end
     @test t[1].name == :TEXT
     @test t[2].name == :LINEBREAK
     @test t[3].name == :HRULE
-    @test FP.prepare_text(t[4]) == "&#60;"
+    @test FP.prepare_text(t[4]) == "\n&#60;"
 
     # emoji
     p = raw"""

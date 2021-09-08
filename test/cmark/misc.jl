@@ -15,6 +15,7 @@
     [1]: https://github.com/markdown-it
     """
     g = s |> grouper
+    filter!(!isempty, g)
     @test length(g) == 7
 
     s = """

@@ -109,7 +109,7 @@ end
         `````
         """
     g = s |> grouper
-    @test g[1].ss // s
+    @test g[2].ss // s
 end
 
 # XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
@@ -130,12 +130,13 @@ end
     @test g[1] // "# heading"
     @test g[2] // "### heading"
     @test g[3] // "##### heading"
-    @test g[4] // "# heading #"
-    @test g[5] // "### heading ###"
-    @test g[6] // raw"##### heading \#\#\#\#\######"
-    @test all(!isp, g[1:6])
-    @test g[7] // "############ not a heading"
-    @test isp(g[7])
+
+    @test g[5] // "# heading #"
+    @test g[6] // "### heading ###"
+    @test g[7] // raw"##### heading \#\#\#\#\######"
+
+    @test g[8] // "\n############ not a heading"
+    @test isp(g[8])
 end
 
 # XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
@@ -156,6 +157,7 @@ end
          ************************* text
         """
     g = s |> grouper
+    filter!(!isempty, g)
     @test g[1] // "* * * * *"
     @test g[1].role == :LIST # NOTE: gets invalidated at Franklin level
     @test g[2] // "*** * *"
@@ -361,11 +363,12 @@ end
 
          <!-- [[[[[[[[[[[[[[[[[[[[]: this is not a valid reference -->
         """
-     g = s|>grouper
+     g = s |> grouper
+     filter!(!isempty, g)
      @test g[1].blocks[1] // "[1]"
      @test g[1].blocks[1].name == :LINK_A
-     @test g[2].blocks[1] // "[looooooooooooooooooooooooooooooooooooooooooooooooooong label]"
-     @test g[2].blocks[1].name == :LINK_A
+     @test g[2].blocks[2] // "[looooooooooooooooooooooooooooooooooooooooooooooooooong label]"
+     @test g[2].blocks[2].name == :LINK_A
 
      @test g[3] // "[1]: <http://something.example.com/foo/bar>"
      @test g[4] // "[2]: http://something.example.com/foo/bar 'test'"
@@ -401,6 +404,7 @@ end
         [foo]: bar
         """
     g = s |> grouper
+    filter!(!isempty, g)
     @test g[1] // "[[[[[[[foo]]]]]]]"
     @test g[2] // "[[[[[[[foo]]]]]]]: bar"
     @test g[3] // "[[[[[[foo]]]]]]: bar"

@@ -548,15 +548,18 @@ end
     @test p[1].blocks[1] // raw"\newcommand"
     @test p[1].blocks[2] // raw"{\foo}"
     @test p[1].blocks[3] // raw"{abc}"
-    @test p[1].blocks[4] // raw"\newcommand"
-    @test p[1].blocks[5] // raw"{\bar}"
-    @test p[1].blocks[6] // raw"[1]"
-    @test p[1].blocks[7] // raw"{abc#1}"
+    @test p[1].blocks[4] // "\n"
+    @test p[1].blocks[5] // raw"\newcommand"
+    @test p[1].blocks[6] // raw"{\bar}"
+    @test p[1].blocks[7] // raw"[1]"
+    @test p[1].blocks[8] // raw"{abc#1}"
 
     p = raw"\newcommand{\foo}  [1 ] {abc}" |> grouper
     @test p[1].blocks[2] // raw"{\foo}"
-    @test p[1].blocks[3] // "[1 ]"
-    @test p[1].blocks[4] // "{abc}"
+    @test p[1].blocks[3].ss == "  "
+    @test p[1].blocks[4] // "[1 ]"
+    @test p[1].blocks[5].ss == " "
+    @test p[1].blocks[6] // "{abc}"
 end
 
 
