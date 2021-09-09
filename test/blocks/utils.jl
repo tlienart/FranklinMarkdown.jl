@@ -59,3 +59,12 @@ end
         """ |> FP.md_partition
     @test FP.prepare_text(p[1]) // "A 👻 and 😄 but :foo:"
 end
+
+@testset "preptext2" begin
+    s = raw"abc \{ &#42;"
+    b = s |> FP.md_partition |> first
+    r = FP.prepare_text(b)
+    @test r // "abc &#123; &#42;"
+    r = FP.prepare_text(b; tohtml=false)
+    @test r // "abc \\{ &#42;"
+end

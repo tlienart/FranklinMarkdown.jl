@@ -13,7 +13,7 @@ end
 
 For a text block, replace the remaining tokens for special characters.
 """
-function prepare_text(b::Block)::String
+function prepare_text(b::Block; tohtml=true)::String
     c = b.ss
     # if there's no tokens over that content, return
     isempty(b.inner_tokens) && return String(c)
@@ -24,7 +24,7 @@ function prepare_text(b::Block)::String
     for t in b.inner_tokens
         t.name in MD_IGNORE && continue
         write(io, subs(parent, head, prev_index(t)))
-        write(io, insert(t))
+        write(io, insert(t; tohtml))
         head = next_index(t)
     end
     write(io, subs(parent, head, to(c)))
@@ -36,12 +36,12 @@ end
 
 For tokens representing special characters, insert the relevant string.
 """
-function insert(t::Token)::String
+function insert(t::Token; tohtml=true)::String
     stname = String(t.name)
     s = String(t.ss)  # safe default
     if t.name == :CHAR_HTML_ENTITY
         s = String(t.ss)
-    elseif startswith(stname, "CHAR_") # CHAR_*
+    elseif startswith(stname, "CHAR_") && tohtml # CHAR_*
         id = stname[6:end]
         s = "&#$(id);"
     elseif t.name == :CAND_EMOJI
