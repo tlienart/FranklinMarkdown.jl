@@ -48,5 +48,6 @@ function insert(t::Token; tohtml=true)::String
         # check if it's a valid emoji
         s = get(emoji_symbols, "\\$(t.ss)", s)
     end
+    tohtml || (s = replace(s, "&" => "\\&"))
     return s
 end

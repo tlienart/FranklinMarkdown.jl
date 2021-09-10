@@ -66,5 +66,5 @@ end
     r = FP.prepare_text(b)
     @test r // "abc &#123; &#42;"
     r = FP.prepare_text(b; tohtml=false)
-    @test r // "abc \\{ &#42;"
+    @test r // "abc \\{ \\&#42;"
 end
