@@ -40,6 +40,9 @@ function partition(
     blocks = blockifier(tokens)
     isempty(blocks) && return [TextBlock(s, tokens)]
 
+    # disable blocks if desired
+    isempty(disable) || filter!(t -> t.name ∉ disable, blocks)
+
     # Form a full partition with text blocks and blocks.
     parent = parent_string(s)
     first_block = blocks[1]
