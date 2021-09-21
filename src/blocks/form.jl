@@ -24,7 +24,6 @@ function aggregate!(blocks::Vector{Block}, items::Vector{Symbol},
     @inbounds while i ≤ length(blocks)
         bi = blocks[i]
         if bi.name in items
-            bi.ss
             # look ahead
             j = i + 1
             while j ≤ length(blocks)

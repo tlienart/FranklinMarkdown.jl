@@ -38,9 +38,13 @@ function partition(
 
     # form Blocks
     blocks = blockifier(tokens)
+    # discard first block if it's a 0-length P_BREAK
+    if !isempty(blocks) && iszero(to(blocks[1]))
+        deleteat!(blocks, 1)
+    end
     isempty(blocks) && return [TextBlock(s, tokens)]
 
-    # disable blocks if desired
+    # disable additional blocks if desired
     isempty(disable) || filter!(t -> t.name ∉ disable, blocks)
 
     # Form a full partition with text blocks and blocks.
@@ -50,7 +54,8 @@ function partition(
 
     # add Text at beginning if first block is not there
     if from(s) < from(first_block)
-        tb = TextBlock(subs(parent, from(s), prev_index(first_block)), tokens)
+        inter = subs(parent, from(s), prev_index(first_block))
+        tb    = TextBlock(inter, tokens)
         push!(parts, tb)
     end
 
@@ -66,7 +71,8 @@ function partition(
 
     # add Text at the end if last block is not there
     if to(s) > to(last_block)
-        push!(parts, TextBlock(subs(parent, next_index(last_block), to(s)), tokens))
+        inter = subs(parent, next_index(last_block), to(s))
+        push!(parts, TextBlock(inter, tokens))
     end
 
     # Postprocessing (e.g. forming blockquotes, lists etc)

@@ -7,13 +7,13 @@ block. This field is necessarily of type `SubString{String}`.
 """
 abstract type AbstractSpan end
 
-from(s::AbstractSpan)          = from(s.ss::SS)
-to(s::AbstractSpan)            = to(s.ss::SS)
-parent_string(s::AbstractSpan) = parent_string(s.ss::SS)
-content(s::AbstractSpan)       = s.ss
-content(s::SS)                 = s
-content(s::String)             = subs(s)
-Base.isempty(o::AbstractSpan)  = isempty(strip(o.ss))
+from(s::AbstractSpan)::Int             = from(s.ss::SS)
+to(s::AbstractSpan)::Int               = to(s.ss::SS)
+parent_string(s::AbstractSpan)::String = parent_string(s.ss::SS)
+content(s::AbstractSpan)::SS           = s.ss
+content(s::SS)::SS                     = s
+content(s::String)::SS                 = subs(s)
+Base.isempty(o::AbstractSpan)::Bool    = isempty(strip(o.ss))
 
 """
     Token <: AbstractSpan
