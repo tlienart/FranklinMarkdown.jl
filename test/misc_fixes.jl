@@ -1,5 +1,12 @@
 # ----------------------------------------------------------------------------
-# Sep24 | more of the previous
+# Sep24 | more issues with lists and sub
+md = """
+    1. A
+    1. B
+    """
+g = FP.md_partition(md) |> FP.md_grouper
+@test g[1].role == :LIST
+@test g[1] // md
 md = """
     * A **B** `C`
     * D _E_

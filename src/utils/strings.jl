@@ -97,7 +97,7 @@ Return the substring following the object and until the next line return or end.
 function until_next_line_return(o)
     ps = parent_string(o)
     no = to(o)
-    j  = nextind(ps, no)
+    j  = ifelse(o isa Token && o.name == :SOS, no, nextind(ps, no))
     j  > lastindex(ps) && return subs("")
     j1 = j
     jk = j
