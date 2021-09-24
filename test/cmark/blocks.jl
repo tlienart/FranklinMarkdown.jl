@@ -109,7 +109,7 @@ end
         `````
         """
     g = s |> grouper
-    @test g[2].ss // s
+    @test g[1].ss // s
 end
 
 # XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX

@@ -128,7 +128,7 @@ end
         &qwertyuioppoiuytrewqwer; &oiuytrewqwertyuioiuytrewqwertyuioytrewqwertyuiiuytri;
         """
     t = s |> toks
-    filter!(!isempty, t)
+    filter!(t -> t.name ∉ FP.MD_IGNORE, t)
 
     gt = ["&nbsp;", "&amp;", "&copy;", "&AElig;", "&Dcaron;", "&frac34;",
           "&HilbertSpace;", "&DifferentialD;", "&ClockwiseContourIntegral;",
@@ -171,13 +171,13 @@ end
         -->
         """
     b = s |> slice
-    for (t, gt) in zip(filter(!isempty, b[1].inner_tokens), [
+    for (t, gt) in zip(filter(t -> t.name ∉ FP.MD_IGNORE, b[1].inner_tokens), [
                         raw"\!", raw"\#", raw"\$", raw"\%", raw"\&",
                         raw"\'", raw"\*", raw"\+", raw"\,", raw"\.",
                         raw"\/", raw"\:", raw"\;", raw"\<", raw"\=", raw"\>", raw"\?"])
         @test t // gt
     end
-    for (t, gt) in zip(filter(!isempty, b[4].inner_tokens), [
+    for (t, gt) in zip(filter(t -> t.name ∉ FP.MD_IGNORE, b[4].inner_tokens), [
                         raw"\@", raw"\^", raw"\_", raw"\`", raw"\{",
                         raw"\|", raw"\}", raw"\~", raw"\-", raw"\'"])
         @test t // gt

@@ -176,7 +176,7 @@ const END_OF_LINE = (:LINE_RETURN, :EOS)
 
 Tokens that may be left over after partition but should be ignored in text blocks.
 """
-const MD_IGNORE = (:LINE_RETURN,)
+const MD_IGNORE = (:SOS, :LINE_RETURN, :EOS)
 
 """
     MD_HEADERS

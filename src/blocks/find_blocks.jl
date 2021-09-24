@@ -93,7 +93,7 @@ function _find_blocks!(
         is_active[i] || continue
         opening = tokens[i].name
 
-        if process_linereturn && opening == :LINE_RETURN
+        if process_linereturn && opening in (:SOS, :LINE_RETURN)
             process_line_return!(blocks, tokens, i)
             continue
         elseif opening ∉ template_keys
@@ -169,7 +169,11 @@ whitespaces of the line return (the line return token captures `\n[ \t]*`).
 function process_line_return!(b::Vector{Block}, tv::SubVector{Token},
                               i::Int)::Nothing
     t = tv[i]
-    c = next_chars(t, 2)
+    if t.name == :SOS
+        c = [first(t.ss), next_chars(t, 1)...]
+    else
+        c = next_chars(t, 2)
+    end
 
     if isempty(c) || c[1] ∈ ('\n', EOS)
         # P_BREAK; if there's not two chars beyond `c` will be empty

@@ -21,8 +21,7 @@ function find_tokens(
     # start with a LINERETURN to allow proper treatment of special lines
     # such as blockquote lines or items that could be right at the start
     # see "process_line_return!"
-    push!(tokens, Token(:LINE_RETURN, subs(s, 1:0)))
-
+    push!(tokens, Token(:SOS, subs(parent_string(s), from(s))))
     head_idx = firstindex(s)
     end_idx  = lastindex(s)
 

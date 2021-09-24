@@ -7,9 +7,10 @@
     names = [t.name for t in tokens]
     @test count(e -> e == :CU_BRACKET_OPEN, names) == 2
     @test count(e -> e == :CU_BRACKET_CLOSE, names) == 2
-    @test count(e -> e == :LINE_RETURN, names) == 3
+    @test count(e -> e == :LINE_RETURN, names) == 2
     @test names[end] == :EOS
-    @test length(tokens) == 2 + 2 + 3 + 1
+    @test names[1] == :SOS
+    @test length(tokens) == 2 + 2 + 2 + 1 + 1
 
     s = """
         A <!-- B --> C
@@ -19,7 +20,7 @@
     tokens = FP.find_tokens(s, FP.MD_TOKENS)
     names = [t.name for t in tokens]
     @test names == [
-        :LINE_RETURN,
+        :SOS,
         :COMMENT_OPEN, :COMMENT_CLOSE, :LINE_RETURN,
         :LINE_RETURN,  # hrule are processed as blocks
         :MD_DEF_BLOCK, :LINE_RETURN,
