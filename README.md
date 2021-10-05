@@ -56,7 +56,8 @@ Notes:
 ### Additional "Franklin" specs
 
 * raw blocks `??? ... ???` (the content will be passed "as is" to X)
-* html blocks `~~~ ... ~~~` (the content will be passed "as is" to HTML)
+* latex blocks `%%% ... %%%` (the content will be passed "as is" to HTML, nothing will be passed to HTML)
+* html blocks `~~~ ... ~~~` (the content will be passed "as is" to HTML, nothing will be passed to LaTeX)
 * math `$...$`, `$$...$$`, `\[...\]` etc
 * ...
 
@@ -68,7 +69,7 @@ For the specs with respect to CommonMark, see `test/partition/md_specs.jl`.
 
 ## Notes
 
-* assumption of LF convention i.e. that end of lines are `\n` and not `\r\n`. Windows users who are using an editor with that convention should switch their preferences (in VSCode this can be done by Settings > Text Editor > Files > EOL or putting `"files.eol": "\n"` in `settings.json`). 
+* assumption of LF convention i.e. that end of lines are `\n` and not `\r\n`. Windows users who are using an editor with that convention should switch their preferences (in VSCode this can be done by Settings > Text Editor > Files > EOL or putting `"files.eol": "\n"` in `settings.json`).
 * dropping `@def` multiline support; there's ambiguity with line returns; better to use `+++...+++` blocks; `@def x = 5` is still allowed.
 * adding `??? ... ???` as an overarching "escape" block, the effect is pretty much the same as that of `~~~ ... ~~~` but an advantage is that `???` is not recognised by Markdown highlighters (e.g. Atom's) and therefore if for instance a user wants to pass a block of text untouched to CommonMark.jl it's nicer if the Markdown remains highlighted properly between the `???`.
 * adding possibility to disable some tokens for instance `$` or indeed `???` by passing `disable=[:MATH_INLINE, :RAW]` etc.

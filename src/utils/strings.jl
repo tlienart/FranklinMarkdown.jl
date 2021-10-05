@@ -141,15 +141,15 @@ This is used in the context of lxdef in Franklin for instance, see try_form_lxde
 function dedent(s::SS)::String
     # initial whitespace if any
     iwsp = match(LEADING_WHITESPACE_PAT, s)
-    cwsp = ""
+    cwsp = subs("")
     if iwsp !== nothing
-        cwsp::SS = iwsp.captures[1]
+        cwsp = iwsp.captures[1]::SS
         # there's no leading whitespace on the first line --> no dedent
         isempty(cwsp) && return String(s)
     end
 
     for m in eachmatch(NEWLINE_WHITESPACE_PAT, s)
-        twsp::SS = m.captures[1]
+        twsp = m.captures[1]::SS
         # if twsp is empty, there's no leading whitespace on that line --> no dedent
         isempty(twsp) && return String(s)
         isempty(cwsp) && (cwsp = twsp; continue)

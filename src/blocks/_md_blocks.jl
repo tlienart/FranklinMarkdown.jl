@@ -2,6 +2,7 @@
 const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
    BlockTemplate(:COMMENT,         :COMMENT_OPEN,   :COMMENT_CLOSE),
    BlockTemplate(:RAW_HTML,        :RAW_HTML,       :RAW_HTML     ),
+   BlockTemplate(:RAW_LATEX,       :RAW_LATEX,      :RAW_LATEX    ),
    BlockTemplate(:MD_DEF_BLOCK,    :MD_DEF_BLOCK,   :MD_DEF_BLOCK ),
    #
    BlockTemplate(:EMPH_EM,        :EM_OPEN,        (:EM_CLOSE,        :EM_MX),        nesting=true),
@@ -74,7 +75,7 @@ const MD_PASS1_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
    o => bt for (o, bt) in MD_BLOCKS
    if bt.name in (
          :COMMENT,
-         :RAW_HTML,
+         :RAW_HTML, :RAW_LATEX,
          :MD_DEF_BLOCK, :MD_DEF,
          :CODE_BLOCK_LANG, :CODE_BLOCK!, :CODE_BLOCK, :CODE_INLINE,
          :MATH_INLINE, :MATH_DISPL_A, :MATH_DISPL_B,

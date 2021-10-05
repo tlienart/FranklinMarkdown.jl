@@ -62,3 +62,19 @@ end
 
     @test_throws FP.FranklinParserException raw"abc \begin{foo}" |> grouper
 end
+
+@testset "raw" begin
+    s = """
+        abc ~~~ def ~~~ ghi %%% klm %%% and ??? %%% foo ???.
+        """
+    g = s |> grouper
+    @test g[1] // s
+    b = g[1].blocks
+    @test b[1] // "abc"
+    @test b[2] // "~~~ def ~~~"
+    @test b[3] // "ghi"
+    @test b[4] // "%%% klm %%%"
+    @test b[5] // "and"
+    @test b[6] // "??? %%% foo ???"
+    @test b[7] // "."
+end

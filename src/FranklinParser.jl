@@ -26,7 +26,7 @@ include("tokens/_args_tokens.jl")
 const INLINE_BLOCKS = [
     :TEXT,
     :COMMENT,                                 # <!-- ... -->
-    :RAW_HTML,                                # ~~~...~~~
+    :RAW, :RAW_HTML, :RAW_LATEX,              # ???...???, ~~~...~~~, %%%...%%%
     :EMPH_EM, :EMPH_STRONG, :EMPH_EM_STRONG,  # * ** ***, _ __ ____
     :LINEBREAK,                               # \\
     :CODE_INLINE,                             # `...`

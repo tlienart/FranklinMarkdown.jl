@@ -218,7 +218,7 @@ function process_line_return!(b::Vector{Block}, tv::SubVector{Token},
         # TABLE_ROW_CAND
         cand = until_next_line_return(t)
         if strip(cand)[end] == '|'
-            ps   = parent_string(cand)
+            ps = parent_string(cand)
             push!(b, Block(:TABLE_ROW_CAND, subs(ps, from(t), to(cand))))
         end
 

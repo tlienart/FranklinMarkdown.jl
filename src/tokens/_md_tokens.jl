@@ -10,9 +10,19 @@ Dev: F_* are greedy match, see `md_utils.jl`.
 Try: https://spec.commonmark.org/dingus
 """
 const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
+    '\n' => [
+        F_LINE_RETURN       => :LINE_RETURN,
+        forward_match("\n") => :LINE_RETURN,
+        ],
     '?' => [
         forward_match("???") => :RAW
     ],
+    '~' => [
+        forward_match("~~~") => :RAW_HTML
+        ],
+    '%' => [
+        forward_match("%%%") => :RAW_LATEX
+        ],
     '(' => [
         forward_match("(") => :BRACKET_OPEN
         ],
@@ -25,25 +35,12 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
     '}' => [
         forward_match("}")  => :CU_BRACKET_CLOSE,
         ],
-    '\n' => [
-        F_LINE_RETURN       => :LINE_RETURN,
-        forward_match("\n") => :LINE_RETURN,
-        ],
     '<' => [
         forward_match("<!--")           => :COMMENT_OPEN,
         forward_match("<", ALPHA_LATIN) => :AUTOLINK_OPEN
         ],
     '>' => [
         forward_match(">") => :AUTOLINK_CLOSE
-        ],
-    '-' => [
-        forward_match("-->") => :COMMENT_CLOSE,
-        ],
-    '+' => [
-        forward_match("+++", ['\n']) => :MD_DEF_BLOCK
-        ],
-    '~' => [
-        forward_match("~~~") => :RAW_HTML
         ],
     '[' => [
         forward_match("[") => :SQ_BRACKET_OPEN,
@@ -53,6 +50,15 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         ],
     ':' => [
         F_EMOJI => :CAND_EMOJI,
+        ],
+    '|' => [
+        forward_match("|") => :PIPE,
+        ],
+    '-' => [
+        forward_match("-->") => :COMMENT_CLOSE,
+        ],
+    '+' => [
+        forward_match("+++", ['\n']) => :MD_DEF_BLOCK
         ],
     '\\' => [
         # -- special characters (https://www.amp-what.com/unicode/search)

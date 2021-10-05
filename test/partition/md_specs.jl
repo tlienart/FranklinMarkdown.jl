@@ -493,9 +493,9 @@ end
     p = """
         foo bar ??? <!-- etc __ ??? baz
         """ |> grouper
-    @test p[1] // "foo bar"
-    @test p[2] // "??? <!-- etc __ ???"
-    @test p[3] // "baz"
+    @test p[1].blocks[1] // "foo bar"
+    @test p[1].blocks[2] // "??? <!-- etc __ ???"
+    @test p[1].blocks[3] // "baz"
 end
 
 
