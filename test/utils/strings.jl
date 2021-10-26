@@ -79,4 +79,18 @@ end
     ss = FP.subs(s, 4:8)
     @test FP.previous_chars(ss, 2) == ['j', 'μ']
     @test FP.next_chars(ss, 3) == ['γ', 'ϵ', '∛']
+
+    s = "✅💮🚫🧨🧯🎆🐂"
+    # 1✅ 4💮 8🚫 12🧨 16🧯 20🎆 24🐂
+    ss = FP.subs(s, 4:16)
+    @test s[FP.from(ss)] == ss[1]
+    @test s[FP.to(ss)] == ss[end]
+
+    ss = FP.subs(s, 12:24)
+    @test s[FP.from(ss)] == ss[1]
+    @test s[FP.to(ss)] == ss[end]
+
+    ss = FP.subs(s, 1:16)
+    @test s[FP.from(ss)] == ss[1]
+    @test s[FP.to(ss)] == ss[end]
 end

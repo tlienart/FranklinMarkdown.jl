@@ -25,8 +25,8 @@ parent_string(s::SS)     = s.string
 """
     from(o)
 
-Given a SubString `ss`, returns the position in the parent string where the substring
-starts. If `ss` is a String, return 1.
+Given a SubString `ss`, returns a valid string index where the substring starts.
+If `ss` is a String, return 1.
 Returns an Int.
 ```
 """
@@ -36,12 +36,15 @@ from(s::String) = 1
 """
     to(o)
 
-Given a SubString `ss`, returns the position in the parent string where the substring
-ends. If `ss` is a String, return the last index.
+Given a SubString `ss`, returns a valid string index where the substring ends.
+If `ss` is a String, return the last index.
 Returns an Int.
 """
-to(ss::SS)    = ss.offset + ss.ncodeunits
 to(s::String) = lastindex(s)
+function to(ss::SS)
+    ps = parent_string(ss)
+    prevind(ps, nextind(ps, ss.offset + ss.ncodeunits))
+end
 
 """
     prev_index(o)
