@@ -25,3 +25,6 @@ const HTML_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
 # the result of `content` to find the first `>` character and start from there.
 # We don't do that by default because in Franklin we ignore script blocks completely.
 #
+# Note also that we are a bit strict in requiring exactly '<script' and '</script>' so
+# users who would somehow enter '< SCRIPT' or whatever would have to be told not to
+#
