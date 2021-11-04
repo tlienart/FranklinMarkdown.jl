@@ -111,7 +111,7 @@ function _find_blocks!(
 
         # Try to find the closing token
         closing_index = -1
-        open_depth = 1
+        open_depth    = 1
         for j in i+1:n_tokens
             # the tokens ahead might be inactive due to first pass
             is_active[j] || continue
