@@ -226,7 +226,7 @@ enverr(n="") = parser_exception(:BlockNotClosed, """
 Take a string like 'foo "bar baz" 1' and return a string that is split along
 whitespaces preserving quoted strings. So ["foo", "\"bar baz\"", "1"].
 """
-function split_args(s::SS)
+function split_args(s::SS)::Vector{String}
     # 1. find single-quoted / triply-quoted strings
     # 2. split the string outside of the quoted strings
     # 3. return the list of strings
