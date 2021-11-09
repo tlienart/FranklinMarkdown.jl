@@ -6,3 +6,12 @@
         @test isapproxstr(FP.content(parts[i]), c)
     end
 end
+
+@testset "script content" begin
+    parts = """
+        ABC <script> GHI </script> DEF
+        """ |> FP.html_partition
+    c = FP.content(parts[2])
+    i = findfirst('>', c)
+    @test strip(c[nextind(c, i):end]) == "GHI"
+end
