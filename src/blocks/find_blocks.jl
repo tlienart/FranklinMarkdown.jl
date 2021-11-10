@@ -28,19 +28,21 @@ function find_blocks(
         # brackets which may form a link
         dt = _find_blocks!(blocks, tokens, MD_PASS2_TEMPLATES, is_active)
         form_links!(blocks)
-        # reactivated tokens inside remaining brackets
-        reactivate = Vector{Pair{Int}}()
-        for b in blocks
-            if b.name == :BRACKETS
-                push!(reactivate, from(b) => to(b))
+        # here there may be brackets that are not part of links which
+        # should have their content re-inspected
+        @inbounds for b in filter(b_ -> b_.name == :BRACKETS, blocks)
+            fromb  = from(b)
+            tob    = to(b)
+            retoks = Token[]
+            for i in dt
+                toki = tokens[i]
+                fi   = from(toki)
+                ti   = to(toki)
+                # is the token in the scope ?
+                fromb < fi && ti < tob && push!(retoks, toki)
             end
-        end
-        @inbounds for i in dt
-            # is the token inside one of the reactivated range?
-            toki = tokens[i]
-            fi   = from(toki)
-            ti   = to(toki)
-            is_active[i] = any(r -> r.first < fi && ti < r.second, reactivate)
+            # recurse
+            append!(blocks, find_blocks(subv(retoks), is_md=true))
         end
         # discard leftover bracket blocks
         filter!(b -> b.name != :BRACKETS, blocks)

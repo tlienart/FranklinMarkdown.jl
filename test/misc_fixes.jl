@@ -1,4 +1,14 @@
 # ----------------------------------------------------------------------------
+# Nov10 | bracketed link
+md = """
+    ([a](b))
+    """
+g = FP.md_partition(md) |> FP.md_grouper
+@test g[1] // md
+@test g[1].blocks[1] // "("
+@test g[1].blocks[2] // "[a](b)"
+@test g[1].blocks[3] // ")"
+# ----------------------------------------------------------------------------
 # Sep24 | more issues with lists and sub
 md = """
     1. A
