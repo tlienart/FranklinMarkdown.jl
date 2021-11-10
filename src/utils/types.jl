@@ -91,6 +91,7 @@ with a token (which would then be an overlapping token and an EOS).
 """
 function content(b::Block)::SS
     b.name == :TEXT && return b.ss
+    b.name == :BLOCKQUOTE && return replace(b.ss, r"^>\s?|\n>\s?" => "\n") |> subs
     # find the relevant range of the parent string
     s = parent_string(b.ss)
     t = from(b.close)

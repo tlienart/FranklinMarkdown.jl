@@ -49,6 +49,16 @@
         >
         >
         """
+    @test isapproxstr(FP.content(g[1].blocks[1]), """
+        the simple example of a blockquote
+        the simple example of a blockquote
+        the simple example of a blockquote
+        the simple example of a blockquote
+        ... continuation
+        ... continuation
+        ... continuation
+        ... continuation
+        """)
 end
 
 # XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
