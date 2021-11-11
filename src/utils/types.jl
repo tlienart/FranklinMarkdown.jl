@@ -90,8 +90,9 @@ Return the content of a `Block`, for instance the content of a `{...}` block wou
 with a token (which would then be an overlapping token and an EOS).
 """
 function content(b::Block)::SS
-    b.name == :TEXT && return b.ss
-    b.name == :BLOCKQUOTE && return replace(b.ss, r"(?:^>)|(?:\n>)" => "\n") |> subs
+    b.name == :TEXT       && return b.ss
+    b.name == :BLOCKQUOTE && return replace(b.ss,
+        r"(?:(?:^>)|(?:\n>))[ \t]*" => "\n") |> strip
     # find the relevant range of the parent string
     s = parent_string(b.ss)
     t = from(b.close)
