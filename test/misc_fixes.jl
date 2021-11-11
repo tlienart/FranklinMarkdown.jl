@@ -1,4 +1,16 @@
 # ----------------------------------------------------------------------------
+# Nov11 | content of blockquotes with empty line
+md = """
+    > ABC
+    >
+    > DEF
+    >
+    > GHI
+    """
+g = FP.md_partition(md) |> FP.md_grouper
+@test FP.content(g[1].blocks[1]) // "\n ABC\n\n DEF\n\n GHI"
+
+# ----------------------------------------------------------------------------
 # Nov10 | bracketed link
 md = """
     ([a](b))
