@@ -424,9 +424,12 @@ end
 
     # AR links
     p = """
-        [A][B]
+        [A][B] ![C][D] ![E][F]:
         """ |> grouper
     @test p[1] // "[A][B]"
+    @test p[3] // "![C][D]"
+    @test p[5] // "![E][F]" # precedence of the img
+    @test p[6] // ":"
 
     # final img
     p = """

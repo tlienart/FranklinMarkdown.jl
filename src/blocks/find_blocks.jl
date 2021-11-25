@@ -297,16 +297,14 @@ function form_links!(blocks::Vector{Block})
             # img: is it preceded by '!'?
             # ref: is it followed by ':'?
             # lnk: is the next char '('
-            if isempty(pchar)
-                img = false
-            else
+            img = false
+            if !isempty(pchar)
                 img = pchar[1] == '!'
             end
-            if isempty(nchar)
-                ref = false
-                lab = false
-                lar = false
-            else
+            ref = false
+            lab = false
+            lar = false
+            if !isempty(nchar)
                 ref = !img && nchar[1] == ':'
                 lab = nchar[1] == '(' && nb.name == :BRACKETS
                 lar = nchar[1] == '[' && nb.name == :SQ_BRACKETS
@@ -361,7 +359,7 @@ function form_links!(blocks::Vector{Block})
     # check if the last block is maybe a standalone `(!)[...](:)`.
     i = nblocks
     b = blocks[i]
-    if b.name == :SQ_BRACKETS
+    if i ∉ remove && b.name == :SQ_BRACKETS
         pchar = previous_chars(b)
         nchar = next_chars(b)
         if isempty(pchar)
