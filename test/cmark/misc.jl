@@ -16,7 +16,7 @@
     """
     g = s |> grouper
     filter!(!isempty, g)
-    @test length(g) == 7
+    @test length(g) == 9
 
     s = """
 

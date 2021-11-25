@@ -255,6 +255,7 @@ end
 Here we catch the following:
 
     * [A]     LINK_A   for <a href="ref(A)">html(A)</a>
+    * [A][B]  LINK_AR  for <a href="ref(B)">html(A)</a>
     * [A](B)  LINK_AB  for <a href="escape(B)">html(A)</a>
     * ![A]    IMG_A    <img src="ref(A)" alt="esc(A)" />
     * ![A](B) IMG_AB   <img src="escape(B)" alt="esc(A)" />
@@ -293,16 +294,33 @@ function form_links!(blocks::Vector{Block})
             nchar = next_chars(b)
 
             # NOTE: ![]: --> ![] takes precedence.
-            img = isempty(pchar) ? false : pchar[1] == '!'
-            ref = (isempty(nchar) || img) ? false : nchar[1] == ':'
-            lnk = isempty(nchar) ? false : (nchar[1] == '(' && nb.name == :BRACKETS)
+            # img: is it preceded by '!'?
+            # ref: is it followed by ':'?
+            # lnk: is the next char '('
+            if isempty(pchar)
+                img = false
+            else
+                img = pchar[1] == '!'
+            end
+            if isempty(nchar)
+                ref = false
+                lab = false
+                lar = false
+            else
+                ref = !img && nchar[1] == ':'
+                lab = nchar[1] == '(' && nb.name == :BRACKETS
+                lar = nchar[1] == '[' && nb.name == :SQ_BRACKETS
+            end
+            lnk = lab | lar
 
             # ref ==> REF, stop
             #
             # img  & !lnk => IMG_A
-            # img  & lnk  => IMG_AB
+            # img  & lab  => IMG_AB
+            # img  & lar  => IMG_AR
             # !img & !lnk => LINK_A
-            # !img & lnk  => LINK_AB
+            # !img & lab  => LINK_AB
+            # !img & lar  => LINK_AR
 
             if ref
                 # [...]: block
@@ -315,32 +333,48 @@ function form_links!(blocks::Vector{Block})
                 end
             else
                 if img
-                    if lnk
+                    if !lnk
+                        blocks[i] = Block(:IMG_A, subs(ps, prev_index(b), to(b)))
+                    elseif lab
                         blocks[i] = Block(:IMG_AB, subs(ps, prev_index(b), to(nb)))
                         push!(remove, i+1)
                     else
-                        blocks[i] = Block(:IMG_A, subs(ps, prev_index(b), to(b)))
+                        blocks[i] = Block(:IMG_AR, subs(ps, prev_index(b), to(nb)))
+                        push!(remove, i+1)
                     end
                 else
-                    if lnk
+                    if !lnk
+                        blocks[i] = Block(:LINK_A, subs(ps, from(b), to(b)))
+                    elseif lab
                         blocks[i] = Block(:LINK_AB, subs(ps, from(b), to(nb)))
                         push!(remove, i+1)
                     else
-                        blocks[i] = Block(:LINK_A, subs(ps, from(b), to(b)))
+                        blocks[i] = Block(:LINK_AR, subs(ps, from(b), to(nb)))
+                        push!(remove, i+1)
                     end
                 end
             end
         end
         i += 1
     end
-    # check if the last block is maybe a standalone `[]`.
+
+    # check if the last block is maybe a standalone `(!)[...](:)`.
     i = nblocks
     b = blocks[i]
     if b.name == :SQ_BRACKETS
         pchar = previous_chars(b)
         nchar = next_chars(b)
-        img   = isempty(pchar) ? false : pchar[1] == '!'
-        ref   = (isempty(nchar) || img) ? false : nchar[1] == ':'
+        if isempty(pchar)
+            img = false
+        else
+            img = pchar[1] == '!'
+        end
+        if isempty(nchar)
+            ref = false
+        else
+            ref = !img && nchar[1] == ':'
+        end
+
         if ref
             ss = until_previous_line_return(b)
             if isempty(strip(ss))
@@ -348,6 +382,8 @@ function form_links!(blocks::Vector{Block})
             else
                 push!(remove, i)
             end
+        elseif img
+            blocks[i] = Block(:IMG_A, subs(ps, prev_index(b), to(b)))
         else
             blocks[i] = Block(:LINK_A, subs(ps, from(b), to(b)))
         end

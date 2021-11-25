@@ -421,6 +421,19 @@ end
     @test length(p[2].blocks) == 1
     @test p[2].blocks[1] // "[def]: foo\nbar"
     @test ctf(p[3]) // "baz"
+
+    # AR links
+    p = """
+        [A][B]
+        """ |> grouper
+    @test p[1] // "[A][B]"
+
+    # final img
+    p = """
+        [A][B] ![C]
+        """ |> grouper
+    @test p[1] // "[A][B]"
+    @test p[2] // "![C]"
 end
 
 
