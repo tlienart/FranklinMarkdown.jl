@@ -426,17 +426,17 @@ end
     p = """
         [A][B] ![C][D] ![E][F]:
         """ |> grouper
-    @test p[1] // "[A][B]"
-    @test p[3] // "![C][D]"
-    @test p[5] // "![E][F]" # precedence of the img
-    @test p[6] // ":"
+    @test p[1].blocks[1] // "[A][B]"
+    @test p[1].blocks[3] // "![C][D]"
+    @test p[1].blocks[5] // "![E][F]" # precedence of the img
+    @test p[1].blocks[6] // ":"
 
     # final img
     p = """
         [A][B] ![C]
         """ |> grouper
-    @test p[1] // "[A][B]"
-    @test p[2] // "![C]"
+    @test p[1].blocks[1] // "[A][B]"
+    @test p[1].blocks[3] // "![C]"
 end
 
 

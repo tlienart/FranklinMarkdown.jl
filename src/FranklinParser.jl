@@ -32,7 +32,8 @@ const INLINE_BLOCKS = [
     :CODE_INLINE,                             # `...`
     :MATH_INLINE,                             # $...$
     :AUTOLINK,                                # <...>
-    :LINK_A, :LINK_AB, :IMG_A, :IMG_AB,       # [...](...) ![...](...)
+    :LINK_A, :LINK_AB, :LINK_AR,              # ![...] ![...](...) ![...][...]
+    :IMG_A, :IMG_AB, :IMG_AR,                 # [...] [...](...) [...][...]
     :CU_BRACKETS, :LX_COMMAND,
     :LX_NEWENVIRONMENT, :LX_NEWCOMMAND,
     :DBB,
