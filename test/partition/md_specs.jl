@@ -209,7 +209,7 @@ end
         ```
         jkl
         """ |> grouper
-    @test ctf(p[2]) // "ghi"
+    @test ctf(p[2]) // "def\nghi"
 
     p = """
         abc
@@ -218,7 +218,7 @@ end
         ```
         ghi
         """ |> grouper
-    @test ctf(p[2]) // "def"
+    @test ctf(p[2]) // "!\ndef"
 end
 
 

@@ -165,11 +165,11 @@ end
     tokens = raw"``` ```! ```julia" |> FP.default_md_tokenizer
     deleteat!(tokens, 1)
     @test tokens[1].name == :CODE_TRIPLE
-    @test tokens[2].name == :CODE_TRIPLE!
-    @test tokens[3].name == :CODE_LANG3
+    @test tokens[2].name == :CODE_TRIPLE
+    @test tokens[3].name == :CODE_TRIPLE
 
     tokens = raw"````hello `````foo" |> FP.default_md_tokenizer
     deleteat!(tokens, 1)
-    @test tokens[1].name == :CODE_LANG4
-    @test tokens[2].name == :CODE_LANG5
+    @test tokens[1].name == :CODE_QUAD
+    @test tokens[2].name == :CODE_PENTA
 end

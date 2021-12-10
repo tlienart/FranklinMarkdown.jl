@@ -29,11 +29,14 @@ const INLINE_BLOCKS = [
     :RAW, :RAW_HTML, :RAW_LATEX,              # ???...???, ~~~...~~~, %%%...%%%
     :EMPH_EM, :EMPH_STRONG, :EMPH_EM_STRONG,  # * ** ***, _ __ ____
     :LINEBREAK,                               # \\
+    #
     :CODE_INLINE,                             # `...`
     :MATH_INLINE,                             # $...$
+    #
     :AUTOLINK,                                # <...>
     :LINK_A, :LINK_AB, :LINK_AR,              # ![...] ![...](...) ![...][...]
     :IMG_A, :IMG_AB, :IMG_AR,                 # [...] [...](...) [...][...]
+    #
     :CU_BRACKETS, :LX_COMMAND,
     :LX_NEWENVIRONMENT, :LX_NEWCOMMAND,
     :DBB,

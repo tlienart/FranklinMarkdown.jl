@@ -131,17 +131,11 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("_",   ['_'], false) => :EM,
         ],
     '`' => [
-        forward_match("`",  ['`'], false)   => :CODE_SINGLE,  # `⎵
-        forward_match("``", ['`'], false)   => :CODE_DOUBLE,  # ``⎵*
-        # 3+ can be named
-        forward_match("```",  SPACE_CHAR)   => :CODE_TRIPLE,  # ```⎵*
-        forward_match("`"^4,  SPACE_CHAR)   => :CODE_QUAD,    # ````⎵*
-        forward_match("`"^5,  SPACE_CHAR)   => :CODE_PENTA,   # `````⎵*
-        forward_match("```!", SPACE_CHAR)   => :CODE_TRIPLE!, # ```!⎵*
-        #
-        F_LANG_3 => :CODE_LANG3,   # ```lang*
-        F_LANG_4 => :CODE_LANG4,   # ````lang*
-        F_LANG_5 => :CODE_LANG5,   # `````lang*
+        forward_match("`",   ['`'], false) => :CODE_SINGLE,  # `⎵
+        forward_match("``",  ['`'], false) => :CODE_DOUBLE,  # ``⎵*
+        forward_match("```", ['`'], false) => :CODE_TRIPLE,  # ```⎵*
+        forward_match("`"^4, ['`'], false) => :CODE_QUAD,    # ````⎵*
+        forward_match("`"^5, ['`'], false) => :CODE_PENTA,   # `````⎵*
         ],
     '*' => [
         forward_match("***", ['*'], false) => :EM_STRONG,

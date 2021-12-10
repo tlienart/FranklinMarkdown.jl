@@ -1,16 +1,16 @@
 # see utils/types/BlockTemplate
 const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
-   BlockTemplate(:COMMENT,         :COMMENT_OPEN,   :COMMENT_CLOSE),
-   BlockTemplate(:RAW_HTML,        :RAW_HTML,       :RAW_HTML     ),
-   BlockTemplate(:RAW_LATEX,       :RAW_LATEX,      :RAW_LATEX    ),
-   BlockTemplate(:MD_DEF_BLOCK,    :MD_DEF_BLOCK,   :MD_DEF_BLOCK ),
+   BlockTemplate(:COMMENT,         :COMMENT_OPEN,   :COMMENT_CLOSE ),
+   BlockTemplate(:RAW_HTML,        :RAW_HTML,       :RAW_HTML      ),
+   BlockTemplate(:RAW_LATEX,       :RAW_LATEX,      :RAW_LATEX     ),
+   BlockTemplate(:MD_DEF_BLOCK,    :MD_DEF_BLOCK,   :MD_DEF_BLOCK  ),
    #
-   BlockTemplate(:EMPH_EM,        :EM_OPEN,        (:EM_CLOSE,        :EM_MX),        nesting=true),
-   BlockTemplate(:EMPH_EM,        :EM_MX,          (:EM_CLOSE,        :EM_MX),        nesting=true),
-   BlockTemplate(:EMPH_STRONG,    :STRONG_OPEN,    (:STRONG_CLOSE,    :STRONG_MX),    nesting=true),
-   BlockTemplate(:EMPH_STRONG,    :STRONG_MX,      (:STRONG_CLOSE,    :STRONG_MX),    nesting=true),
-   BlockTemplate(:EMPH_EM_STRONG, :EM_STRONG_OPEN, (:EM_STRONG_CLOSE, :EM_STRONG_MX), nesting=true),
-   BlockTemplate(:EMPH_EM_STRONG, :EM_STRONG_MX,   (:EM_STRONG_CLOSE, :EM_STRONG_MX), nesting=true),
+   BlockTemplate(:EMPH_EM,        :EM_OPEN,        (:EM_CLOSE,        :EM_MX        ), nesting=true),
+   BlockTemplate(:EMPH_EM,        :EM_MX,          (:EM_CLOSE,        :EM_MX        ), nesting=true),
+   BlockTemplate(:EMPH_STRONG,    :STRONG_OPEN,    (:STRONG_CLOSE,    :STRONG_MX    ), nesting=true),
+   BlockTemplate(:EMPH_STRONG,    :STRONG_MX,      (:STRONG_CLOSE,    :STRONG_MX    ), nesting=true),
+   BlockTemplate(:EMPH_EM_STRONG, :EM_STRONG_OPEN, (:EM_STRONG_CLOSE, :EM_STRONG_MX ), nesting=true),
+   BlockTemplate(:EMPH_EM_STRONG, :EM_STRONG_MX,   (:EM_STRONG_CLOSE, :EM_STRONG_MX ), nesting=true),
    #
    BlockTemplate(:AUTOLINK,        :AUTOLINK_OPEN,  :AUTOLINK_CLOSE ),
    # these blocks are disabled in find_blocks if they're not attached in
@@ -18,40 +18,36 @@ const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
    BlockTemplate(:BRACKETS,    :BRACKET_OPEN,    :BRACKET_CLOSE,    nesting=true),
    BlockTemplate(:SQ_BRACKETS, :SQ_BRACKET_OPEN, :SQ_BRACKET_CLOSE, nesting=true),
    # code
-   BlockTemplate(:CODE_BLOCK_LANG, :CODE_LANG3,   :CODE_TRIPLE  ),
-   BlockTemplate(:CODE_BLOCK_LANG, :CODE_LANG4,   :CODE_QUAD    ),
-   BlockTemplate(:CODE_BLOCK_LANG, :CODE_LANG5,   :CODE_PENTA   ),
-   BlockTemplate(:CODE_BLOCK!,     :CODE_TRIPLE!, :CODE_TRIPLE  ),
-   BlockTemplate(:CODE_BLOCK,      :CODE_TRIPLE,  :CODE_TRIPLE  ),
-   BlockTemplate(:CODE_BLOCK,      :CODE_QUAD,    :CODE_QUAD    ),
-   BlockTemplate(:CODE_BLOCK,      :CODE_PENTA,   :CODE_PENTA   ),
-   BlockTemplate(:CODE_INLINE,     :CODE_DOUBLE,  :CODE_DOUBLE  ),
-   BlockTemplate(:CODE_INLINE,     :CODE_SINGLE,  :CODE_SINGLE  ),
+   BlockTemplate(:CODE_BLOCK,      :CODE_PENTA,   :CODE_PENTA  ),
+   BlockTemplate(:CODE_BLOCK,      :CODE_QUAD,    :CODE_QUAD   ),
+   BlockTemplate(:CODE_BLOCK,      :CODE_TRIPLE,  :CODE_TRIPLE ),
+   BlockTemplate(:CODE_INLINE,     :CODE_DOUBLE,  :CODE_DOUBLE ),
+   BlockTemplate(:CODE_INLINE,     :CODE_SINGLE,  :CODE_SINGLE ),
    # maths
-   BlockTemplate(:MATH_INLINE,  :MATH_INLINE,       :MATH_INLINE       ),
-   BlockTemplate(:MATH_DISPL_A, :MATH_DISPL_A,      :MATH_DISPL_A      ),
-   BlockTemplate(:MATH_DISPL_B, :MATH_DISPL_B_OPEN, :MATH_DISPL_B_CLOSE),
+   BlockTemplate(:MATH_INLINE,  :MATH_INLINE,       :MATH_INLINE        ),
+   BlockTemplate(:MATH_DISPL_A, :MATH_DISPL_A,      :MATH_DISPL_A       ),
+   BlockTemplate(:MATH_DISPL_B, :MATH_DISPL_B_OPEN, :MATH_DISPL_B_CLOSE ),
    # md def one line
-   BlockTemplate(:MD_DEF, :MD_DEF_OPEN, END_OF_LINE),
+   BlockTemplate(:MD_DEF, :MD_DEF_OPEN, END_OF_LINE ),
    # div and braces
    BlockTemplate(:DIV,         :DIV_OPEN, :DIV_CLOSE,               nesting=true),
    BlockTemplate(:CU_BRACKETS, :CU_BRACKET_OPEN, :CU_BRACKET_CLOSE, nesting=true),
    # headers
-   BlockTemplate(:H1, :H1_OPEN, END_OF_LINE),
-   BlockTemplate(:H2, :H2_OPEN, END_OF_LINE),
-   BlockTemplate(:H3, :H3_OPEN, END_OF_LINE),
-   BlockTemplate(:H4, :H4_OPEN, END_OF_LINE),
-   BlockTemplate(:H5, :H5_OPEN, END_OF_LINE),
-   BlockTemplate(:H6, :H6_OPEN, END_OF_LINE),
+   BlockTemplate(:H1, :H1_OPEN, END_OF_LINE ),
+   BlockTemplate(:H2, :H2_OPEN, END_OF_LINE ),
+   BlockTemplate(:H3, :H3_OPEN, END_OF_LINE ),
+   BlockTemplate(:H4, :H4_OPEN, END_OF_LINE ),
+   BlockTemplate(:H5, :H5_OPEN, END_OF_LINE ),
+   BlockTemplate(:H6, :H6_OPEN, END_OF_LINE ),
    # Direct blocks
-   SingleTokenBlockTemplate(:LINEBREAK),
-   SingleTokenBlockTemplate(:HRULE),
+   SingleTokenBlockTemplate(:LINEBREAK ),
+   SingleTokenBlockTemplate(:HRULE     ),
    # Direct blocks -- latex objects
-   SingleTokenBlockTemplate(:LX_NEWENVIRONMENT),
-   SingleTokenBlockTemplate(:LX_NEWCOMMAND),
-   SingleTokenBlockTemplate(:LX_COMMAND),
-   SingleTokenBlockTemplate(:LX_BEGIN),
-   SingleTokenBlockTemplate(:LX_END)
+   SingleTokenBlockTemplate(:LX_NEWENVIRONMENT ),
+   SingleTokenBlockTemplate(:LX_NEWCOMMAND     ),
+   SingleTokenBlockTemplate(:LX_COMMAND        ),
+   SingleTokenBlockTemplate(:LX_BEGIN          ),
+   SingleTokenBlockTemplate(:LX_END            )
    ])
 
 #

@@ -35,15 +35,15 @@ end
     # code
     @test strip(FP.content(blocks[1])) == "ABC"
     blocks = "```julia ABC``` ````julia ABC```` `````julia ABC`````" |> md_blockifier
-    @test strip(FP.content(blocks[1])) == "ABC"
-    @test strip(FP.content(blocks[2])) == "ABC"
-    @test strip(FP.content(blocks[3])) == "ABC"
+    @test FP.content(blocks[1]) // "julia ABC"
+    @test FP.content(blocks[2]) // "julia ABC"
+    @test FP.content(blocks[3]) // "julia ABC"
     blocks = "`A` ``A`` ``` A```" |> md_blockifier
     @test FP.content(blocks[1]) == "A"
     @test FP.content(blocks[2]) == "A"
-    @test strip(FP.content(blocks[3])) == "A"
+    @test FP.content(blocks[3]) // "A"
     blocks = "```! ABC```" |> md_blockifier
-    @test strip(FP.content(blocks[1])) == "ABC"
+    @test FP.content(blocks[1]) // "! ABC"
     # headers
     blocks = """
         # abc
@@ -132,7 +132,7 @@ end
         `A` ``B``
         ```
         """ |> md_blockifier
-    @test strip(FP.content(b[1])) == "`A` ``B``"
+    @test FP.content(b[1]) // "foo\n`A` ``B``"
 
     b = """
         @@abc
