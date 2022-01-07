@@ -17,15 +17,18 @@ function find_blocks(
     # ------------------------------------------------------------------------
     if is_md
         # ======== PASS 0 ==============
+        # raw blocks
         _find_blocks!(blocks, tokens, MD_PASS0, is_active)
 
         # ======== PASS 1 ==============
         # basically all container blocks
+        # comment, raw html, raw latex, def blocks, code blocks
+        # math blocks, div blocks, ...
         _find_blocks!(blocks, tokens, MD_PASS1_TEMPLATES, is_active,
                       process_linereturn=true)
 
         # ======== PASS 2 ==============
-        # brackets which may form a link
+        # brackets which may form a link () and []
         dt = _find_blocks!(blocks, tokens, MD_PASS2_TEMPLATES, is_active)
         form_links!(blocks)
         # here there may be brackets that are not part of links which
