@@ -102,4 +102,44 @@ end
     @test g[2].role == :PARAGRAPH_NOP
     @test g[3].role == :PARAGRAPH
     @test g[4].role == :PARAGRAPH_NOP
+
+    # from franklin docs
+
+    s = raw"""
+        +++
+        a = 5
+        +++
+
+        \newcommand{\foo}{bar}
+
+        ~~~
+        baz
+        ~~~
+
+        ABC
+        """
+    g = s |> grouper
+    @test g[1].role == :MD_DEF_BLOCK
+    @test g[2].role == :PARAGRAPH_NOP
+    @test g[3].role == :PARAGRAPH_NOP
+    @test g[4].role == :PARAGRAPH
+    @test g[4] // "ABC"
+
+    s = raw"""
+        +++
+        a = 5
+        +++
+
+        \newcommand{\foo}{bar}
+        ~~~
+        baz
+        ~~~
+
+        ABC
+        """
+    g = s |> grouper
+    @test g[1].role == :MD_DEF_BLOCK
+    @test g[2].role == :PARAGRAPH_NOP
+    @test g[3].role == :PARAGRAPH
+    @test g[3] // "ABC"
 end
