@@ -78,3 +78,28 @@ end
     @test b[6] // "??? %%% foo ???"
     @test b[7] // "."
 end
+
+@testset "nop-par" begin
+    s = """
+
+        {{foo}}
+
+        """
+    g = s |> grouper
+    @test g[1] // s
+    @test g[1].role == :PARAGRAPH_NOP
+    s = """
+        ABC ~~~foo~~~
+
+        ~~~foo~~~
+
+        ABC <!--bar-->
+
+        <!--bar-->
+        """
+    g = s |> grouper
+    @test g[1].role == :PARAGRAPH
+    @test g[2].role == :PARAGRAPH_NOP
+    @test g[3].role == :PARAGRAPH
+    @test g[4].role == :PARAGRAPH_NOP
+end

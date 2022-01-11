@@ -44,6 +44,25 @@ const INLINE_BLOCKS = [
     :RAW_INLINE
 ]
 
+# these are blocks which, if present in a paragraph, necessarily make that paragraph
+# a paragraph. Here's an example:
+#
+# [:TEXT][:RAW_HTML][:TEXT] --> if the [:TEXT] are non-empty, it's necessarily a paragraph
+#
+# [:RAW_HTML] --> not a paragraph because it's on it's own
+#
+# [:TEXT][:RAW_HTML] -> not a paragraph if the stripped text is empty
+#
+const INLINE_BLOCKS_CHECKP = [
+    :COMMENT,
+    :RAW, :RAW_HTML, :RAW_LATEX,
+    :LINEBREAK,
+    :LX_COMMAND,
+    :LX_NEWENVIRONMENT,
+    :LX_NEWCOMMAND,
+    :DBB
+]
+
 include("blocks/form.jl")
 include("blocks/find_blocks.jl")
 include("blocks/_md_blocks.jl")

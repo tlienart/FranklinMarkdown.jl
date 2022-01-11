@@ -145,7 +145,7 @@ function md_grouper(blocks::Vector{Block})::Vector{Group}
 
     @inbounds while i <= n_blocks
         bi = blocks[i]
-        br = bi.name in INLINE_BLOCKS ? :PARAGRAPH : bi.name
+        br = ifelse(bi.name in INLINE_BLOCKS, :PARAGRAPH, bi.name)
 
         if br != :PARAGRAPH
             _close_open_paragraph!(groups, blocks, cur_head, i)
@@ -208,11 +208,21 @@ end
 
 
 function _close_open_paragraph!(groups, blocks, cur_head, i)
-    if cur_head != 0
-        push!(groups, Group(blocks[cur_head:i-1]; role=:PARAGRAPH))
+    cur_head == 0 && return
+    # blocks in the paragraph
+    par_blocks = blocks[cur_head:i-1]
+    strict_p   = any(
+        b -> b.name ∉ INLINE_BLOCKS_CHECKP && !isempty(strip(content(b))),
+        par_blocks
+    )
+    if strict_p
+        push!(groups, Group(par_blocks; role=:PARAGRAPH))
+    else
+        push!(groups, Group(par_blocks; role=:PARAGRAPH_NOP))
     end
     return
 end
+
 
 enverr(n="") = parser_exception(:BlockNotClosed, """
     An opening \\begin$n was found but either not followed by a brace or
