@@ -17,8 +17,14 @@ const HTML_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         ],
     '-' => [
         forward_match("-->") => :COMMENT_CLOSE
-        ]
-    )
+        ],
+    '\\' => [
+        forward_match("\\(") => :MATH_INLINE_OPEN,
+        forward_match("\\)") => :MATH_INLINE_CLOSE,
+        forward_match("\\[") => :MATH_BLOCK_OPEN,
+        forward_match("\\]") => :MATH_BLOCK_CLOSE,
+    ]
+)
 #
 # [1] note that we don't capture the closing `>` so for an application where the user
 # would want to extract the content in a script block; they would have to post-filer

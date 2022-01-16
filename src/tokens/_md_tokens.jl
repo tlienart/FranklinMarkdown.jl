@@ -30,10 +30,10 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match(")") => :BRACKET_CLOSE
         ],
     '{' => [
-        forward_match("{")  => :CU_BRACKET_OPEN
+        forward_match("{") => :CU_BRACKET_OPEN
         ],
     '}' => [
-        forward_match("}")  => :CU_BRACKET_CLOSE,
+        forward_match("}") => :CU_BRACKET_CLOSE,
         ],
     '<' => [
         forward_match("<!--")           => :COMMENT_OPEN,
@@ -46,7 +46,7 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("[") => :SQ_BRACKET_OPEN,
         ],
     ']' => [
-        forward_match("]")  => :SQ_BRACKET_CLOSE,
+        forward_match("]") => :SQ_BRACKET_CLOSE,
         ],
     ':' => [
         F_EMOJI => :CAND_EMOJI,
@@ -72,9 +72,9 @@ const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("\\]")  => :MATH_DISPL_B_CLOSE,     #    ... \]
         # -- latex
         forward_match("\\newenvironment", ['{']) => :LX_NEWENVIRONMENT,
-        forward_match("\\newcommand", ['{'])     => :LX_NEWCOMMAND,
-        forward_match("\\begin", ['{'])          => :LX_BEGIN,
-        forward_match("\\end", ['{'])            => :LX_END,
+        forward_match("\\newcommand",     ['{']) => :LX_NEWCOMMAND,
+        forward_match("\\begin",          ['{']) => :LX_BEGIN,
+        forward_match("\\end",            ['{']) => :LX_END,
         F_LX_COMMAND                             => :LX_COMMAND,  # \command⎵*
         # -- other special characters
         forward_match("\\*")  => :CHAR_42,

@@ -15,3 +15,14 @@ end
     i = findfirst('>', c)
     @test strip(c[nextind(c, i):end]) == "GHI"
 end
+
+@testset "math content" begin
+    parts = """
+        \\(x\\)
+        """ |> FP.html_partition
+    parts[1] // "\\(x\\)"
+    parts = """
+        \\[x\\]
+        """ |> FP.html_partition
+    parts[1] // "\\[x\\]"
+end
