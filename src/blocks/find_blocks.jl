@@ -17,18 +17,25 @@ function find_blocks(
     # ------------------------------------------------------------------------
     if is_md
         # ======== PASS 0 ==============
-        # raw blocks
+        # raw blocks (??? ... ???)
         _find_blocks!(blocks, tokens, MD_PASS0, is_active)
 
         # ======== PASS 1 ==============
         # basically all container blocks
         # comment, raw html, raw latex, def blocks, code blocks
-        # math blocks, div blocks, ...
+        # math blocks, div blocks, autolink, cu_brackets, h* blocks
+        # and lxbegin/end
         _find_blocks!(blocks, tokens, MD_PASS1_TEMPLATES, is_active,
                       process_linereturn=true)
 
+        sort!(blocks, by=from)
+
+        # At this point we have the cu_brackets and begin/end in blocks
+        # Form the begin...end environments and deactivate all tokens within
+        _find_env_blocks!(blocks, tokens, is_active)
+
         # ======== PASS 2 ==============
-        # brackets which may form a link () and []
+        # brackets which may form a link: brackets and sq_brackets
         dt = _find_blocks!(blocks, tokens, MD_PASS2_TEMPLATES, is_active)
         form_links!(blocks)
         # here there may be brackets that are not part of links which
@@ -51,7 +58,7 @@ function find_blocks(
         filter!(b -> b.name != :BRACKETS, blocks)
 
         # ======== PASS 3 ==============
-        # remaining stuff e.g. emphasis tokens
+        # remaining stuff e.g. emphasis tokens, lxnew* etc
         _find_blocks!(blocks, tokens, MD_PASS3_TEMPLATES, is_active)
 
     # ------------------------------------------------------------------------
@@ -438,4 +445,87 @@ function form_dbb!(b::Vector{Block})
         it    = @view b[i].inner_tokens[2:end-1]
         b[i]  = Block(:DBB, open => close, it)
     end
+end
+
+
+
+function _find_env_blocks!(
+        blocks::Vector{Block},
+        tokens::SubVector{Token},
+        is_active::Vector{Bool}
+        )::Nothing
+
+    isempty(blocks) && return
+
+    envs     = Block[]
+    discard  = Int[]
+    i        = 1
+    n_blocks = length(blocks)
+    curb     = blocks[i]
+
+    @inbounds while i < n_blocks
+        nxtb = blocks[i+1]
+        j    = i
+
+        if curb.name == :LX_BEGIN
+            nxtb.name == :CU_BRACKETS || enverr()
+            env_name  = content(nxtb) |> strip
+
+            # look ahead trying to find the proper closing \end{...}
+            open_depth    = 1
+            closing_index = -1
+            probe         = nxtb
+            j            += 1
+
+            while j < n_blocks && open_depth != 0
+                cand  = probe.name
+                probe = blocks[j + 1]
+
+                closer = (cand == :LX_END) &&
+                         (probe.name == :CU_BRACKETS) &&
+                         (env_name == content(probe) |> strip)
+
+                opener = (cand == :LX_BEGIN) &&
+                         (probe.name == :CU_BRACKETS) &&
+                         (env_name == content(probe) |> strip)
+
+                if closer
+                    open_depth -= 1
+                elseif opener
+                    open_depth += 1
+                end
+
+                j += 1
+            end
+            open_depth   != 0 && enverr("{$env_name}")
+            closing_index = min(j + 1, n_blocks)
+
+            # tokens in span (there is always at least LX_BEGIN and END)
+            env_from = from(curb)
+            env_to   = to(blocks[closing_index])
+            toks_1   = findfirst(t -> from(t) >= env_from, tokens)
+            toks_n   = findlast(t -> to(t) <= env_to, tokens)
+            toks_r   = toks_1:toks_n
+
+            # deactivate them all
+            is_active[toks_r] .= false
+
+            # mark all blocks in the range as to be discarded
+            append!(discard, i:closing_index)
+
+            # keep track of the block and its tokens
+            b = Block(
+                Symbol("ENV_$(env_name)"),
+                @view tokens[toks_r]
+            )
+            push!(envs, b)
+        end
+
+        curb = nxtb
+        i    = j + 1
+    end
+    # discard all blocks within the env
+    deleteat!(blocks, discard)
+    append!(blocks, envs)
+    return
 end

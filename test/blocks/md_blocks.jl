@@ -174,21 +174,6 @@ end
     @test b[2].name == :MATH_INLINE
 end
 
-@testset "lx-obj" begin
-    b = raw"""
-        \begin{abc}\end{def}\newcommand{hello}\newenvironment{foo}\bar
-        """ |> md_blockifier
-    @test b[1].name == :LX_BEGIN
-    @test b[2].name == :CU_BRACKETS
-    @test b[3].name == :LX_END
-    @test b[4].name == :CU_BRACKETS
-    @test b[5].name == :LX_NEWCOMMAND
-    @test b[6].name == :CU_BRACKETS
-    @test b[7].name == :LX_NEWENVIRONMENT
-    @test b[8].name == :CU_BRACKETS
-    @test b[9].name == :LX_COMMAND
-end
-
 # -----------------------------
 # Added to take over commonmark
 
@@ -217,4 +202,36 @@ end
     b = FP.find_blocks(t)
     @test b[1] // "*bc*"
     @test b[2] // "_ef_"
+end
+
+@testset "env" begin
+    s = raw"""
+        \begin{abc}
+        foo
+        \end{abc}
+        """
+    t = s |> toks
+    b = FP.find_blocks(t)
+    @test b[1].ss // s
+
+    s = raw"""
+        \begin{abc}
+        \begin{def}
+        1
+        \end{def}
+        2
+        \end{abc}
+        """
+    t = s |> toks
+    b = FP.find_blocks(t)
+    @test b[1].ss // s
+end
+
+@testset "env issue" begin
+    s = raw"""
+        \begin{abc}
+        foo
+        """
+    t = s |> toks
+    @test_throws FP.FranklinParserException FP.find_blocks(t)
 end

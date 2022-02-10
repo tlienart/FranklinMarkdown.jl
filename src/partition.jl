@@ -149,45 +149,7 @@ function md_grouper(blocks::Vector{Block})::Vector{Group}
 
         if br != :PARAGRAPH
             _close_open_paragraph!(groups, blocks, cur_head, i)
-            if br == :LX_BEGIN
-                blocks[i+1].name == :CU_BRACKETS || enverr()
-                env_name = content(blocks[i+1])
-                # look ahead trying to find the proper closing \end{...}
-                open_depth    = 1
-                closing_index = -1
-                probe = blocks[i+1]
-                for j in i+1:n_blocks-1
-                    cand  = probe.name
-                    probe = blocks[j+1]
-                    if (
-                        cand == :LX_END &&
-                        probe.name == :CU_BRACKETS &&
-                        content(probe) == env_name
-                        )
-                        open_depth -= 1
-                    elseif (
-                            cand == :LX_BEGIN &&
-                            probe.name == :CU_BRACKETS &&
-                            content(probe) == env_name
-                            )
-                        open_depth += 1
-                    end
-                    if open_depth == 0
-                        closing_index = j+1  # take the brace
-                        break
-                    end
-                end
-                closing_index == -1 && enverr("{$env_name}")
-                # here we have a range of blocks from i -> closing which form a
-                # complete begin{...} --> end{...}
-                # it can't be empty as first and last are necessarily begin/end
-                br = Symbol("ENV_$(env_name)")
-                push!(groups, Group(blocks[i:closing_index]; role=br))
-                # move the head to the end
-                i = closing_index
-            else
-                push!(groups, Group(bi; role=br))
-            end
+            push!(groups, Group(bi; role=br))
             cur_head = 0
             cur_role = br
 

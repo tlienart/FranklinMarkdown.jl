@@ -79,6 +79,7 @@ const MD_PASS1_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
          :AUTOLINK,
          :CU_BRACKETS,
          :H1, :H2, :H3, :H4, :H5, :H6,
+         :LX_BEGIN, :LX_END,
       )
 )
 
