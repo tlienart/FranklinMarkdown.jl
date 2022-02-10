@@ -225,6 +225,15 @@ end
     t = s |> toks
     b = FP.find_blocks(t)
     @test b[1].ss // s
+
+    s = raw"""
+        \begin{abc}
+        foo
+        \end{abc}
+        def
+        """
+    t = s |> toks
+    b = FP.find_blocks(t)
 end
 
 @testset "env issue" begin

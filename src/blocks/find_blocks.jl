@@ -498,7 +498,7 @@ function _find_env_blocks!(
                 j += 1
             end
             open_depth   != 0 && enverr("{$env_name}")
-            closing_index = min(j + 1, n_blocks)
+            closing_index = j
 
             # tokens in span (there is always at least LX_BEGIN and END)
             env_from = from(curb)
