@@ -503,6 +503,7 @@ function _find_env_blocks!(
             # tokens in span (there is always at least LX_BEGIN and END)
             env_from = from(curb)
             env_to   = to(blocks[closing_index])
+
             toks_1   = findfirst(t -> from(t) >= env_from, tokens)
             toks_n   = findlast(t -> to(t) <= env_to, tokens)
             toks_r   = toks_1:toks_n
@@ -516,6 +517,7 @@ function _find_env_blocks!(
             # keep track of the block and its tokens
             b = Block(
                 Symbol("ENV_$(env_name)"),
+                tokens[toks_1] => tokens[toks_n],
                 @view tokens[toks_r]
             )
             push!(envs, b)

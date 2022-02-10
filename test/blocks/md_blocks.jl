@@ -234,6 +234,18 @@ end
         """
     t = s |> toks
     b = FP.find_blocks(t)
+
+    s = raw"""
+        \newenvironment{foo}{bar:}{:baz}
+        \begin{foo}
+        abc
+        \end{foo}
+        ABC
+        """
+    t = s |> toks
+    b = FP.find_blocks(t)
+    @test b[5].ss // "\\begin{foo}\nabc\n\\end{foo}"
+    @test b[5].inner_tokens[end].name == :CU_BRACKET_CLOSE
 end
 
 @testset "env issue" begin
