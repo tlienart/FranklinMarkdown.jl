@@ -39,7 +39,7 @@ we simplify here to `[a-zA-Z]+[_a-zA-Z0-9-]` and allow `,` for separation so
 """
 const F_DIV_OPEN = greedy_match(
     head_chars=[['@'], ALPHA_LATIN],
-    tail_chars=vcat(ALPHANUM_LATIN, ['-', '_', ','])
+    tail_chars=vcat(ALPHANUM_LATIN, ['-', '_', ',', ':', '/'])
 )
 
 """

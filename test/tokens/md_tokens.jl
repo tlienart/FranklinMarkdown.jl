@@ -134,6 +134,11 @@ end
     @test tokens[3].ss == "@@d1,d-2"
     @test tokens[4].name == :DIV_CLOSE
 
+    tokens = raw"@@d1,d-2:1/2 @@" |> FP.default_md_tokenizer
+    deleteat!(tokens, 1)
+    @test tokens[1].name == :DIV_OPEN
+    @test tokens[1].ss == "@@d1,d-2:1/2"
+
     tokens = raw"&amp; & foo" |> FP.default_md_tokenizer
     deleteat!(tokens, 1)
     @test tokens[1].name == :CHAR_HTML_ENTITY
