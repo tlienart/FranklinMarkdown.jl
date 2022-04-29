@@ -1,6 +1,5 @@
 module FranklinParser
 
-import OrderedCollections: LittleDict
 import REPL.REPLCompletions: emoji_symbols
 import Base.isempty
 

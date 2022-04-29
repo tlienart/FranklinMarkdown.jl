@@ -96,7 +96,7 @@ Returns:
     A function that takes a string and returns a vector of tokens.
 """
 @inline function tokenizer_factory(;
-            templates::LittleDict=MD_TOKENS
+            templates::Dict=MD_TOKENS
             )::Function
     return s -> find_tokens(s, templates)
 end

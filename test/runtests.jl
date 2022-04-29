@@ -1,4 +1,4 @@
-using Test, FranklinParser, OrderedCollections, Pkg
+using Test, FranklinParser, Pkg
 FP = FranklinParser
 FPE = FP.FranklinParserException
 

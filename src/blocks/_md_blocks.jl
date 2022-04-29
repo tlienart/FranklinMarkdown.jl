@@ -1,5 +1,5 @@
 # see utils/types/BlockTemplate
-const MD_BLOCKS = LittleDict{Symbol,BlockTemplate}(e.opening => e for e in [
+const MD_BLOCKS = Dict{Symbol,BlockTemplate}(e.opening => e for e in [
    BlockTemplate(:COMMENT,         :COMMENT_OPEN,   :COMMENT_CLOSE ),
    BlockTemplate(:RAW_HTML,        :RAW_HTML,       :RAW_HTML      ),
    BlockTemplate(:RAW_LATEX,       :RAW_LATEX,      :RAW_LATEX     ),
@@ -62,12 +62,12 @@ const CAN_BE_LEFT_OPEN = (
     :AUTOLINK_OPEN
 )
 
-const MD_PASS0 = LittleDict{Symbol,BlockTemplate}(
+const MD_PASS0 = Dict{Symbol,BlockTemplate}(
    :RAW => BlockTemplate(:RAW, :RAW, :RAW),
 )
 
 # First pass: container blocks etc
-const MD_PASS1_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
+const MD_PASS1_TEMPLATES = Dict{Symbol,BlockTemplate}(
    o => bt for (o, bt) in MD_BLOCKS
    if bt.name in (
          :COMMENT,
@@ -84,7 +84,7 @@ const MD_PASS1_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
 )
 
 # Second pass: links etc
-const MD_PASS2_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
+const MD_PASS2_TEMPLATES = Dict{Symbol,BlockTemplate}(
    o => bt for (o, bt) in MD_BLOCKS
    if bt.name in (
          :BRACKETS,
@@ -93,7 +93,7 @@ const MD_PASS2_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
 )
 
 # Last pass: the rest
-const MD_PASS3_TEMPLATES = LittleDict{Symbol,BlockTemplate}(
+const MD_PASS3_TEMPLATES = Dict{Symbol,BlockTemplate}(
    o => bt for (o, bt) in MD_BLOCKS
    if o ∉ union(keys(MD_PASS1_TEMPLATES), keys(MD_PASS2_TEMPLATES))
 )

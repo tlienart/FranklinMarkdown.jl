@@ -8,7 +8,7 @@ blocks are weeded out.
 function find_blocks(
             tokens::SubVector{Token};
             is_md::Bool=true
-            )::Vector{Block} where T <: LittleDict{Symbol, BlockTemplate}
+            )::Vector{Block} where T <: Dict{Symbol, BlockTemplate}
 
     blocks = Block[]
     isempty(tokens) && return blocks
@@ -83,7 +83,7 @@ end
 function _find_blocks!(
             blocks::Vector{Block},
             tokens::SubVector{Token},
-            templates::LittleDict{Symbol, BlockTemplate},
+            templates::Dict{Symbol, BlockTemplate},
             is_active::Vector{Bool}=ones(Bool, length(tokens));
             process_linereturn::Bool=false
             )::Vector{Int}

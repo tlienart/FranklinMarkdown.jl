@@ -12,7 +12,7 @@ returned.
 """
 function find_tokens(
             s::SS,
-            templates::LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}
+            templates::Dict{Char, Vector{Pair{TokenFinder, Symbol}}}
             )::Vector{Token}
 
     tokens = Token[]

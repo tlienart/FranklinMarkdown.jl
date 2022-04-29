@@ -1,4 +1,4 @@
-const ARGS_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
+const ARGS_TOKENS = Dict{Char, Vector{Pair{TokenFinder, Symbol}}}(
     '\\' => [
         forward_match("\\\"") => :SKIP,
     ],

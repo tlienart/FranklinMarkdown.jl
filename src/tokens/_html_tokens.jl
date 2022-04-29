@@ -3,7 +3,7 @@
 
 Dictionary of tokens for HTML. See also [`MD_TOKENS`](@ref).
 """
-const HTML_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
+const HTML_TOKENS = Dict{Char, Vector{Pair{TokenFinder, Symbol}}}(
     '{' => [
         forward_match("{{") => :DBB_OPEN
         ],

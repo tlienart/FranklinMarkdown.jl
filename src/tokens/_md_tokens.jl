@@ -9,7 +9,7 @@ Dev: F_* are greedy match, see `md_utils.jl`.
 
 Try: https://spec.commonmark.org/dingus
 """
-const MD_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
+const MD_TOKENS = Dict{Char, Vector{Pair{TokenFinder, Symbol}}}(
     '\n' => [
         F_LINE_RETURN       => :LINE_RETURN,
         forward_match("\n") => :LINE_RETURN,
@@ -149,7 +149,7 @@ MD_MATH_TOKENS
 
 Tokens that should be considered within a math environment.
 """
-const MD_MATH_TOKENS = LittleDict{Char, Vector{Pair{TokenFinder, Symbol}}}(
+const MD_MATH_TOKENS = Dict{Char, Vector{Pair{TokenFinder, Symbol}}}(
     '{' => [
         forward_match("{") => :CU_BRACKET_OPEN
         ],
