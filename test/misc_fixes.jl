@@ -1,4 +1,9 @@
 # ----------------------------------------------------------------------------
+# Oct14'22 | md block finishing at EOS #9
+md = """+++\na = 5\n+++"""
+g = FP.md_partition(md) |> FP.md_grouper
+@test FP.content(g[1].blocks[1]) // "a = 5"
+# ----------------------------------------------------------------------------
 # Nov11 | content of blockquotes with empty line
 md = """
     > ABC

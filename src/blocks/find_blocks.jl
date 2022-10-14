@@ -8,7 +8,7 @@ blocks are weeded out.
 function find_blocks(
             tokens::SubVector{Token};
             is_md::Bool=true
-            )::Vector{Block} where T <: Dict{Symbol, BlockTemplate}
+            )::Vector{Block}
 
     blocks = Block[]
     isempty(tokens) && return blocks

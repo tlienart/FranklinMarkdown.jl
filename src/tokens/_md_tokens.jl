@@ -58,7 +58,7 @@ const MD_TOKENS = Dict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("-->") => :COMMENT_CLOSE,
         ],
     '+' => [
-        forward_match("+++", ['\n']) => :MD_DEF_BLOCK
+        forward_match("+++", ['\n', EOS]) => :MD_DEF_BLOCK
         ],
     '\\' => [
         # -- special characters (https://www.amp-what.com/unicode/search)
