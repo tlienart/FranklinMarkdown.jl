@@ -16,8 +16,13 @@ BLOCKQUOTE block.
     * acc:    list of names of blocks that would be taken in the aggregation
     * case:   name of the block resulting from the aggregation
 """
-function aggregate!(blocks::Vector{Block}, items::Vector{Symbol},
-                    acc::Vector{Symbol}, case::Symbol)
+function aggregate!(
+            blocks::Vector{Block},
+            items::Vector{Symbol},
+            acc::Vector{Symbol},
+            case::Symbol
+        )::Nothing
+
     i = 1
     j = 1
     ps = parent_string(first(blocks))
@@ -39,6 +44,7 @@ function aggregate!(blocks::Vector{Block}, items::Vector{Symbol},
         end
         i = max(j, i + 1)
     end
+    return
 end
 
 form_blockquotes!(blocks::Vector{Block}) =

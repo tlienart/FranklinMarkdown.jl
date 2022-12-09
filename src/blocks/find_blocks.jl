@@ -415,8 +415,12 @@ function remove_inner!(blocks::Vector{Block})
         is_active[i] || continue
         to_current = to(blocks[i])
         next_outer = n_blocks + 1
-        for j = i+1:n_blocks
-            if from(blocks[j]) >= to_current
+        for j in i+1:n_blocks
+            bj = blocks[j]
+            fj, tj = from(bj), to(bj)
+            # there can be a one-character block exactly at the end
+            # of the span, see misc_fixes dec9'22.
+            if (fj > to_current) || (fj == to_current && tj > fj)
                 next_outer = j
                 break
             end

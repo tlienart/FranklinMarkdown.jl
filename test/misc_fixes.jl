@@ -1,3 +1,12 @@
+# Dec9'22 | remove_inner! when last block has from=to
+md = """
+    * abc
+    * def
+    ghi [aaa](bbb).
+    """
+g = FP.md_partition(md) |> FP.md_grouper
+@test length(g) == 1
+@test g[1].ss // md
 # ----------------------------------------------------------------------------
 # Oct14'22 | md block finishing at EOS #9
 md = """+++\na = 5\n+++"""

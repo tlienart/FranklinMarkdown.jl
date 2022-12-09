@@ -26,10 +26,11 @@ function partition(
     if isempty(tokens)
         tokens = tokenizer(s)
     end
-    # NOTE: we need to be explicit here as in the recursive case, when partitioning
-    # a block, there will not be a LR and EOS token, we're just getting the blocks'
-    # inner token (and so checking the length of the tokens is insufficient)
-    if length(tokens) == 2 && tokens[1].name == :LINE_RETURN && tokens[2].name == :EOS
+
+    # NOTE: we need to be explicit here as, in the recursive case, when
+    # partitioning a block, there will not be a LR and EOS token. We'll just
+    # get the blocks' inner tokens.
+    if getfield.(tokens, :name) == [:LINE_RETURN, :EOS]
         return [TextBlock(s)]
     end
 
