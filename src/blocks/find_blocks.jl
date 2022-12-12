@@ -7,8 +7,9 @@ blocks are weeded out.
 """
 function find_blocks(
             tokens::SubVector{Token};
+            # kwargs
             is_md::Bool=true
-            )::Vector{Block}
+        )::Vector{Block}
 
     blocks = Block[]
     isempty(tokens) && return blocks
@@ -16,11 +17,15 @@ function find_blocks(
 
     # ------------------------------------------------------------------------
     if is_md
-        # ======== PASS 0 ==============
+        ##########
+        # PASS 0 #
+        ##########
         # raw blocks (??? ... ???)
         _find_blocks!(blocks, tokens, MD_PASS0, is_active)
 
-        # ======== PASS 1 ==============
+        ##########
+        # PASS 1 #
+        ##########
         # basically all container blocks
         # comment, raw html, raw latex, def blocks, code blocks
         # math blocks, div blocks, autolink, cu_brackets, h* blocks
@@ -34,7 +39,9 @@ function find_blocks(
         # Form the begin...end environments and deactivate all tokens within
         _find_env_blocks!(blocks, tokens, is_active)
 
-        # ======== PASS 2 ==============
+        ##########
+        # PASS 2 #
+        ##########
         # brackets which may form a link: brackets and sq_brackets
         dt = _find_blocks!(blocks, tokens, MD_PASS2_TEMPLATES, is_active)
         form_links!(blocks)
@@ -57,7 +64,9 @@ function find_blocks(
         # discard leftover bracket blocks
         filter!(b -> b.name != :BRACKETS, blocks)
 
-        # ======== PASS 3 ==============
+        ##########
+        # PASS 3 #
+        ##########
         # remaining stuff e.g. emphasis tokens, lxnew* etc
         _find_blocks!(blocks, tokens, MD_PASS3_TEMPLATES, is_active)
 
@@ -71,7 +80,7 @@ function find_blocks(
     sort!(blocks, by=from)
     remove_inner!(blocks)
 
-    # forming of double braces is done here to avoid clash with latex curly braces
+    # forming of double braces is done here to avoid clash with lx curly braces
     is_md && form_dbb!(blocks)
 
     return blocks
@@ -80,13 +89,20 @@ end
 @inline find_blocks(t::Vector{Token}, a...) = find_blocks(subv(t), a...)
 
 
+"""
+    _find_blocks!(...)
+
+Helper function to resolve each of the passes looking at a different set of
+templates.
+"""
 function _find_blocks!(
             blocks::Vector{Block},
             tokens::SubVector{Token},
             templates::Dict{Symbol, BlockTemplate},
             is_active::Vector{Bool}=ones(Bool, length(tokens));
+            # kwargs
             process_linereturn::Bool=false
-            )::Vector{Int}
+        )::Vector{Int}
     #
     # keep track of what was deactivated, this is useful for md parsing
     # when discarding BRACKET tokens and re-enabling the tokens inside them;
@@ -98,8 +114,10 @@ function _find_blocks!(
     deactivated_tokens = Int[]
 
     isempty(templates) && return deactivated_tokens
+
     template_keys = keys(templates)
-    n_tokens = length(tokens)
+    n_tokens      = length(tokens)
+
     @inbounds for i in eachindex(tokens)
 
         is_active[i] || continue
@@ -154,6 +172,14 @@ function _find_blocks!(
         new_block = Block(template.name, tokens_in_span)
         push!(blocks, new_block)
 
+        # for blocks that end with a line return, do not deactivate
+        # that line return which might e.g. lead to the start of an item
+        # see process_line_returns
+        last_token = tokens[closing_index]
+        if last_token.name == :LINE_RETURN
+            closing_index -= 1
+        end
+
         # deactivate all tokens in the span of the block
         to_deactivate = i:closing_index
         is_active[to_deactivate] .= false
@@ -166,21 +192,29 @@ end
 """
     process_line_return!(blocks, tokens, i)
 
-Process a line return followed by any number of white spaces and X. Depending
-on `X`, it will lead to a different interpretation.
+Process a line return followed by any number of white spaces and one or more
+characters. Depending on these characters, it will lead to a different
+interpretation and an update of the token.
 
-* a paragraph break (double line skip)
-* a hrule (has --- or *** or ____ on the line)
-* an item candidate (starts with * or + or ...)
-* a table row candidate (startswith |)
-* a blockquote (startswith >).
+if the next non-space character(s) is/are:
 
-We disambiguate the different cases based on the two characters after the
+* another lret      --> interpret as paragraph break (double line skip)
+* two -,* or _      --> a hrule that will need to be validated later
+* one *, +, -, etc. --> an item candidate
+* |                 --> table row candidate
+* >                 --> a blockquote (startswith >).
+
+We disambiguate the different cases based on the **two** characters after the
 whitespaces of the line return (the line return token captures `\n[ \t]*`).
 """
-function process_line_return!(b::Vector{Block}, tv::SubVector{Token},
-                              i::Int)::Nothing
+function process_line_return!(
+            b::Vector{Block},
+            tv::SubVector{Token},
+            i::Int
+        )::Nothing
+
     t = tv[i]
+    # start of string (SOS) is a "virtual" line return.
     if t.name == :SOS
         c = [first(t.ss), next_chars(t, 1)...]
     else
@@ -287,7 +321,10 @@ Note: in the case of a LINK_A, we check around if the previous non whitespace
 character and the next non whitespace character don't happen to be } {. In
 that specific case, the link is
 """
-function form_links!(blocks::Vector{Block})
+function form_links!(
+            blocks::Vector{Block}
+        )::Nothing
+    
     isempty(blocks) && return
     nblocks = length(blocks)
     remove  = Int[]
@@ -407,7 +444,10 @@ end
 Remove blocks which are part of larger blocks (these will get re-formed and
 re-processed at an ulterior step).
 """
-function remove_inner!(blocks::Vector{Block})
+function remove_inner!(
+            blocks::Vector{Block}
+        )::Nothing
+
     isempty(blocks) && return
     n_blocks  = length(blocks)
     is_active = ones(Bool, n_blocks)
@@ -452,11 +492,10 @@ function form_dbb!(b::Vector{Block})
 end
 
 
-
 function _find_env_blocks!(
-        blocks::Vector{Block},
-        tokens::SubVector{Token},
-        is_active::Vector{Bool}
+            blocks::Vector{Block},
+            tokens::SubVector{Token},
+            is_active::Vector{Bool}
         )::Nothing
 
     isempty(blocks) && return
