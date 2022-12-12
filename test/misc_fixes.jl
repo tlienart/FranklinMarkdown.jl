@@ -1,3 +1,24 @@
+# Dec12'22 | release line return deactivated in block find so that
+# other things can start immediately after e.g. a heading
+md = """
+    # abc
+    * i1
+    * i2
+    """
+g = FP.md_partition(md)
+@test g[1].name == :H1
+@test g[1].ss == "# abc\n"
+@test FP.content(g[1]) == " abc"
+@test g[2].name == :LIST
+@test g[2].ss == "\n* i1\n* i2"
+@test g[3].name == :P_BREAK
+md = """
+    @def v = 5
+    * i1
+    * i2
+    """
+g = FP.md_partition(md)
+@test g[2].ss == "\n* i1\n* i2"
 # Dec9'22 | remove_inner! when last block has from=to
 md = """
     * abc
