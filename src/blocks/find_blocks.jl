@@ -86,7 +86,7 @@ function find_blocks(
     return blocks
 end
 
-@inline find_blocks(t::Vector{Token}, a...) = find_blocks(subv(t), a...)
+find_blocks(t::Vector{Token}, a...) = find_blocks(subv(t), a...)
 
 
 """
@@ -163,9 +163,8 @@ function _find_blocks!(
             if opening ∈ CAN_BE_LEFT_OPEN
                 continue
             end
-            parser_exception(:BlockNotClosed, """
-                An opening token '$(opening)' was found but not closed.
-                """)
+            # otherwise complain
+            block_not_closed_exception(tokens[i])
         end
 
         tokens_in_span = @view tokens[i:closing_index]
@@ -475,7 +474,8 @@ end
 """
     form_dbb!(blocks)
 
-Find CU_BRACKETS blocks that start with `{{` and and with `}}` and mark them as :DBB.
+Find CU_BRACKETS blocks that start with `{{` and and with `}}` and mark them as
+:DBB.
 """
 function form_dbb!(b::Vector{Block})
     @inbounds for i in eachindex(b)
@@ -511,8 +511,11 @@ function _find_env_blocks!(
         j    = i
 
         if curb.name == :LX_BEGIN
-            nxtb.name == :CU_BRACKETS || enverr()
-            env_name  = content(nxtb) |> strip
+            # Note that the next block here is **necessarily** a CU_BRACKETS
+            # indeed, LX_BEGIN is detected only if it's followed by `{` which
+            # at this point, must have been closed (otherwise an error would
+            # have been formed at block creation time).
+            env_name = content(nxtb) |> strip
 
             # look ahead trying to find the proper closing \end{...}
             open_depth    = 1
@@ -540,7 +543,7 @@ function _find_env_blocks!(
 
                 j += 1
             end
-            open_depth   != 0 && enverr("{$env_name}")
+            open_depth   != 0 && env_not_closed_exception(curb, env_name)
             closing_index = j
 
             # tokens in span (there is always at least LX_BEGIN and END)

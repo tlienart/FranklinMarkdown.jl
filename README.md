@@ -3,6 +3,41 @@
 [![CI Actions Status](https://github.com/tlienart/FranklinParser.jl/workflows/CI/badge.svg)](https://github.com/tlienart/FranklinParser.jl/actions)
 [![codecov](https://codecov.io/gh/tlienart/FranklinParser.jl/branch/main/graph/badge.svg?token=mNry6r2aIn)](https://codecov.io/gh/tlienart/FranklinParser.jl)
 
+
+Markdown parser for Franklin. See [Dev](#dev) at the bottom for information
+about how it's structured. This isn't expected to be used by itself but may
+be interesting for users who would like to extend the parsing or understand
+how the parsing is done.
+
+The way it's expected to be used is:
+
+
+````julia-repl
+julia> using FranklinParser
+
+julia> s = raw"""
+  a **b** _c_ `d` ~~html~~ $math$
+  +++
+  def
+  +++
+  """;
+
+julia> p = FranklinParser.md_partition(s)
+11-element Vector{FranklinParser.Block}:
+(...)
+
+julia> g = FranklinParser.md_grouper(p)
+2-element Vector{FranklinParser.Group}:
+(...)
+````
+
+* _Blocks_ are recuperated at parsing time by finding opening and closing tokens (e.g. a first `**` and the next matching `**`).
+* _Groups_ are sets of blocks (potentially laced with text) that should be considered together (e.g. a paragraph).
+* lastly note that we use `md_partition` and `md_parser` which do a few things by default, however someone could re-define those (see `partition.jl`).
+
+
+
+
 ## Why not just CommonMark.jl?
 
 [CommonMark.jl](https://github.com/MichaelHatherly/CommonMark.jl) is great, well coded, and aims to respect the [commonmark specs](https://commonmark.org).
@@ -65,11 +100,24 @@ Notes:
 
 For the specs with respect to CommonMark, see `test/partition/md_specs.jl`.
 
-(ONGOING) additional test suite following CommonMark.jl.
-
 ## Notes
 
-* assumption of LF convention i.e. that end of lines are `\n` and not `\r\n`. Windows users who are using an editor with that convention should switch their preferences (in VSCode this can be done by Settings > Text Editor > Files > EOL or putting `"files.eol": "\n"` in `settings.json`).
-* dropping `@def` multiline support; there's ambiguity with line returns; better to use `+++...+++` blocks; `@def x = 5` is still allowed.
-* adding `??? ... ???` as an overarching "escape" block, the effect is pretty much the same as that of `~~~ ... ~~~` but an advantage is that `???` is not recognised by Markdown highlighters (e.g. Atom's) and therefore if for instance a user wants to pass a block of text untouched to CommonMark.jl it's nicer if the Markdown remains highlighted properly between the `???`.
-* adding possibility to disable some tokens for instance `$` or indeed `???` by passing `disable=[:MATH_INLINE, :RAW]` etc.
+* assumption of LF convention i.e. that end of lines are `\n` and not `\r\n`.
+Windows users who are using an editor with that convention should switch their preferences (in
+VSCode this can be done by Settings > Text Editor > Files > EOL or putting `"files.eol": "\n"` in
+`settings.json`).
+* dropping `@def` multiline support; there's ambiguity with line returns; better to use `+++...+++`
+blocks; `@def x = 5` is still allowed.
+* adding `??? ... ???` as an overarching "escape" block, the effect is pretty much the same as that
+of `~~~ ... ~~~` but an advantage is that `???` is not recognised by Markdown highlighters
+(e.g. Atom's) and therefore if for instance a user wants to pass a block of text untouched to
+CommonMark.jl it's nicer if the Markdown remains highlighted properly between the `???`.
+* adding possibility to disable some tokens for instance `$` or indeed `???` by passing
+`disable=[:MATH_INLINE, :RAW]` etc.
+
+---
+
+## Dev
+
+* `find_tokens` reads string left to right, form tokens out of template, should not throw errors.
+* `find_blocks`

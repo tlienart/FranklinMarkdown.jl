@@ -79,8 +79,8 @@ function partition(
     # Postprocessing (e.g. forming blockquotes, lists etc)
     return postproc(parts)
 end
-@inline partition(s::String, a...; kw...) = partition(subs(s), a...; kw...)
-@inline partition(b::Block, a...; kw...)  = partition(content(b), a...; tokens=b.inner_tokens)
+partition(s::String, a...; kw...) = partition(subs(s), a...; kw...)
+partition(b::Block, a...; kw...)  = partition(content(b), a...; tokens=b.inner_tokens)
 
 
 """
@@ -96,8 +96,8 @@ Returns:
 --------
     A function that takes a string and returns a vector of tokens.
 """
-@inline function tokenizer_factory(;
-            templates::Dict=MD_TOKENS
+function tokenizer_factory(;
+            templates::Dict = MD_TOKENS
             )::Function
     return s -> find_tokens(s, templates)
 end
@@ -109,14 +109,14 @@ default_html_tokenizer = tokenizer_factory(templates=HTML_TOKENS)
 default_md_blockifier   = t -> find_blocks(subv(t), is_md=true)
 default_html_blockifier = t -> find_blocks(subv(t), is_md=false)
 
-@inline md_partition(e; kw...) =
+md_partition(e; kw...) =
     partition(e, default_md_tokenizer, default_md_blockifier;
               postproc=default_md_postproc!, kw...)
 
-@inline math_partition(e; kw...) =
+math_partition(e; kw...) =
     partition(e, default_math_tokenizer, default_md_blockifier; kw...)
 
-@inline html_partition(e; kw...) =
+html_partition(e; kw...) =
     partition(e, default_html_tokenizer, default_html_blockifier; kw...)
 
 
@@ -185,12 +185,6 @@ function _close_open_paragraph!(groups, blocks, cur_head, i)
     end
     return
 end
-
-
-enverr(n="") = parser_exception(:BlockNotClosed, """
-    An opening \\begin$n was found but either not followed by a brace or
-    left open.
-    """)
 
 
 """

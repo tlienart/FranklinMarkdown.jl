@@ -45,3 +45,7 @@ end
 @testset "bugfixes" begin
     include("misc_fixes.jl")
 end
+
+@testset "errors" begin
+    include("errors.jl")
+end

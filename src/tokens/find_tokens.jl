@@ -5,10 +5,15 @@ Go through a text left to right, one (valid) char at the time and keep track
 of sequences of chars that match specific tokens. The list of tokens found is
 returned.
 
-**Arguments**
+## Arguments
 
 * `s`: the initial text
 * `templates`: dictionary of possible tokens
+
+## Errors
+
+This should not throw any error, everything should be explicitly handled by
+a code path.
 """
 function find_tokens(
             s::SS,
@@ -18,10 +23,12 @@ function find_tokens(
     tokens = Token[]
     isempty(s) && return tokens
 
-    # start with a LINERETURN to allow proper treatment of special lines
-    # such as blockquote lines or items that could be right at the start
-    # see "process_line_return!"
-    push!(tokens, Token(:SOS, subs(parent_string(s), from(s))))
+    # Put a "start of string" token first, note that it may overlap with another
+    # token which would be right at the start too.
+    push!(
+        tokens,
+        Token(:SOS, subs(parent_string(s), from(s)))
+    )
     head_idx = firstindex(s)
     end_idx  = lastindex(s)
 
@@ -53,8 +60,10 @@ function find_tokens(
                     # other cases.
                     if matches
                         head_idx = prevind(s, tail_idx, offset)
-                        token    = Token(case, chop(candidate, tail=offset))
-                        push!(tokens, token)
+                        push!(
+                            tokens,
+                            Token(case, chop(candidate, tail=offset))
+                        )
                         break
                     end
                 # -----------------------------------------
@@ -84,8 +93,10 @@ function find_tokens(
                         check(tf, candidate) || continue
                         # if it's happy move head and push the token
                         head_idx = tail_idx
-                        token = Token(case, candidate)
-                        push!(tokens, token)
+                        push!(
+                            tokens,
+                            Token(case, candidate)
+                        )
                         break
                     end
                 end
@@ -94,10 +105,12 @@ function find_tokens(
         head_idx = nextind(s, head_idx)
     end
 
-    # finally push the end token on the stack observe that it can overlap a token
-    # that would be at the end of the string.
-    eos = Token(:EOS, subs(s, end_idx))
-    push!(tokens, eos)
+    # finally push the end token on the stack, note that it can overlap another
+    # token that would be at the end of the string, same as :SOS token.
+    push!(
+        tokens,
+        Token(:EOS, subs(s, end_idx))
+    )
 
     # discard header tokens that are not at the start of a line or
     # only preceded by whitespaces
@@ -109,7 +122,7 @@ function find_tokens(
     return tokens
 end
 
-@inline find_tokens(s::String, templates) = find_tokens(subs(s), templates)
+find_tokens(s::String, templates) = find_tokens(subs(s), templates)
 
 
 """

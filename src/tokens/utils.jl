@@ -145,7 +145,7 @@ Return a TokenFinder corresponding to a forward lookup checking if a sequence
 of characters matches a `refstring` and is followed (or not followed if
 `is_followed==false`) by a char out of a list of chars (`next_chars`).
 """
-@inline function forward_match(
+function forward_match(
             refstring::String,
             next_chars::Vector{Char}=Char[],
             is_followed::Bool=true
@@ -167,7 +167,7 @@ end
 
 Lazily accept the next char and stop as soon as it fails to verify `λ(c)`.
 """
-@inline function greedy_match(;
+function greedy_match(;
             head_chars::Vector{Vector{Char}}=Vector{Vector{Char}}(),
             tail_chars::Vector{Char}=Char[],
             check::Regex=r"")
