@@ -1,13 +1,15 @@
 name = "FranklinParser"
 uuid = "796511e7-1510-466f-ad0c-1823c64bcafa"
 authors = ["Thibaut Lienart <tlienart@me.com>"]
-version = "0.7.0"
+version = "0.7.1"
 
 [deps]
+PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [compat]
 julia = "1.5"
+PrecompileTools = "1.1"
 
 [extras]
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"

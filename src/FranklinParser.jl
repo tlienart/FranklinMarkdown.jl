@@ -2,6 +2,7 @@ module FranklinParser
 
 import REPL.REPLCompletions: emoji_symbols
 import Base.isempty
+import PrecompileTools
 
 const SS = SubString{String}
 const SubVector{T} = SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}
@@ -32,5 +33,6 @@ include("blocks/utils.jl")
 
 include("partition.jl")
 
+include("_precompile/main.jl")
 
 end
