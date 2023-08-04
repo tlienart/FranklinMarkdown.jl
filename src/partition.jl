@@ -21,63 +21,84 @@ function partition(
             postproc::Function=identity
             )::Vector{Block}
 
-    parts = Block[]
-    isempty(s) && return parts
-    if isempty(tokens)
-        tokens = tokenizer(s)
-    end
+    t = 0
+    dt = @elapsed begin
 
-    # NOTE: we need to be explicit here as, in the recursive case, when
-    # partitioning a block, there will not be a LR and EOS token. We'll just
-    # get the blocks' inner tokens.
-    if getfield.(tokens, :name) == [:LINE_RETURN, :EOS]
-        return [TextBlock(s)]
-    end
+        parts = Block[]
+        isempty(s) && return parts
+        if isempty(tokens)
+            tokens = tokenizer(s)
+        end
 
-    # disable tokens if desired
-    isempty(disable) || filter!(t -> t.name ∉ disable, tokens)
+    end; @show ("tok", dt); t+=dt; ###
+    dt = @elapsed begin
 
-    # form Blocks
-    blocks = blockifier(tokens)
-    # discard first block if it's a 0-length P_BREAK
-    if !isempty(blocks) && iszero(to(blocks[1]))
-        deleteat!(blocks, 1)
-    end
-    isempty(blocks) && return [TextBlock(s, tokens)]
+        # NOTE: we need to be explicit here as, in the recursive case, when
+        # partitioning a block, there will not be a LR and EOS token. We'll just
+        # get the blocks' inner tokens.
+        if getfield.(tokens, :name) == [:LINE_RETURN, :EOS]
+            return [TextBlock(s)]
+        end
 
-    # disable additional blocks if desired
-    isempty(disable) || filter!(t -> t.name ∉ disable, blocks)
+        # disable tokens if desired
+        isempty(disable) || filter!(t -> t.name ∉ disable, tokens)
+    
+    end; @show ("preblock", dt); t+=dt; ###
+    dt = @elapsed begin
 
-    # Form a full partition with text blocks and blocks.
-    parent = parent_string(s)
-    first_block = blocks[1]
-    last_block  = blocks[end]
+        # form Blocks
+        blocks = blockifier(tokens)
+        # discard first block if it's a 0-length P_BREAK
+        if !isempty(blocks) && iszero(to(blocks[1]))
+            deleteat!(blocks, 1)
+        end
+        isempty(blocks) && return [TextBlock(s, tokens)]
 
-    # add Text at beginning if first block is not there
-    if from(s) < from(first_block)
-        inter = subs(parent, from(s), prev_index(first_block))
-        tb    = TextBlock(inter, tokens)
-        push!(parts, tb)
-    end
+    end; @show ("block", dt); t+=dt; ###
+    dt = @elapsed begin
 
-    # Go through blocks and add text with what's between them
-    for i in 1:length(blocks)-1
-        bi   = blocks[i]
-        bip1 = blocks[i+1]
-        push!(parts, blocks[i])
-        inter = subs(parent, next_index(bi), prev_index(bip1))
-        isempty(inter) || push!(parts, TextBlock(inter, tokens))
-    end
-    push!(parts, last_block)
+        # disable additional blocks if desired
+        isempty(disable) || filter!(t -> t.name ∉ disable, blocks)
 
-    # add Text at the end if last block is not there
-    if to(s) > to(last_block)
-        inter = subs(parent, next_index(last_block), to(s))
-        push!(parts, TextBlock(inter, tokens))
-    end
+        # Form a full partition with text blocks and blocks.
+        parent = parent_string(s)
+        first_block = blocks[1]
+        last_block  = blocks[end]
 
-    # Postprocessing (e.g. forming blockquotes, lists etc)
-    return postproc(parts)
+        # add Text at beginning if first block is not there
+        if from(s) < from(first_block)
+            inter = subs(parent, from(s), prev_index(first_block))
+            tb    = TextBlock(inter, tokens)
+            push!(parts, tb)
+        end
+
+        # Go through blocks and add text with what's between them
+        for i in 1:length(blocks)-1
+            bi   = blocks[i]
+            bip1 = blocks[i+1]
+            push!(parts, blocks[i])
+            inter = subs(parent, next_index(bi), prev_index(bip1))
+            isempty(inter) || push!(parts, TextBlock(inter, tokens))
+        end
+        push!(parts, last_block)
+
+        # add Text at the end if last block is not there
+        if to(s) > to(last_block)
+            inter = subs(parent, next_index(last_block), to(s))
+            push!(parts, TextBlock(inter, tokens))
+        end
+
+    end; @show ("rest", dt); t+=dt; ###
+    dt = @elapsed begin
+
+        # Postprocessing (e.g. forming blockquotes, lists etc)
+        pp = postproc(parts)
+
+    end; @show ("pproc", dt); t+=dt; ###
+
+    @show t
+
+    return pp
 end
 partition(s::String, a...; kw...) = partition(subs(s), a...; kw...)
 partition(b::Block, a...; kw...)  = partition(content(b), a...; tokens=b.inner_tokens)
