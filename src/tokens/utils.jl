@@ -173,3 +173,12 @@ function greedy_match(;
             check::Regex=r"")
     TokenFinder(-1, Chomp(; head_chars, tail_chars), check)
 end
+
+regex_escaper(s) = escape_string(string(s),
+    [
+        '!', '?', '|',
+        '(', ')', '[', ']', '{', '}',
+        '-', '+', '.', '*',
+        '$', '^'
+    ]
+)

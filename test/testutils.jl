@@ -20,7 +20,7 @@ end
 
 toks    = FP.default_md_tokenizer
 slice   = FP.md_partition
-text(b) = FP.prepare_text(b)
+text(b) = FP.prepare_md_text(b)
 ct(b)   = FP.content(b)
 ctf(b::FP.Group) = FP.content(first(b.blocks))
 grouper = FP.md_grouper ∘ slice

@@ -1,4 +1,61 @@
 """
+    MD_TOKENS_SIMPLE
+
+Dictionary of tokens for Markdown where a simple match over a fixed set of
+characters is enough, and where there's no special character so indexing
+arithmetic is by increments of one.
+"""
+const MD_TOKENS_SIMPLE = Dict{String,Symbol}(
+    "???"  => :RAW,
+    "~~~"  => :RAW_HTML,
+    "%%%"  => :RAW_LATEX,
+    "("    => :BRACKET_OPEN,
+    ")"    => :BRACKET_CLOSE,
+    "{"    => :CU_BRACKET_OPEN,
+    "}"    => :CU_BRACKET_CLOSE,
+    "["    => :SQ_BRACKET_OPEN,
+    "]"    => :SQ_BRACKET_CLOSE,
+    "<!--" => :COMMENT_OPEN,
+    "-->"  => :COMMENT_CLOSE,
+    ">"    => :AUTOLINK_CLOSE,
+    "|"    => :PIPE,
+    "\\\\" => :LINEBREAK,       # --> br
+    # -- maths
+    "\\["  => :MATH_DISPL_B_OPEN,      # \[ ...
+    "\\]"  => :MATH_DISPL_B_CLOSE,     #    ... \]
+    "\$\$" => :MATH_DISPL_A,  # $$⎵*
+    # -- other special characters
+    "\\*"  => :CHAR_42,
+    "\\_"  => :CHAR_95,
+    "\\`"  => :CHAR_96,
+    "\\@"  => :CHAR_64,
+    "\\#"  => :CHAR_35,
+    "\\{"  => :CHAR_123,
+    "\\}"  => :CHAR_125,
+    "\\\$" => :CHAR_36,
+    "\\~"  => :CHAR_126,
+    "\\!"  => :CHAR_33,
+    "\\\"" => :CHAR_34,
+    "\\%"  => :CHAR_37,
+    "\\&"  => :CHAR_38,
+    "\\'"  => :CHAR_39,
+    "\\+"  => :CHAR_43,
+    "\\,"  => :CHAR_44,
+    "\\-"  => :CHAR_45,
+    "\\."  => :CHAR_46,
+    "\\/"  => :CHAR_47,
+    "\\:"  => :CHAR_58,
+    "\\;"  => :CHAR_59,
+    "\\<"  => :CHAR_60,
+    "\\="  => :CHAR_61,
+    "\\>"  => :CHAR_62,
+    "\\?"  => :CHAR_63,
+    "\\^"  => :CHAR_94,
+    "\\|"  => :CHAR_124,
+)
+
+
+"""
     MD_TOKENS
 
 Dictionary of tokens for Markdown. Note that for each, there may be several
@@ -14,48 +71,12 @@ const MD_TOKENS = Dict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         F_LINE_RETURN       => :LINE_RETURN,
         forward_match("\n") => :LINE_RETURN,
         ],
-    '?' => [
-        forward_match("???") => :RAW
-    ],
-    '~' => [
-        forward_match("~~~") => :RAW_HTML
-        ],
-    '%' => [
-        forward_match("%%%") => :RAW_LATEX
-        ],
-    '(' => [
-        forward_match("(") => :BRACKET_OPEN
-        ],
-    ')' => [
-        forward_match(")") => :BRACKET_CLOSE
-        ],
-    '{' => [
-        forward_match("{") => :CU_BRACKET_OPEN
-        ],
-    '}' => [
-        forward_match("}") => :CU_BRACKET_CLOSE,
-        ],
     '<' => [
-        forward_match("<!--")           => :COMMENT_OPEN,
+        # forward_match("<!--")           => :COMMENT_OPEN,
         forward_match("<", ALPHA_LATIN) => :AUTOLINK_OPEN
-        ],
-    '>' => [
-        forward_match(">") => :AUTOLINK_CLOSE
-        ],
-    '[' => [
-        forward_match("[") => :SQ_BRACKET_OPEN,
-        ],
-    ']' => [
-        forward_match("]") => :SQ_BRACKET_CLOSE,
         ],
     ':' => [
         F_EMOJI => :CAND_EMOJI,
-        ],
-    '|' => [
-        forward_match("|") => :PIPE,
-        ],
-    '-' => [
-        forward_match("-->") => :COMMENT_CLOSE,
         ],
     '+' => [
         forward_match("+++", ['\n', EOS]) => :MD_DEF_BLOCK
@@ -65,45 +86,13 @@ const MD_TOKENS = Dict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         # commonmark specs: https://spec.commonmark.org/0.30/#backslash-escapes
         # OK \#\$\~\{\}\*\@\\\!\"\%\&\'\+\,\-\.\/\:\;\<\=\>\?\^\_\`\|
         # NO \[\]\(\)
-        forward_match("\\\\") => :LINEBREAK,         # --> <br/>
         forward_match("\\", SPACE_CHAR) => :CHAR_92,
-        # -- maths
-        forward_match("\\[")  => :MATH_DISPL_B_OPEN,      # \[ ...
-        forward_match("\\]")  => :MATH_DISPL_B_CLOSE,     #    ... \]
         # -- latex
         forward_match("\\newenvironment", ['{']) => :LX_NEWENVIRONMENT,
         forward_match("\\newcommand",     ['{']) => :LX_NEWCOMMAND,
         forward_match("\\begin",          ['{']) => :LX_BEGIN,
         forward_match("\\end",            ['{']) => :LX_END,
         F_LX_COMMAND                             => :LX_COMMAND,  # \command⎵*
-        # -- other special characters
-        forward_match("\\*")  => :CHAR_42,
-        forward_match("\\_")  => :CHAR_95,
-        forward_match("\\`")  => :CHAR_96,
-        forward_match("\\@")  => :CHAR_64,
-        forward_match("\\#")  => :CHAR_35,
-        forward_match("\\{")  => :CHAR_123,
-        forward_match("\\}")  => :CHAR_125,
-        forward_match("\\\$") => :CHAR_36,
-        forward_match("\\~")  => :CHAR_126,
-        forward_match("\\!")  => :CHAR_33,
-        forward_match("\\\"") => :CHAR_34,
-        forward_match("\\%")  => :CHAR_37,
-        forward_match("\\&")  => :CHAR_38,
-        forward_match("\\'")  => :CHAR_39,
-        forward_match("\\+")  => :CHAR_43,
-        forward_match("\\,")  => :CHAR_44,
-        forward_match("\\-")  => :CHAR_45,
-        forward_match("\\.")  => :CHAR_46,
-        forward_match("\\/")  => :CHAR_47,
-        forward_match("\\:")  => :CHAR_58,
-        forward_match("\\;")  => :CHAR_59,
-        forward_match("\\<")  => :CHAR_60,
-        forward_match("\\=")  => :CHAR_61,
-        forward_match("\\>")  => :CHAR_62,
-        forward_match("\\?")  => :CHAR_63,
-        forward_match("\\^")  => :CHAR_94,
-        forward_match("\\|")  => :CHAR_124,
         ],
     '@' => [
         forward_match("@def", [' '])    => :MD_DEF_OPEN,    # @def var = ...
@@ -123,7 +112,6 @@ const MD_TOKENS = Dict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         ],
     '$' => [
         forward_match("\$", ['$'], false) => :MATH_INLINE,   # $⎵*
-        forward_match("\$\$")             => :MATH_DISPL_A,  # $$⎵*
         ],
     '_' => [
         forward_match("___", ['_'], false) => :EM_STRONG,
@@ -144,18 +132,24 @@ const MD_TOKENS = Dict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         ]
     )  # end dict
 
+
 """
-MD_MATH_TOKENS
+    MD_MATH_TOKENS_SIMPLE
+
+Cf. MD_TOKENS_SIMPLE.
+"""
+const MD_MATH_TOKENS_SIMPLE = Dict{String,Symbol}(
+    "{" => :CU_BRACKET_OPEN,
+    "}" => :CU_BRACKET_CLOSE,
+)
+
+
+"""
+    MD_MATH_TOKENS
 
 Tokens that should be considered within a math environment.
 """
 const MD_MATH_TOKENS = Dict{Char, Vector{Pair{TokenFinder, Symbol}}}(
-    '{' => [
-        forward_match("{") => :CU_BRACKET_OPEN
-        ],
-    '}' => [
-        forward_match("}") => :CU_BRACKET_CLOSE,
-        ],
     '\\' => [
         forward_match("\\begin", ['{']) => :LX_BEGIN,
         forward_match("\\end", ['{'])   => :LX_END,

@@ -17,92 +17,147 @@ a code path.
 """
 function find_tokens(
             s::SS,
-            templates::Dict{Char, Vector{Pair{TokenFinder, Symbol}}}
+            templates::Dict{Char, Vector{Pair{TokenFinder, Symbol}}},
+            simple_templates::Dict{String,Symbol} = Dict{String,Symbol}()
             )::Vector{Token}
 
     tokens = Token[]
     isempty(s) && return tokens
 
-    # Put a "start of string" token first, note that it may overlap with another
-    # token which would be right at the start too.
+    # Put a "start of string" token first, note that it may overlap with
+    # another token which would be right at the start too.
     push!(
         tokens,
         Token(:SOS, subs(parent_string(s), from(s)))
     )
+    head_idx     = firstindex(s)
+    end_idx      = lastindex(s)
+    next_end_idx = nextind(s, end_idx)
+
+    #
+    # This first block handles the trivial tokens that correspond to an exact,
+    # non-ambiguous sequence of characters.
+    #
+    deactivated_char_index = Set{Int}()
+    if !isempty(simple_templates)
+        rx = Regex(
+            join(
+                (
+                    regex_escaper(k)
+                    for k in keys(simple_templates)
+                ),
+                '|'
+            )
+        )
+        simple_matches = eachmatch(rx, s)
+        for match in simple_matches
+            # for simple matches we can do arithmetic in +- 1
+            idx = match.offset
+            (idx >= head_idx) || continue
+            start  = match.offset
+            finish = start + length(match.match) - 1
+            push!(
+                tokens,
+                Token(
+                    simple_templates[match.match],
+                    subs(s, start, finish)
+                )
+            )
+            union!(deactivated_char_index, start:finish)
+            head_idx = finish + 1
+        end
+    end
+
+    #
+    # The purpose of this next block is to
+    #   1. find all trigger characters (chars that would start a rule-token)
+    #   2. filter the ones that actually do start a token
+    #   3. keep a stack of these validated tokens
+    #
     head_idx = firstindex(s)
-    end_idx  = lastindex(s)
-
-    @inbounds while head_idx <= end_idx
+    rx = Regex(
+        '[' * prod(regex_escaper(k) for k in keys(templates)) * ']'
+    )
+    matches  = collect(eachmatch(rx, s))
+    if !isempty(deactivated_char_index)
+        # ignore matches that start in one of the zones already found with the
+        # previous step
+        filter!(
+            m -> m.offset ∉ deactivated_char_index,
+            matches
+        )
+    end
+    for match in matches
+        idx = match.offset
+        (idx >= head_idx) || continue
+        head_idx  = idx
         head_char = s[head_idx]
-        if haskey(templates, head_char)
-            # Look at each possible finder sequentially
-            for (tf, case) in templates[head_char]
-                # ------------------------------------
-                # exact match of a given fixed pattern
-                # --> we form a candidate substring with a fixed number of characters
-                # and try to see if it matches a fixed rule. Possibly the substring
-                # contains an extra character for rules where we must match only when
-                # the next character is or isn't something.
-                if (tf.steps >= 0)
-                    tail_idx = nextind(s, head_idx, tf.steps)
-                    at_eos   = false
-                    if tail_idx == nextind(s, end_idx)
-                        tail_idx = end_idx
-                        at_eos = true
-                    end
-                    (tail_idx > end_idx) && continue
 
-                    # if there is space, consider the substring and verify whether it matches
-                    candidate       = subs(s, head_idx, tail_idx)
-                    matches, offset = fixed_lookahead(tf, candidate, at_eos)
+        for (tf, case) in templates[head_char]
+            # ------------------------------------
+            # exact match of a given fixed pattern
+            # --> we form a candidate substring with a fixed number of characters
+            # and try to see if it matches a fixed rule. Possibly the substring
+            # contains an extra character for rules where we must match only when
+            # the next character is or isn't something.
+            if (tf.steps >= 0)
+                tail_idx = nextind(s, head_idx, tf.steps)
+                at_eos   = (tail_idx == next_end_idx)
+                tail_idx = min(tail_idx, end_idx)
 
-                    # if it matches, form the token and break the for loop: no need to check
-                    # other cases.
-                    if matches
-                        head_idx = prevind(s, tail_idx, offset)
-                        push!(
-                            tokens,
-                            Token(case, chop(candidate, tail=offset))
-                        )
-                        break
-                    end
-                # -----------------------------------------
-                # rule-based match: greedy catch until fail
-                # --> we gradually form a candidate substring of increasing length until
-                # the next character doesn't meet the condition.
-                else
-                    nchars    = 1
-                    tail_idx  = head_idx
-                    probe_idx = nextind(s, head_idx)
-                    probe_idx > end_idx && continue
-                    probe_char::Char = s[probe_idx]
+                # if there is space, consider the substring and verify whether it matches
+                candidate       = subs(s, head_idx, tail_idx)
+                matches, offset = fixed_lookahead(tf, candidate, at_eos)
 
-                    # while the condition holds, consume get next char
-                    while greedy_lookahead(tf, nchars, probe_char)
-                        tail_idx   = probe_idx
-                        probe_idx  = nextind(s, probe_idx)
-                        (probe_idx > end_idx) && break
-                        probe_char = s[probe_idx]
-                        nchars    += 1
-                    end
+                # if it matches, form the token and break the for loop: no need to check
+                # other cases.
+                # (note that we don't care that the +1 is a valid char
+                # we just want to indicate to move after tail so the
+                # next trigger index is not on the tail)
+                if matches
+                    head_idx = tail_idx + 1 - offset
+                    push!(
+                        tokens,
+                        Token(case, chop(candidate, tail=offset))
+                    )
+                    break
+                end
+            # -----------------------------------------
+            # rule-based match: greedy catch until fail
+            # --> we gradually form a candidate substring of increasing length until
+            # the next character doesn't meet the condition.
+            else
+                nchars     = 1
+                tail_idx   = head_idx
+                probe_idx  = nextind(s, head_idx)
+                (probe_idx > end_idx) && continue
+                probe_char = s[probe_idx]
 
-                    # if we took in at least a char, validate then form the token
-                    if tail_idx > head_idx
-                        candidate = subs(s, head_idx, tail_idx)
-                        # check if the backward validator is happy otherwise skip
-                        check(tf, candidate) || continue
-                        # if it's happy move head and push the token
-                        head_idx = tail_idx
-                        push!(
-                            tokens,
-                            Token(case, candidate)
-                        )
-                        break
-                    end
+                # while the condition holds, consume get next char
+                while greedy_lookahead(tf, nchars, probe_char)
+                    tail_idx   = probe_idx
+                    probe_idx  = nextind(s, probe_idx)
+                    (probe_idx > end_idx) && break
+                    probe_char = s[probe_idx]
+                    nchars    += 1
+                end
+
+                # if we took in at least a char, validate then form the token
+                if tail_idx > head_idx
+                    candidate = subs(s, head_idx, tail_idx)
+                    # check if the backward validator is happy otherwise skip
+                    check(tf, candidate) || continue
+                    # if it's happy move head and push the token
+                    # (see note in fixed match for +1)
+                    head_idx = tail_idx
+                    push!(
+                        tokens,
+                        Token(case, candidate)
+                    )
+                    break
                 end
             end
         end
-        head_idx = nextind(s, head_idx)
     end
 
     # finally push the end token on the stack, note that it can overlap another
@@ -111,6 +166,8 @@ function find_tokens(
         tokens,
         Token(:EOS, subs(s, end_idx))
     )
+
+    sort!(tokens, by=t->from(t))
 
     # discard header tokens that are not at the start of a line or
     # only preceded by whitespaces
@@ -122,7 +179,7 @@ function find_tokens(
     return tokens
 end
 
-find_tokens(s::String, templates) = find_tokens(subs(s), templates)
+find_tokens(s::String, a...) = find_tokens(subs(s), a...)
 
 
 """

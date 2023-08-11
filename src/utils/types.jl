@@ -65,24 +65,6 @@ end
 TokenBlock(t::Token) = Block(t.name, t, EMPTY_TOKEN, t.ss, EMPTY_TOKEN_SVEC)
 
 """
-    TextBlock
-
-Spans of text which should be left to the fallback engine (such as CommonMark for
-instance). Text blocks can also have inner tokens that are non-block delimiters such as
-emojis or html entities.
-"""
-function TextBlock(ss::SS, it=EMPTY_TOKEN_SVEC)::Block
-    isempty(it) && return Block(:TEXT, ss)
-    fss = from(ss)
-    tss = to(ss)
-    i = findfirst(t -> fss <= from(t), it)
-    j = findlast(t -> to(t) <= tss && !is_eos(t), it)
-    any(isnothing, (i, j)) && return Block(:TEXT, ss)
-    inner_tokens = @view it[i:j]
-    return Block(:TEXT, ss, inner_tokens)
-end
-
-"""
     content(block)
 
 Return the content of a `Block`, for instance the content of a `{...}` block would be

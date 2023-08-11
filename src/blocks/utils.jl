@@ -9,20 +9,25 @@ function get_classes(b::Block)::String
 end
 
 """
-    prepare_text(blocks)
+    prepare_md_text(blocks)
 
 For a text block, replace the remaining tokens for special characters.
 """
-function prepare_text(b::Block; tohtml=true)::String
+function prepare_md_text(
+            b::Block;
+            tohtml=true,
+            tokenizer=default_md_tokenizer
+        )::String
+
     c = b.ss
-    # if there's no tokens over that content, return
-    isempty(b.inner_tokens) && return String(c)
-    # otherwise inject as appropriate
+
+    inner_tokens = filter(t -> t.name ∉ MD_IGNORE, tokenizer(c))
+    isempty(inner_tokens) && return String(c)
+
     parent = parent_string(c)
-    io = IOBuffer()
-    head = from(c)
-    for t in b.inner_tokens
-        t.name in MD_IGNORE && continue
+    io     = IOBuffer()
+    head   = from(c)
+    for t in inner_tokens
         write(io, subs(parent, head, prev_index(t)))
         write(io, insert(t; tohtml))
         head = next_index(t)

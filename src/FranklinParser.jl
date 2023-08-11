@@ -4,12 +4,14 @@ import REPL.REPLCompletions: emoji_symbols
 import Base.isempty
 import PrecompileTools
 
+using TimerOutputs
+const TIMER = TimerOutput()
+
 const SS = SubString{String}
 const SubVector{T} = SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}
 
 subv(v::Vector{T}) where T = @view v[1:length(v)]
 subv(v::SubVector{T}) where T = v
-
 
 include("utils/strings.jl")
 include("utils/types.jl")
