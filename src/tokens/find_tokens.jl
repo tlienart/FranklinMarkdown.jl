@@ -1,14 +1,9 @@
 """
-    find_tokens(s, templates)
+    find_tokens(s; ...)
 
 Go through a text left to right, one (valid) char at the time and keep track
 of sequences of chars that match specific tokens. The list of tokens found is
 returned.
-
-## Arguments
-
-* `s`: the initial text
-* `templates`: dictionary of possible tokens
 
 ## Errors
 
@@ -16,9 +11,11 @@ This should not throw any error, everything should be explicitly handled by
 a code path.
 """
 function find_tokens(
-            s::SS,
-            templates::Dict{Char, Vector{Pair{TokenFinder, Symbol}}},
-            simple_templates::Dict{String,Symbol} = Dict{String,Symbol}()
+            s::SS;
+            simple_templates    = Dict(),
+            simple_templates_rx = r"",
+            templates::Dict     = Dict(),
+            templates_rx        = r"",
             )::Vector{Token}
 
     tokens = Token[]
@@ -40,15 +37,10 @@ function find_tokens(
     #
     deactivated_char_index = Set{Int}()
     if !isempty(simple_templates)
-        rx = Regex(
-            join(
-                (
-                    regex_escaper(k)
-                    for k in keys(simple_templates)
-                ),
-                '|'
-            )
-        )
+        rx = simple_templates_rx
+        if isempty(rx.pattern)
+            rx = make_simple_templates_rx(simple_templates)
+        end
         simple_matches = eachmatch(rx, s)
         for match in simple_matches
             # for simple matches we can do arithmetic in +- 1
@@ -75,9 +67,10 @@ function find_tokens(
     #   3. keep a stack of these validated tokens
     #
     head_idx = firstindex(s)
-    rx = Regex(
-        '[' * prod(regex_escaper(k) for k in keys(templates)) * ']'
-    )
+    rx = templates_rx
+    if isempty(rx.pattern)
+        rx = make_templates_rx(templates)
+    end
     matches  = collect(eachmatch(rx, s))
     if !isempty(deactivated_char_index)
         # ignore matches that start in one of the zones already found with the
@@ -179,7 +172,7 @@ function find_tokens(
     return tokens
 end
 
-find_tokens(s::String, a...) = find_tokens(subs(s), a...)
+find_tokens(s::String; kw...) = find_tokens(subs(s); kw...)
 
 
 """

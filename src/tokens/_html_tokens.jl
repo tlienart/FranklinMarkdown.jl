@@ -15,6 +15,7 @@ const HTML_TOKENS_SIMPLE = Dict{String,Symbol}(
     "<script>"  => :SCRIPT_OPEN,
     "</script>" => :SCRIPT_CLOSE
 )
+const HTML_TOKENS_SIMPLE_RX = make_simple_templates_rx(HTML_TOKENS_SIMPLE)
 
 
 """
@@ -27,6 +28,7 @@ const HTML_TOKENS = Dict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("<script", [' ', '>']) => :SCRIPT_OPEN,  # [1]
         ],
 )
+const HTML_TOKENS_RX = make_templates_rx(HTML_TOKENS)
 #
 # [1] note that here we don't capture the closing `>` so for an application
 # where the user would want to extract the content in a script block; they

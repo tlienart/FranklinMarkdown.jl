@@ -5,7 +5,7 @@ Dictionary of tokens for Markdown where a simple match over a fixed set of
 characters is enough, and where there's no special character so indexing
 arithmetic is by increments of one.
 """
-const MD_TOKENS_SIMPLE = Dict{String,Symbol}(
+const MD_TOKENS_SIMPLE = Dict{String, Symbol}(
     "???"  => :RAW,
     "~~~"  => :RAW_HTML,
     "%%%"  => :RAW_LATEX,
@@ -53,6 +53,7 @@ const MD_TOKENS_SIMPLE = Dict{String,Symbol}(
     "\\^"  => :CHAR_94,
     "\\|"  => :CHAR_124,
 )
+const MD_TOKENS_SIMPLE_RX = make_simple_templates_rx(MD_TOKENS_SIMPLE)
 
 
 """
@@ -131,7 +132,7 @@ const MD_TOKENS = Dict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         forward_match("*",   ['*'], false) => :EM,
         ]
     )  # end dict
-
+const MD_TOKENS_RX = make_simple_templates_rx(MD_TOKENS)
 
 """
     MD_MATH_TOKENS_SIMPLE
@@ -142,6 +143,7 @@ const MD_MATH_TOKENS_SIMPLE = Dict{String,Symbol}(
     "{" => :CU_BRACKET_OPEN,
     "}" => :CU_BRACKET_CLOSE,
 )
+const MD_MATH_TOKENS_SIMPLE_RX = make_simple_templates_rx(MD_MATH_TOKENS_SIMPLE)
 
 
 """
@@ -156,6 +158,7 @@ const MD_MATH_TOKENS = Dict{Char, Vector{Pair{TokenFinder, Symbol}}}(
         F_LX_COMMAND                    => :LX_COMMAND,  # \command⎵*
         ],
     ) # end dict
+const MD_MATH_TOKENS_RX = make_templates_rx(MD_MATH_TOKENS)
 
 
 """

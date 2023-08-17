@@ -122,19 +122,27 @@ Returns:
 --------
     A function that takes a string and returns a vector of tokens.
 """
-function tokenizer_factory(;
-            simple_templates = MD_TOKENS_SIMPLE,
-            templates        = MD_TOKENS,
-            )::Function
-    return s -> find_tokens(s, templates, simple_templates)
+function tokenizer_factory(; kw...)::Function
+    return s -> find_tokens(s; kw...)
 end
 
-default_md_tokenizer   = tokenizer_factory()
-default_math_tokenizer = tokenizer_factory(
-    simple_templates=MD_MATH_TOKENS_SIMPLE, templates=MD_MATH_TOKENS
+default_md_tokenizer   = tokenizer_factory(;
+    simple_templates    = MD_TOKENS_SIMPLE,
+    simple_templates_rx = MD_TOKENS_SIMPLE_RX,
+    templates           = MD_TOKENS,
+    templates_rx        = MD_TOKENS_RX
+)
+default_math_tokenizer = tokenizer_factory(;
+    simple_templates    = MD_MATH_TOKENS_SIMPLE,
+    simple_templates_rx = MD_MATH_TOKENS_SIMPLE_RX,
+    templates           = MD_MATH_TOKENS,
+    templates_rx        = MD_MATH_TOKENS_RX
 )
 default_html_tokenizer = tokenizer_factory(
-    simple_templates=HTML_TOKENS_SIMPLE, templates=HTML_TOKENS
+    simple_templates    = HTML_TOKENS_SIMPLE,
+    simple_templates_rx = HTML_TOKENS_SIMPLE_RX,
+    templates           = HTML_TOKENS,
+    templates_rx        = HTML_TOKENS_RX
 )
 
 default_md_blockifier   = t -> find_blocks(subv(t), is_md=true)
@@ -242,7 +250,7 @@ function split_args(s::SS)::Vector{String}
     #
     parts = partition(
         s,
-        _s -> find_tokens(_s, ARGS_TOKENS),
+        _s -> find_tokens(_s; templates=ARGS_TOKENS, templates_rx=ARGS_TOKENS_RX),
         _t -> (b = Block[]; _find_blocks!(b, subv(_t), ARGS_BLOCKS); b),
     )
 

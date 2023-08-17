@@ -3,7 +3,7 @@
         A { B } C
         D } E { F
         """
-    tokens = FP.find_tokens(s, FP.MD_TOKENS, FP.MD_TOKENS_SIMPLE)
+    tokens = FP.default_md_tokenizer(s)
     names = [t.name for t in tokens]
     # tokens are sorted
     @test names == [
@@ -18,7 +18,7 @@
         ---
         and +++
         """
-    tokens = FP.find_tokens(s, FP.MD_TOKENS, FP.MD_TOKENS_SIMPLE)
+    tokens = FP.default_md_tokenizer(s)
     names = [t.name for t in tokens]
     @test names == [
         :SOS,
@@ -36,7 +36,7 @@ end
             hello
           bye
         -->"""
-    tokens = FP.find_tokens(s, FP.MD_TOKENS, FP.MD_TOKENS_SIMPLE)
+    tokens = FP.default_md_tokenizer(s)
     deleteat!(tokens, 1)
     check_tokens(tokens, [1, 2, 4, 6, 7],  :CU_BRACKET_OPEN)
     check_tokens(tokens, [3, 5, 8, 9, 10], :CU_BRACKET_CLOSE)
@@ -61,7 +61,7 @@ end
 
 @testset "md-base" begin
     s = """* *a _ b_ **a b**"""
-    tokens = FP.find_tokens(s, FP.MD_TOKENS, FP.MD_TOKENS_SIMPLE)
+    tokens = FP.default_md_tokenizer(s)
     deleteat!(tokens, 1)
     @test tokens[1].name == :EM_OPEN
     @test tokens[2].name == :EM_OPEN
@@ -70,13 +70,13 @@ end
     @test tokens[5].name == :STRONG_CLOSE
     @test tokens[6].name == :EOS
     s = """--> ----"""
-    tokens = FP.find_tokens(s, FP.MD_TOKENS, FP.MD_TOKENS_SIMPLE)
+    tokens = FP.default_md_tokenizer(s)
     deleteat!(tokens, 1)
     @test tokens[1].name == :COMMENT_CLOSE
     @test tokens[2].name == :EOS
     s = """+++ +++
     """
-    tokens = FP.find_tokens(s, FP.MD_TOKENS)
+    tokens = FP.default_md_tokenizer(s)
     deleteat!(tokens, 1)
     @test length(tokens) == 3 # 1 +++ 2 \n 3 EOS
     @test tokens[1].name == :MD_DEF_BLOCK
