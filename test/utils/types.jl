@@ -22,11 +22,6 @@ end
     @test b.close === t2
     @test FP.content(b) == "bc"
     @test isa(b, FP.AbstractSpan)
-
-    s = "abc def ghi"
-    t = FP.TextBlock(FP.subs(s, 5:7))
-    @test isa(t, FP.AbstractSpan)
-    @test t.ss == "def"
 end
 
 @testset "concrete" begin

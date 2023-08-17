@@ -3,26 +3,27 @@
         A { B } C
         D } E { F
         """
-    tokens = FP.find_tokens(s, FP.MD_TOKENS)
+    tokens = FP.default_md_tokenizer(s)
     names = [t.name for t in tokens]
-    @test count(e -> e == :CU_BRACKET_OPEN, names) == 2
-    @test count(e -> e == :CU_BRACKET_CLOSE, names) == 2
-    @test count(e -> e == :LINE_RETURN, names) == 2
-    @test names[end] == :EOS
-    @test names[1] == :SOS
-    @test length(tokens) == 2 + 2 + 2 + 1 + 1
+    # tokens are sorted
+    @test names == [
+        :SOS,
+        :CU_BRACKET_OPEN, :CU_BRACKET_CLOSE, :LINE_RETURN,
+        :CU_BRACKET_CLOSE, :CU_BRACKET_OPEN, :LINE_RETURN,
+        :EOS
+    ]
 
     s = """
         A <!-- B --> C
         ---
         and +++
         """
-    tokens = FP.find_tokens(s, FP.MD_TOKENS)
+    tokens = FP.default_md_tokenizer(s)
     names = [t.name for t in tokens]
     @test names == [
         :SOS,
         :COMMENT_OPEN, :COMMENT_CLOSE, :LINE_RETURN,
-        :LINE_RETURN,  # hrule are processed as blocks
+        :LINE_RETURN,
         :MD_DEF_BLOCK, :LINE_RETURN,
         :EOS
     ]
@@ -35,33 +36,32 @@ end
             hello
           bye
         -->"""
-    tokens = FP.find_tokens(s, FP.MD_TOKENS)
+    tokens = FP.default_md_tokenizer(s)
     deleteat!(tokens, 1)
-
-    check_tokens(tokens, [1, 2, 4, 6, 7], :CU_BRACKET_OPEN)
+    check_tokens(tokens, [1, 2, 4, 6, 7],  :CU_BRACKET_OPEN)
     check_tokens(tokens, [3, 5, 8, 9, 10], :CU_BRACKET_CLOSE)
-
     check_tokens(tokens, [11, 13, 14, 15], :LINE_RETURN)
-
     check_tokens(tokens, [12], :COMMENT_OPEN)
     check_tokens(tokens, [16], :COMMENT_CLOSE)
-
     check_tokens(tokens, [17], :EOS)
-
-    @test length(tokens) == 17
 
     t = """
         abc
             def
         {{abc}}
         """ |> FP.default_md_tokenizer
-    deleteat!(t, 1)
-    @test t[1].name == t[2].name == :LINE_RETURN
+    @test [ti.name for ti in t] == [
+        :SOS, 
+        :LINE_RETURN,
+        :LINE_RETURN,
+        :CU_BRACKET_OPEN, :CU_BRACKET_OPEN, :CU_BRACKET_CLOSE, :CU_BRACKET_CLOSE,
+        :LINE_RETURN, :EOS
+    ]
 end
 
 @testset "md-base" begin
     s = """* *a _ b_ **a b**"""
-    tokens = FP.find_tokens(s, FP.MD_TOKENS)
+    tokens = FP.default_md_tokenizer(s)
     deleteat!(tokens, 1)
     @test tokens[1].name == :EM_OPEN
     @test tokens[2].name == :EM_OPEN
@@ -70,13 +70,13 @@ end
     @test tokens[5].name == :STRONG_CLOSE
     @test tokens[6].name == :EOS
     s = """--> ----"""
-    tokens = FP.find_tokens(s, FP.MD_TOKENS)
+    tokens = FP.default_md_tokenizer(s)
     deleteat!(tokens, 1)
     @test tokens[1].name == :COMMENT_CLOSE
     @test tokens[2].name == :EOS
     s = """+++ +++
     """
-    tokens = FP.find_tokens(s, FP.MD_TOKENS)
+    tokens = FP.default_md_tokenizer(s)
     deleteat!(tokens, 1)
     @test length(tokens) == 3 # 1 +++ 2 \n 3 EOS
     @test tokens[1].name == :MD_DEF_BLOCK
@@ -178,3 +178,4 @@ end
     @test tokens[1].name == :CODE_QUAD
     @test tokens[2].name == :CODE_PENTA
 end
+

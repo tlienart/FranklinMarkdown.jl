@@ -21,63 +21,89 @@ function partition(
             postproc::Function=identity
             )::Vector{Block}
 
+    reset_timer!(TIMER)
+
     parts = Block[]
     isempty(s) && return parts
     if isempty(tokens)
-        tokens = tokenizer(s)
+        @timeit_debug TIMER "tokenizer" begin
+            tokens = tokenizer(s)
+        end
     end
 
     # NOTE: we need to be explicit here as, in the recursive case, when
     # partitioning a block, there will not be a LR and EOS token. We'll just
     # get the blocks' inner tokens.
     if getfield.(tokens, :name) == [:LINE_RETURN, :EOS]
-        return [TextBlock(s)]
+        return [Block(:TEXT, s)]
     end
 
     # disable tokens if desired
     isempty(disable) || filter!(t -> t.name ∉ disable, tokens)
 
     # form Blocks
-    blocks = blockifier(tokens)
+    @timeit_debug TIMER "blockifier" begin
+        blocks = blockifier(tokens)
+    end
     # discard first block if it's a 0-length P_BREAK
     if !isempty(blocks) && iszero(to(blocks[1]))
         deleteat!(blocks, 1)
     end
-    isempty(blocks) && return [TextBlock(s, tokens)]
+    isempty(blocks) && return [Block(:TEXT, s)]
 
     # disable additional blocks if desired
     isempty(disable) || filter!(t -> t.name ∉ disable, blocks)
 
-    # Form a full partition with text blocks and blocks.
-    parent = parent_string(s)
-    first_block = blocks[1]
-    last_block  = blocks[end]
+    @timeit_debug TIMER "partitioning" begin
+        @timeit_debug TIMER "init" begin
+    
+            # Form a full partition with text blocks and blocks.
+            parent = parent_string(s)
+            first_block = blocks[1]
+            last_block  = blocks[end]
 
-    # add Text at beginning if first block is not there
-    if from(s) < from(first_block)
-        inter = subs(parent, from(s), prev_index(first_block))
-        tb    = TextBlock(inter, tokens)
-        push!(parts, tb)
+            # add Text at beginning if first block is not there
+            if from(s) < from(first_block)
+                inter = subs(parent, from(s), prev_index(first_block))
+                tb    = Block(:TEXT, inter)
+                push!(parts, tb)
+            end
+   
+        end
+        @timeit_debug TIMER "loop" begin
+
+            # Go through blocks and add text with what's between them
+            for i in 1:length(blocks)-1
+                bi   = blocks[i]
+                bip1 = blocks[i+1]
+                @timeit_debug TIMER "push1" push!(parts, blocks[i])
+                @timeit_debug TIMER "inter" inter = subs(parent, next_index(bi), prev_index(bip1))
+                @timeit_debug TIMER "push2" begin
+                    @timeit_debug TIMER "isempty" flag = isempty(inter)
+                    @timeit_debug TIMER "pushif2" (flag || push!(parts, Block(:TEXT, inter)))
+                end
+            end
+            push!(parts, last_block)
+
+        end
+        @timeit_debug TIMER "end" begin
+
+            # add Text at the end if last block is not there
+            if to(s) > to(last_block)
+                inter = subs(parent, next_index(last_block), to(s))
+                push!(parts, Block(:TEXT, inter))
+            end
+        end
     end
 
-    # Go through blocks and add text with what's between them
-    for i in 1:length(blocks)-1
-        bi   = blocks[i]
-        bip1 = blocks[i+1]
-        push!(parts, blocks[i])
-        inter = subs(parent, next_index(bi), prev_index(bip1))
-        isempty(inter) || push!(parts, TextBlock(inter, tokens))
-    end
-    push!(parts, last_block)
-
-    # add Text at the end if last block is not there
-    if to(s) > to(last_block)
-        inter = subs(parent, next_index(last_block), to(s))
-        push!(parts, TextBlock(inter, tokens))
+    @timeit_debug TIMER "postprocessing" begin
+        # Postprocessing (e.g. forming blockquotes, lists etc)
+        pp = postproc(parts)
     end
 
-    # Postprocessing (e.g. forming blockquotes, lists etc)
-    return postproc(parts)
+    TimerOutputs.complement!(TIMER)
+
+    return pp
 end
 partition(s::String, a...; kw...) = partition(subs(s), a...; kw...)
 partition(b::Block, a...; kw...)  = partition(content(b), a...; tokens=b.inner_tokens)
@@ -96,28 +122,44 @@ Returns:
 --------
     A function that takes a string and returns a vector of tokens.
 """
-function tokenizer_factory(;
-            templates::Dict = MD_TOKENS
-            )::Function
-    return s -> find_tokens(s, templates)
+function tokenizer_factory(; kw...)::Function
+    return s -> find_tokens(s; kw...)
 end
 
-default_md_tokenizer   = tokenizer_factory()
-default_math_tokenizer = tokenizer_factory(templates=MD_MATH_TOKENS)
-default_html_tokenizer = tokenizer_factory(templates=HTML_TOKENS)
+default_md_tokenizer   = tokenizer_factory(;
+    simple_templates    = MD_TOKENS_SIMPLE,
+    simple_templates_rx = MD_TOKENS_SIMPLE_RX,
+    templates           = MD_TOKENS,
+    templates_rx        = MD_TOKENS_RX
+)
+default_math_tokenizer = tokenizer_factory(;
+    simple_templates    = MD_MATH_TOKENS_SIMPLE,
+    simple_templates_rx = MD_MATH_TOKENS_SIMPLE_RX,
+    templates           = MD_MATH_TOKENS,
+    templates_rx        = MD_MATH_TOKENS_RX
+)
+default_html_tokenizer = tokenizer_factory(
+    simple_templates    = HTML_TOKENS_SIMPLE,
+    simple_templates_rx = HTML_TOKENS_SIMPLE_RX,
+    templates           = HTML_TOKENS,
+    templates_rx        = HTML_TOKENS_RX
+)
 
 default_md_blockifier   = t -> find_blocks(subv(t), is_md=true)
 default_html_blockifier = t -> find_blocks(subv(t), is_md=false)
 
-md_partition(e; kw...) =
+function md_partition(e; kw...)
     partition(e, default_md_tokenizer, default_md_blockifier;
               postproc=default_md_postproc!, kw...)
+end
 
-math_partition(e; kw...) =
+function math_partition(e; kw...)
     partition(e, default_math_tokenizer, default_md_blockifier; kw...)
+end
 
-html_partition(e; kw...) =
+function html_partition(e; kw...)
     partition(e, default_html_tokenizer, default_html_blockifier; kw...)
+end
 
 
 function default_md_postproc!(blocks::Vector{Block})
@@ -208,7 +250,7 @@ function split_args(s::SS)::Vector{String}
     #
     parts = partition(
         s,
-        _s -> find_tokens(_s, ARGS_TOKENS),
+        _s -> find_tokens(_s; templates=ARGS_TOKENS, templates_rx=ARGS_TOKENS_RX),
         _t -> (b = Block[]; _find_blocks!(b, subv(_t), ARGS_BLOCKS); b),
     )
 

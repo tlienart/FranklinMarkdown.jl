@@ -1,12 +1,22 @@
 using FranklinParser
 using BenchmarkTools
+using TimerOutputs
 
-ct = read(joinpath(@__DIR__, "..", "src", "_precompile", "expages", "real1.md"), String)
+TimerOutputs.enable_debug_timings(FranklinParser)
 
-# last run: aug 4, ~ 0.5ms, this is ok but
-# ideally would eventually go down somewhat.
-@btime FranklinParser.md_partition($ct);
+txt = read(joinpath(@__DIR__, "..", "src", "_precompile", "expages", "real1.md"), String) *
+      read(joinpath(@__DIR__, "..", "src", "_precompile", "expages", "real3.md"), String) *
+      read(joinpath(@__DIR__, "..", "src", "_precompile", "expages", "real4.md"), String)
 
-# last run: aug 4, ~0.02ms, this is fine
-parts = FranklinParser.md_partition(ct)
-@btime FranklinParser.md_grouper($parts);
+# last run: aug 17, ~ 2.75ms; show(TIMER) gives
+#
+#     - tokenizer:  ~1.6ms
+#     - blockifier: ~0.7ms
+#     - partition:  ~0.6ms
+#
+@btime FranklinParser.md_partition($txt);
+
+# NOTE: One thing that could still be attempted
+# and may have an impact, is to come back to TextBlock encapsulating the
+# inner-tokens in their span so that we don't have to do lots of
+# re-tokenization bearing in mind that it's a significant effort.

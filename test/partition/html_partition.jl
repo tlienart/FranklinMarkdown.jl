@@ -2,14 +2,14 @@
     parts = """
         ABC1 <!-- DEF --> ABC2 <script> GHI </script> ABC3 {{ JKL }} ABC4
         """ |> FP.html_partition
-    for (i, c) in enumerate(("ABC1", "DEF", "ABC2", "> GHI", "ABC3", "JKL", "ABC4"))
+    for (i, c) in enumerate(("ABC1", "DEF", "ABC2", "GHI", "ABC3", "JKL", "ABC4"))
         @test isapproxstr(FP.content(parts[i]), c)
     end
 end
 
 @testset "script content" begin
     parts = """
-        ABC <script> GHI </script> DEF
+        ABC <script src="foo"> GHI </script> DEF
         """ |> FP.html_partition
     c = FP.content(parts[2])
     i = findfirst('>', c)
@@ -20,9 +20,9 @@ end
     parts = """
         \\(x\\)
         """ |> FP.html_partition
-    parts[1] // "\\(x\\)"
+    @test parts[1] // "\\(x\\)"
     parts = """
         \\[x\\]
         """ |> FP.html_partition
-    parts[1] // "\\[x\\]"
+    @test parts[1] // "\\[x\\]"
 end

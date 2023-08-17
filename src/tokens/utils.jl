@@ -173,3 +173,30 @@ function greedy_match(;
             check::Regex=r"")
     TokenFinder(-1, Chomp(; head_chars, tail_chars), check)
 end
+
+regex_escaper(s) = escape_string(string(s),
+    [
+        '!', '?', '|',
+        '(', ')', '[', ']', '{', '}',
+        '-', '+', '.', '*',
+        '$', '^'
+    ]
+)
+
+function make_simple_templates_rx(simple_templates)
+    return Regex(
+        join(
+            (
+                regex_escaper(k)
+                for k in keys(simple_templates)
+            ),
+            '|'
+        )
+    )
+end
+
+function make_templates_rx(templates)
+    return Regex(
+        '[' * prod(regex_escaper(k) for k in keys(templates)) * ']'
+    )
+end
