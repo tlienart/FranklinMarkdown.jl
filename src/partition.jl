@@ -27,21 +27,23 @@ function partition(
     isempty(s) && return parts
     if isempty(tokens)
         @timeit_debug TIMER "tokenizer" begin
-            tokens = tokenizer(s)
+            tokens = subv(tokenizer(s))
         end
     end
 
-    # NOTE: we need to be explicit here as, in the recursive case, when
-    # partitioning a block, there will not be a LR and EOS token. We'll just
-    # get the blocks' inner tokens.
+    # [Final line return] we need to be explicit here. Indeed, in the recursive
+    # case, when partitioning a block, there will not be a LR and EOS token.
+    # We'll just get the blocks' inner tokens.
     if getfield.(tokens, :name) == [:LINE_RETURN, :EOS]
         return [Block(:TEXT, s)]
     end
 
-    # disable tokens if desired
-    isempty(disable) || filter!(t -> t.name ∉ disable, tokens)
+    # disable tokens as requested
+    if !isempty(disable)
+        tokens = subv(filter(t -> t.name ∉ disable, collect(tokens)))
+    end
 
-    # form Blocks
+    # form Blocks based on the tokens
     @timeit_debug TIMER "blockifier" begin
         blocks = blockifier(tokens)
     end
@@ -49,7 +51,7 @@ function partition(
     if !isempty(blocks) && iszero(to(blocks[1]))
         deleteat!(blocks, 1)
     end
-    isempty(blocks) && return [Block(:TEXT, s)]
+    isempty(blocks) && return [Block(:TEXT, s, tokens)]
 
     # disable additional blocks if desired
     isempty(disable) || filter!(t -> t.name ∉ disable, blocks)
@@ -95,6 +97,38 @@ function partition(
             end
         end
     end
+
+    @timeit_debug TIMER "text-inner-tokens" begin
+
+        parts_no_pbreak = [p for p in parts if p.name != :P_BREAK]
+        n_parts         = length(parts_no_pbreak)
+        n_tokens        = length(tokens)
+        head_token_idx  = 1
+
+        for (i, part) in enumerate(parts_no_pbreak)
+
+            if part.name == :TEXT
+                old_head_idx = head_token_idx
+                if i < n_parts
+                    from_next_block = from(parts_no_pbreak[i+1])
+                    while (head_token_idx <= n_tokens) &&
+                          (from(tokens[head_token_idx]) <= from_next_block)
+                        head_token_idx += 1
+                    end
+                    part.inner_tokens = @view tokens[old_head_idx:head_token_idx-2]
+                else
+                    # final, put all tokens here
+                    part.inner_tokens = @view tokens[head_token_idx:end]
+                end
+            else
+                head_token_idx += 1 + length(part.inner_tokens) + 
+                                  Int(part.close === EMPTY_TOKEN)
+            end
+
+        end
+
+    end
+
 
     @timeit_debug TIMER "postprocessing" begin
         # Postprocessing (e.g. forming blockquotes, lists etc)
@@ -251,7 +285,7 @@ function split_args(s::SS)::Vector{String}
     parts = partition(
         s,
         _s -> find_tokens(_s; templates=ARGS_TOKENS, templates_rx=ARGS_TOKENS_RX),
-        _t -> (b = Block[]; _find_blocks!(b, subv(_t), ARGS_BLOCKS); b),
+        _t -> (b = Block[]; _find_blocks!(b, _t, ARGS_BLOCKS); b),
     )
 
     # form a dummy string with |__STR__| --> "foo |__STR__| 1"

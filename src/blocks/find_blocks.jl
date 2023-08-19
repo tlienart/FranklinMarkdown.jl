@@ -86,7 +86,7 @@ function find_blocks(
     return blocks
 end
 
-find_blocks(t::Vector{Token}, a...) = find_blocks(subv(t), a...)
+find_blocks(t::Vector{Token}; kw...) = find_blocks(subv(t); kw...)
 
 
 """

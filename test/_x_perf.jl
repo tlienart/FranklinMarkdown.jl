@@ -8,7 +8,15 @@ txt = read(joinpath(@__DIR__, "..", "src", "_precompile", "expages", "real1.md")
       read(joinpath(@__DIR__, "..", "src", "_precompile", "expages", "real3.md"), String) *
       read(joinpath(@__DIR__, "..", "src", "_precompile", "expages", "real4.md"), String)
 
-# last run: aug 17, ~ 2.75ms; show(TIMER) gives
+# aug 20, ~ 3.8ms (after adding inner tokens stuff...)
+#
+#     - tokenizer: ~1.8ms   (+)
+#     - blockifier: ~1.12ms (+++)
+#     - partition: ~0.6ms   (=)
+#
+# (regression maybe due to subvector stuff and non typestable stuff?)
+# - 
+# aug 17, ~ 2.75ms; show(TIMER) gives
 #
 #     - tokenizer:  ~1.6ms
 #     - blockifier: ~0.7ms

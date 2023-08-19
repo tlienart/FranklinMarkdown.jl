@@ -15,13 +15,13 @@ For a text block, replace the remaining tokens for special characters.
 """
 function prepare_md_text(
             b::Block;
-            tohtml=true,
-            tokenizer=default_md_tokenizer
+            tohtml=true
         )::String
 
     c = b.ss
+    isempty(strip(c)) && return ""
 
-    inner_tokens = filter(t -> t.name ∉ MD_IGNORE, tokenizer(c))
+    inner_tokens = filter(t -> t.name ∉ MD_IGNORE, b.inner_tokens)
     isempty(inner_tokens) && return String(c)
 
     parent = parent_string(c)

@@ -127,7 +127,7 @@ end
 
         &qwertyuioppoiuytrewqwer; &oiuytrewqwertyuioiuytrewqwertyuioytrewqwertyuiiuytri;
         """
-    t = s |> toks
+    t = s |> toks |> collect
     filter!(t -> t.name ∉ FP.MD_IGNORE, t)
 
     gt = ["&nbsp;", "&amp;", "&copy;", "&AElig;", "&Dcaron;", "&frac34;",

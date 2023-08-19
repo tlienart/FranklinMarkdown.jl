@@ -36,10 +36,11 @@ const EMPTY_TOKEN_SVEC = @view (Token[])[1:0]
 """
     Block <: AbstractSpan
 
-Blocks are defined by an opening and a closing `Token`, they may be nested. For instance
-braces block are formed of an opening `{` and a closing `}`.
+Blocks are defined by a single opening and a single closing `Token`.
+They may be nested. For instance braces block are formed of an opening `{` and
+a closing `}`.
 """
-struct Block <: AbstractSpan
+mutable struct Block <: AbstractSpan
     name::Symbol
     open::Token
     close::Token
