@@ -2,6 +2,7 @@ module FranklinParser
 
 import REPL.REPLCompletions: emoji_symbols
 import Base.isempty
+import Random
 import PrecompileTools
 
 using TimerOutputs
@@ -35,6 +36,6 @@ include("blocks/utils.jl")
 
 include("partition.jl")
 
-include("_precompile/main.jl")
+# include("_precompile/main.jl")
 
 end

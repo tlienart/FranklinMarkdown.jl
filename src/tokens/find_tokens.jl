@@ -21,15 +21,21 @@ function find_tokens(
     tokens = Token[]
     isempty(s) && return tokens
 
+    #
     # Put a "start of string" token first, note that it may overlap with
-    # another token which would be right at the start too.
+    # another token which would be right at the start too (e.g. a line return)
+    #
     push!(
         tokens,
         Token(:SOS, subs(parent_string(s), from(s)))
     )
-    head_idx     = firstindex(s)
-    end_idx      = lastindex(s)
-    next_end_idx = nextind(s, end_idx)
+
+    #
+    # string probes
+    #
+    head_idx     = firstindex(s)::Int
+    end_idx      = lastindex(s)::Int
+    next_end_idx = nextind(s, end_idx)::Int
 
     #
     # This first block handles the trivial tokens that correspond to an exact,
@@ -37,15 +43,22 @@ function find_tokens(
     #
     deactivated_char_index = Set{Int}()
     if !isempty(simple_templates)
+        # usually the regex is provided as a const, but in the case it
+        # isn't compute it; see also MD_TOKENS_SIMPLE etc.
         rx = simple_templates_rx
         if isempty(rx.pattern)
             rx = make_simple_templates_rx(simple_templates)
         end
+
         simple_matches = eachmatch(rx, s)
         for match in simple_matches
-            # for simple matches we can do arithmetic in +- 1
+            # for simple matches we can do arithmetic in +- 1 because there
+            # are no 'special' characters here (of length != 1)
             idx = match.offset
+            # if the index is after the span of the previous token, take it
+            # otherwise move on to the next match
             (idx >= head_idx) || continue
+            # form and store the token
             start  = match.offset
             finish = start + length(match.match) - 1
             push!(
@@ -55,7 +68,11 @@ function find_tokens(
                     subs(s, start, finish)
                 )
             )
+            # keep track of "dead zone" of the string which are already
+            # captured within a token and should not be considered when
+            # looking for tokens in the next step
             union!(deactivated_char_index, start:finish)
+            # move the head to keep track of the span of the token
             head_idx = finish + 1
         end
     end
@@ -71,6 +88,7 @@ function find_tokens(
     if isempty(rx.pattern)
         rx = make_templates_rx(templates)
     end
+
     matches  = collect(eachmatch(rx, s))
     if !isempty(deactivated_char_index)
         # ignore matches that start in one of the zones already found with the
@@ -80,30 +98,33 @@ function find_tokens(
             matches
         )
     end
+
     for match in matches
         idx = match.offset
         (idx >= head_idx) || continue
+
         head_idx  = idx
         head_char = s[head_idx]
 
+        # we have a set of checker function to try, first one that works
+        # leads to a token
         for (tf, case) in templates[head_char]
-            # ------------------------------------
             # exact match of a given fixed pattern
-            # --> we form a candidate substring with a fixed number of characters
+            # --> we form a candidate substring with a fixed number of chars
             # and try to see if it matches a fixed rule. Possibly the substring
-            # contains an extra character for rules where we must match only when
-            # the next character is or isn't something.
+            # contains an extra character for rules where we must match only
+            # when the next character is or isn't something.
             if (tf.steps >= 0)
                 tail_idx = nextind(s, head_idx, tf.steps)
                 at_eos   = (tail_idx == next_end_idx)
                 tail_idx = min(tail_idx, end_idx)
 
-                # if there is space, consider the substring and verify whether it matches
+                # consider the substring and verify whether it matches
                 candidate       = subs(s, head_idx, tail_idx)
                 matches, offset = fixed_lookahead(tf, candidate, at_eos)
 
-                # if it matches, form the token and break the for loop: no need to check
-                # other cases.
+                # if it matches, form the token and break the for loop:
+                # no need to check other cases.
                 # (note that we don't care that the +1 is a valid char
                 # we just want to indicate to move after tail so the
                 # next trigger index is not on the tail)
@@ -159,19 +180,23 @@ function find_tokens(
         tokens,
         Token(:EOS, subs(s, end_idx))
     )
-
     sort!(tokens, by=t->from(t))
-
+    
     # discard header tokens that are not at the start of a line or
     # only preceded by whitespaces
-    process_header_tokens!(tokens)
+    rm_header  = process_header_tokens!(tokens)
     # validate or drop emphasis tokens
-    process_emphasis_tokens!(tokens)
+    rm_emph    = process_emphasis_tokens!(tokens)
     # discard autolink_close tokens which are preceded by a space
-    process_autolink_close_tokens!(tokens)
+    rm_autolnk = process_autolink_close_tokens!(tokens)
+
+    remove = vcat(rm_header, rm_emph, rm_autolnk)
+    unique!(remove)
+    sort!(remove)
+    deleteat!(tokens, remove)
+
     return tokens
 end
-
 find_tokens(s::String; kw...) = find_tokens(subs(s); kw...)
 
 
@@ -181,7 +206,10 @@ find_tokens(s::String; kw...) = find_tokens(subs(s); kw...)
 Discard header tokens that are not at the start of a line or only preceded by
 whitespaces.
 """
-function process_header_tokens!(tokens::Vector{Token})
+function process_header_tokens!(
+            tokens::Vector{Token}
+        )::Vector{Int}
+
     remove = Int[]
     @inbounds for (i, t) in enumerate(tokens)
         if t.name in MD_HEADERS
@@ -189,7 +217,8 @@ function process_header_tokens!(tokens::Vector{Token})
             isempty(strip(ss)) || push!(remove, i)
         end
     end
-    deleteat!(tokens, remove)
+
+    return remove
 end
 
 
@@ -204,18 +233,18 @@ they don't look correct.
 * `sTx` with token `T` is a valid OPEN if `x` is a character and `s` a space
 * `xTy` with token `T` is a valid MIXED if `x`, `y` are characters
 """
-function process_emphasis_tokens!(tokens::Vector{Token})
-    isempty(tokens) && return
+function process_emphasis_tokens!(
+            tokens::Vector{Token}
+        )::Vector{Int}
+
     remove = Int[]
-    ps = parent_string(first(tokens))
-    N  = lastindex(ps)
     @inbounds for (i, t) in enumerate(tokens)
         if t.name in (:EM, :STRONG, :EM_STRONG)
             prev_char = previous_chars(t)
             next_char = next_chars(t)
             # if the token is surrounded by spaces, discard it
-            bad = !isempty(prev_char) && first(prev_char) in SPACE_CHAR &&
-                  !isempty(next_char) && first(next_char) in SPACE_CHAR
+            bad = (!isempty(prev_char) && first(prev_char) in SPACE_CHAR) &&
+                  (!isempty(next_char) && first(next_char) in SPACE_CHAR)
             # sTs
             if bad
                 push!(remove, i)
@@ -233,8 +262,8 @@ function process_emphasis_tokens!(tokens::Vector{Token})
             end
         end
     end
-    deleteat!(tokens, remove)
-    return
+
+    return remove
 end
 
 """
@@ -242,14 +271,17 @@ end
 
 Discard :AUTOLINK_CLOSE that are preceded by a space.
 """
-function process_autolink_close_tokens!(tokens::Vector{Token})
-    isempty(tokens) && return
+function process_autolink_close_tokens!(
+            tokens::Vector{Token}
+        )::Vector{Int}
+
     remove = Int[]
     @inbounds for (i, t) in enumerate(tokens)
-        t.name == :AUTOLINK_CLOSE || continue
-        c = previous_chars(t)
-        (isempty(c) || first(c) ∈ SPACE_CHAR) && push!(remove, i)
+        if t.name == :AUTOLINK_CLOSE
+            c = previous_chars(t)
+            (isempty(c) || first(c) ∈ SPACE_CHAR) && push!(remove, i)
+        end
     end
-    deleteat!(tokens, remove)
-    return
+
+    return remove
 end

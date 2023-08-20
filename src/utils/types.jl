@@ -15,6 +15,7 @@ content(s::SS)::SS                     = s
 content(s::String)::SS                 = subs(s)
 Base.isempty(o::AbstractSpan)::Bool    = isempty(strip(o.ss))
 
+
 """
     Token <: AbstractSpan
 
@@ -24,9 +25,11 @@ a block. It can also be used for special characters.
 struct Token <: AbstractSpan
     name::Symbol
     ss::SS
+    uid::UInt32
 end
+Token(n, ss) = Token(n, ss, Random.rand(UInt32))
 
-is_eos(t::Token) = t.name == :EOS
+is_eos(t::Token) = (t.name == :EOS)
 to(t::Token)     = ifelse(is_eos(t), from(t.ss), to(t.ss))
 
 const EMPTY_TOKEN      = Token(:NONE, subs(""))

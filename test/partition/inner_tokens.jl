@@ -16,3 +16,18 @@
             end
         end
 end
+
+
+@testset "inner tokens textblock 2" begin
+    p = raw"""abc \newenvironment{foo}{bar}{baz} def""" |> FP.md_partition
+
+    for part in p
+        ta = filter(t -> t.name ∉ (:SOS, :EOS), collect(part.inner_tokens))
+        tb = filter(t -> t.name ∉ (:SOS, :EOS), collect(FP.default_md_tokenizer(part.ss)))
+        for (tai, tbi) in zip(ta, tb)
+            @test tai.name == tbi.name
+        end
+    end
+end
+
+
