@@ -62,11 +62,11 @@ const CAN_BE_LEFT_OPEN = (
     :AUTOLINK_OPEN
 )
 
-const MD_PASS0 = Dict{Symbol,BlockTemplate}(
+const MD_PASS0_TEMPLATES = Dict{Symbol,BlockTemplate}(
    :RAW => BlockTemplate(:RAW, :RAW, :RAW),
 )
 
-# First pass: container blocks etc
+# First pass: container blocks and lx commands
 const MD_PASS1_TEMPLATES = Dict{Symbol,BlockTemplate}(
    o => bt for (o, bt) in MD_BLOCKS
    if bt.name in (
@@ -79,7 +79,8 @@ const MD_PASS1_TEMPLATES = Dict{Symbol,BlockTemplate}(
          :AUTOLINK,
          :CU_BRACKETS,
          :H1, :H2, :H3, :H4, :H5, :H6,
-         :LX_BEGIN, :LX_END,
+         :LX_NEWENVIRONMENT, :LX_NEWCOMMAND, :LX_COMMAND, :LX_BEGIN, :LX_END,
+         :LINEBREAK,
       )
 )
 

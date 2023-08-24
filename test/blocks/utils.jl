@@ -21,18 +21,19 @@ end
         &#92; &#35; &#64; &#96; &#123; &#125; &#42; &#95;
         Hello
         """)
-    p = raw"""
+
+    s = raw"""
         &#42;
          ----
         \\
-        """ |> FP.md_partition
+        """
+    p = s |> FP.md_partition
 
     @test eltype(p) == FP.Block
     @test p[1].name == :TEXT
     @test p[2].name == :HRULE
-    @test p[3].name == :TEXT
-    @test p[4].name == :LINEBREAK
-    @test p[5].name == :P_BREAK
+    @test p[3].name == :LINEBREAK
+    @test isapproxstr(s, prod(pp.ss for pp in p))
 
     # # no clash with tables
     # p = raw"""
@@ -43,15 +44,18 @@ end
     # @test p[1].name == :TEXT
     # @test length(p) == 1
 
-    t = raw"""
+    s = raw"""
         abc \\
           --------
         &#60;
-        """ |> FP.md_partition
-    @test t[1].name == :TEXT
-    @test t[2].name == :LINEBREAK
-    @test t[3].name == :HRULE
-    @test FP.prepare_md_text(t[4]) == "\n&#60;"
+        """
+    p = s |> FP.md_partition
+    @test p[1].name == :TEXT
+    @test p[2].name == :LINEBREAK
+    @test p[3].name == :HRULE
+    @test p[4].name == :TEXT
+    @test FP.prepare_md_text(p[4]) == "&#60;"
+    @test isapproxstr(s, prod(pp.ss for pp in p))
 
     # emoji
     p = raw"""

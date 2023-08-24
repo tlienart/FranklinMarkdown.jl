@@ -79,8 +79,8 @@ end
 """
     next_chars(o, n)
 
-Return the characters just after the object. Empty vector if there isn't the number of
-characters required.
+Return the characters just after the object. Empty vector if there isn't the
+number of characters required.
 """
 function next_chars(o, n::Int=1)
     ps = parent_string(o)
@@ -90,26 +90,6 @@ function next_chars(o, n::Int=1)
     i  = nextind(ps, no)
     ij = [nextind(ps, i, k) for k in 0:n-1]
     return [ps[k] for k in ij]
-end
-
-"""
-    until_next_line_return(o)
-
-Return the substring following the object and until the next line return or end.
-"""
-function until_next_line_return(o)
-    ps = parent_string(o)
-    no = to(o)
-    j  = ifelse(o isa Token && o.name == :SOS, no, nextind(ps, no))
-    j  > lastindex(ps) && return subs("")
-    j1 = j
-    jk = j
-    # no need to match EOS, it's implicit with j <= lastindex
-    @inbounds while (j <= lastindex(ps)) && (ps[j] != '\n')
-        jk = j
-        j  = nextind(ps, j)
-    end
-    return subs(ps, j1, jk)
 end
 
 """

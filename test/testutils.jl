@@ -8,7 +8,9 @@ isapproxstr(s1::AbstractString, s2::AbstractString) =
 (//)(s1::AbstractString, s2::AbstractString) = strip(s1) == strip(s2)
 (//)(o::FP.AbstractSpan, s::AbstractString)  = o.ss // s
 
+len1(o) = length(o) == 1
 # --------------------------------------------------------------------------------------
+
 
 md_blockifier = s -> FP.default_md_tokenizer(s) |> FP.default_md_blockifier
 
@@ -26,3 +28,12 @@ ctf(b::FP.Group) = FP.content(first(b.blocks))
 grouper = FP.md_grouper ∘ slice
 isp(g)  = g.role == :PARAGRAPH
 printel(bv) = foreach(e -> println(strip(e.ss)), bv)
+
+
+pass1blocks = s -> begin
+    tokens = FP.default_md_tokenizer(s)
+    blocks = FP.Block[]
+    is_active = ones(Bool, length(tokens))
+    FP._find_blocks!(blocks, tokens, FP.MD_PASS1_TEMPLATES, is_active, process_line_return=true)
+    return blocks
+end

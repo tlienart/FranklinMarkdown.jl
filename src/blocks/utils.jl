@@ -56,3 +56,17 @@ function insert(t::Token; tohtml=true)::String
     tohtml || (s = replace(s, "&" => "\\&"))
     return s
 end
+
+
+function first_token_id(b::Block)
+    if isempty(b.open)
+        # e.g. the case with HRULE, ITEM (see process_line_return)
+        if isempty(b.inner_tokens)
+            return b.close.id
+        else
+            @show b.inner_tokens
+            return b.inner_tokens[1].id
+        end
+    end
+    return b.open.id
+end

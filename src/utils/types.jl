@@ -25,15 +25,17 @@ a block. It can also be used for special characters.
 struct Token <: AbstractSpan
     name::Symbol
     ss::SS
-    uid::UInt32
+    id::UInt32
 end
 Token(n, ss) = Token(n, ss, Random.rand(UInt32))
 
 is_eos(t::Token) = (t.name == :EOS)
 to(t::Token)     = ifelse(is_eos(t), from(t.ss), to(t.ss))
 
-const EMPTY_TOKEN      = Token(:NONE, subs(""))
-const EMPTY_TOKEN_SVEC = @view (Token[])[1:0]
+const EMPTY_TOKEN      = Token(:NONE, subs(""), zero(UInt32))
+Base.isempty(t::Token) = iszero(t.id)
+
+const EMPTY_TOKEN_SVEC = @view (Token[])[1:0] # always valid, always empty
 
 
 """
@@ -66,7 +68,7 @@ function Block(n::Symbol, ss::SS, it=EMPTY_TOKEN_SVEC)
     return Block(n, EMPTY_TOKEN, EMPTY_TOKEN, ss, it)
 end
 
-TokenBlock(t::Token) = Block(t.name, t, EMPTY_TOKEN, t.ss, EMPTY_TOKEN_SVEC)
+TokenBlock(t::Token) = Block(t.name, t, t, t.ss, EMPTY_TOKEN_SVEC)
 
 """
     content(block)

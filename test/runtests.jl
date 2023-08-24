@@ -16,6 +16,7 @@ end
 end
 
 @testset "blocks" begin
+    include("blocks/line_returns.jl")
     include("blocks/md_blocks.jl")
     include("blocks/html_blocks.jl")
     include("blocks/utils.jl")

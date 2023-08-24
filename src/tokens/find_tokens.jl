@@ -180,7 +180,6 @@ function find_tokens(
         tokens,
         Token(:EOS, subs(s, end_idx))
     )
-    sort!(tokens, by=t->from(t))
     
     # discard header tokens that are not at the start of a line or
     # only preceded by whitespaces
@@ -195,6 +194,7 @@ function find_tokens(
     sort!(remove)
     deleteat!(tokens, remove)
 
+    sort!(tokens, by=t->from(t))
     return tokens
 end
 find_tokens(s::String; kw...) = find_tokens(subs(s); kw...)
@@ -217,7 +217,6 @@ function process_header_tokens!(
             isempty(strip(ss)) || push!(remove, i)
         end
     end
-
     return remove
 end
 
@@ -262,7 +261,6 @@ function process_emphasis_tokens!(
             end
         end
     end
-
     return remove
 end
 
@@ -282,6 +280,5 @@ function process_autolink_close_tokens!(
             (isempty(c) || first(c) ∈ SPACE_CHAR) && push!(remove, i)
         end
     end
-
     return remove
 end

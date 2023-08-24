@@ -21,7 +21,7 @@ end
         """
     blocks = s |> md_blockifier
     @test FP.content(blocks[1]) == "A<!--B"
-    @test blocks[2].name == :P_BREAK
+    @test len1(blocks)
 end
 
 @testset "Other - no nesting" begin
@@ -38,12 +38,14 @@ end
     @test FP.content(blocks[1]) // "julia ABC"
     @test FP.content(blocks[2]) // "julia ABC"
     @test FP.content(blocks[3]) // "julia ABC"
+
     blocks = "`A` ``A`` ``` A```" |> md_blockifier
     @test FP.content(blocks[1]) == "A"
     @test FP.content(blocks[2]) == "A"
     @test FP.content(blocks[3]) // "A"
     blocks = "```! ABC```" |> md_blockifier
     @test FP.content(blocks[1]) // "! ABC"
+
     # headers
     blocks = """
         # abc
@@ -104,6 +106,7 @@ end
     blocks = raw"""
         \a{\b{c}} \a{{b}\c{d}}
         """ |> md_blockifier
+
     @test blocks[1].ss == raw"\a"
     @test blocks[2].ss == raw"{\b{c}}"
     @test blocks[3].ss == raw"\a"
@@ -186,7 +189,7 @@ end
     @test FP.content(b[1]) == "b"
     @test b[2].name == :EMPH_EM
     @test FP.content(b[2]) == "d"
-    @test b[3].name == :P_BREAK
+    @test length(b) == 2
 
     # nest (we only recover the outer block of course)
     b = """
@@ -194,7 +197,7 @@ end
         """ |> md_blockifier
     @test b[1].name == :EMPH_STRONG
     @test FP.content(b[1]) == "abc_def_ghi"
-    @test b[2].name == :P_BREAK
+    @test len1(b)
 end
 
 @testset "cov" begin

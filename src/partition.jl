@@ -16,31 +16,30 @@ function partition(
             s::SS,
             tokenizer::Function,
             blockifier::Function;
-            tokens::SubVector{Token}=EMPTY_TOKEN_SVEC,
+            pre_tokens::SubVector{Token}=EMPTY_TOKEN_SVEC,
             disable::Vector{Symbol}=Symbol[],
             postproc::Function=identity
             )::Vector{Block}
 
     reset_timer!(TIMER)
 
-    parts = Block[]
     isempty(s) && return parts
-    if isempty(tokens)
+    if isempty(pre_tokens)
         @timeit_debug TIMER "tokenizer" begin
-            tokens = subv(tokenizer(s))
+            tokens = tokenizer(s)::Vector{Token}
         end
+    else
+        tokens = collect(pre_tokens)
     end
+
+    # disable tokens as requested
+    isempty(disable) || filter!(t -> t.name ∉ disable, tokens)
 
     # [Final line return] we need to be explicit here. Indeed, in the recursive
     # case, when partitioning a block, there will not be a LR and EOS token.
     # We'll just get the blocks' inner tokens.
-    if getfield.(tokens, :name) == [:LINE_RETURN, :EOS]
+    if length(tokens) == 2 && (getfield.(tokens, :name) == [:LINE_RETURN, :EOS])
         return [Block(:TEXT, s)]
-    end
-
-    # disable tokens as requested
-    if !isempty(disable)
-        tokens = subv(filter(t -> t.name ∉ disable, collect(tokens)))
     end
 
     # form Blocks based on the tokens
@@ -51,84 +50,99 @@ function partition(
     if !isempty(blocks) && iszero(to(blocks[1]))
         deleteat!(blocks, 1)
     end
-    isempty(blocks) && return [Block(:TEXT, s, tokens)]
+    isempty(blocks) && return [Block(:TEXT, s, subv(tokens))]
 
     # disable additional blocks if desired
     isempty(disable) || filter!(t -> t.name ∉ disable, blocks)
 
+    # here the tokens are active, and sorted, we can form the map
+    # map token UID -> token index so that we can map from a block
+    # to the tokens in span of that block
+    tok_map = Dict(tok.id => idx for (idx, tok) in enumerate(tokens))
+    
+    parts = Block[]
     @timeit_debug TIMER "partitioning" begin
         @timeit_debug TIMER "init" begin
     
             # Form a full partition with text blocks and blocks.
-            parent = parent_string(s)
             first_block = blocks[1]
             last_block  = blocks[end]
 
             # add Text at beginning if first block is not there
             if from(s) < from(first_block)
-                inter = subs(parent, from(s), prev_index(first_block))
-                tb    = Block(:TEXT, inter)
-                push!(parts, tb)
+                _to     = tok_map[first_token_id(first_block)]-1
+                content = strip(
+                    subs(
+                        parent_string(s),
+                        1,
+                        prev_index(first_block)
+                    )
+                )
+                if !isempty(content)
+                    txtb = Block(
+                        :TEXT,
+                        strip(subs(parent_string(s), 1, prev_index(first_block))),
+                        @view tokens[1:_to]
+                    )
+                    push!(parts, txtb)
+                end
             end
    
         end
         @timeit_debug TIMER "loop" begin
 
             # Go through blocks and add text with what's between them
+            bi = blocks[1]
             for i in 1:length(blocks)-1
-                bi   = blocks[i]
-                bip1 = blocks[i+1]
-                @timeit_debug TIMER "push1" push!(parts, blocks[i])
-                @timeit_debug TIMER "inter" inter = subs(parent, next_index(bi), prev_index(bip1))
-                @timeit_debug TIMER "push2" begin
-                    @timeit_debug TIMER "isempty" flag = isempty(inter)
-                    @timeit_debug TIMER "pushif2" (flag || push!(parts, Block(:TEXT, inter)))
+                push!(parts, bi)
+
+                bip1    = blocks[i+1]
+                content = strip(
+                    subs(
+                        parent_string(s),
+                        next_index(bi),
+                        prev_index(bip1)
+                    )
+                )
+
+                if !isempty(content)
+                    _from = tok_map[bi.close.id]+1
+                    _to   = tok_map[first_token_id(bip1)]-1
+                    txtb = Block(
+                        :TEXT,
+                        cand,
+                        @view tokens[_from:_to]
+                    )
+                    push!(parts, txtb)
                 end
+
+                bi = bip1
             end
-            push!(parts, last_block)
+            push!(parts, bi)
 
         end
         @timeit_debug TIMER "end" begin
-
             # add Text at the end if last block is not there
             if to(s) > to(last_block)
-                inter = subs(parent, next_index(last_block), to(s))
-                push!(parts, Block(:TEXT, inter))
-            end
-        end
-    end
-
-    @timeit_debug TIMER "text-inner-tokens" begin
-
-        parts_no_pbreak = [p for p in parts if p.name != :P_BREAK]
-        n_parts         = length(parts_no_pbreak)
-        n_tokens        = length(tokens)
-        head_token_idx  = 1
-
-        for (i, part) in enumerate(parts_no_pbreak)
-
-            if part.name == :TEXT
-                old_head_idx = head_token_idx
-                if i < n_parts
-                    from_next_block = from(parts_no_pbreak[i+1])
-                    while (head_token_idx <= n_tokens) &&
-                          (from(tokens[head_token_idx]) <= from_next_block)
-                        head_token_idx += 1
-                    end
-                    part.inner_tokens = @view tokens[old_head_idx:head_token_idx-2]
-                else
-                    # final, put all tokens here
-                    part.inner_tokens = @view tokens[head_token_idx:end]
+                _from = tok_map[last_block.close.id]
+                content = strip(
+                    subs(
+                        parent_string(s),
+                        next_index(last_block),
+                        lastindex(parent_string(s))
+                    )
+                )
+                if !isempty(content)
+                    txtb = Block(
+                        :TEXT,
+                        content,
+                        @view tokens[_from:end]
+                    )
+                    push!(parts, txtb)
                 end
-            else
-                head_token_idx += 1 + length(part.inner_tokens) + 
-                                  Int(part.close === EMPTY_TOKEN)
             end
-
         end
-
     end
-
 
     @timeit_debug TIMER "postprocessing" begin
         # Postprocessing (e.g. forming blockquotes, lists etc)
@@ -156,9 +170,7 @@ Returns:
 --------
     A function that takes a string and returns a vector of tokens.
 """
-function tokenizer_factory(; kw...)::Function
-    return s -> find_tokens(s; kw...)
-end
+tokenizer_factory(; kw...) = s -> find_tokens(s; kw...)
 
 default_md_tokenizer   = tokenizer_factory(;
     simple_templates    = MD_TOKENS_SIMPLE,
@@ -179,8 +191,8 @@ default_html_tokenizer = tokenizer_factory(
     templates_rx        = HTML_TOKENS_RX
 )
 
-default_md_blockifier   = t -> find_blocks(subv(t), is_md=true)
-default_html_blockifier = t -> find_blocks(subv(t), is_md=false)
+default_md_blockifier   = t -> find_blocks(t, is_md=true)
+default_html_blockifier = t -> find_blocks(t, is_md=false)
 
 function md_partition(e; kw...)
     partition(e, default_md_tokenizer, default_md_blockifier;

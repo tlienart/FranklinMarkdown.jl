@@ -1,12 +1,11 @@
 """
-    find_blocks(tokens, templates)
+    find_blocks(...)
 
-Given a list of tokens and a dictionary of block templates, find all blocks
-matching templates. The blocks are sorted by order of appearance and inner
-blocks are weeded out.
+Given a vector of tokens, find all blocks matching templates.
+The blocks are sorted by order of appearance and inner blocks are weeded out.
 """
 function find_blocks(
-            tokens::SubVector{Token};
+            tokens::Vector{Token};
             # kwargs
             is_md::Bool=true
         )::Vector{Block}
@@ -21,7 +20,11 @@ function find_blocks(
         # PASS 0 #
         ##########
         # raw blocks (??? ... ???)
-        _find_blocks!(blocks, tokens, MD_PASS0, is_active)
+        _find_blocks!(
+            blocks, tokens,
+            MD_PASS0_TEMPLATES,
+            is_active
+        )
 
         ##########
         # PASS 1 #
@@ -30,9 +33,12 @@ function find_blocks(
         # comment, raw html, raw latex, def blocks, code blocks
         # math blocks, div blocks, autolink, cu_brackets, h* blocks
         # and lxbegin/end
-        _find_blocks!(blocks, tokens, MD_PASS1_TEMPLATES, is_active,
-                      process_linereturn=true)
-
+        _find_blocks!(
+            blocks, tokens,
+            MD_PASS1_TEMPLATES,
+            is_active,
+            process_line_return=true
+        )
         sort!(blocks, by=from)
 
         # At this point we have the cu_brackets and begin/end in blocks
@@ -43,23 +49,26 @@ function find_blocks(
         # PASS 2 #
         ##########
         # brackets which may form a link: brackets and sq_brackets
-        dt = _find_blocks!(blocks, tokens, MD_PASS2_TEMPLATES, is_active)
+        deact_tokens = _find_blocks!(
+            blocks, tokens,
+            MD_PASS2_TEMPLATES,
+            is_active
+        )
         form_links!(blocks)
         # here there may be brackets that are not part of links which
         # should have their content re-inspected
         @inbounds for b in filter(b_ -> b_.name == :BRACKETS, blocks)
-            fromb  = from(b)
-            tob    = to(b)
-            retoks = Token[]
-            for i in dt
+            fromb, tob = from(b), to(b)
+            react_tokens = Token[]
+            for i in deact_tokens
                 toki = tokens[i]
                 fi   = from(toki)
                 ti   = to(toki)
                 # is the token in the scope ?
-                fromb < fi && ti < tob && push!(retoks, toki)
+                fromb < fi && ti < tob && push!(react_tokens, toki)
             end
             # recurse
-            append!(blocks, find_blocks(subv(retoks), is_md=true))
+            append!(blocks, find_blocks(react_tokens, is_md=true))
         end
         # discard leftover bracket blocks
         filter!(b -> b.name != :BRACKETS, blocks)
@@ -68,12 +77,20 @@ function find_blocks(
         # PASS 3 #
         ##########
         # remaining stuff e.g. emphasis tokens, lxnew* etc
-        _find_blocks!(blocks, tokens, MD_PASS3_TEMPLATES, is_active)
+        _find_blocks!(
+            blocks, tokens,
+            MD_PASS3_TEMPLATES,
+            is_active
+        )
 
     # ------------------------------------------------------------------------
     else
         # for HTML we barely do anything, a single pass is plenty enough
-        _find_blocks!(blocks, tokens, HTML_TEMPLATES, is_active)
+        _find_blocks!(
+            blocks, tokens,
+            HTML_TEMPLATES,
+            is_active
+        )
     end
 
     # remove blocks inside larger blocks (recursion)
@@ -86,8 +103,6 @@ function find_blocks(
     return blocks
 end
 
-find_blocks(t::Vector{Token}; kw...) = find_blocks(subv(t); kw...)
-
 
 """
     _find_blocks!(...)
@@ -97,11 +112,11 @@ templates.
 """
 function _find_blocks!(
             blocks::Vector{Block},
-            tokens::SubVector{Token},
+            tokens::Vector{Token},
             templates::Dict{Symbol, BlockTemplate},
-            is_active::Vector{Bool}=ones(Bool, length(tokens));
+            is_active::Vector{Bool};
             # kwargs
-            process_linereturn::Bool=false
+            process_line_return::Bool=false
         )::Vector{Int}
     #
     # keep track of what was deactivated, this is useful for md parsing
@@ -119,27 +134,31 @@ function _find_blocks!(
     n_tokens      = length(tokens)
 
     @inbounds for i in eachindex(tokens)
-
+        # skip inactive
         is_active[i] || continue
+
         opening = tokens[i].name
 
-        if process_linereturn && opening in (:SOS, :LINE_RETURN)
-            process_line_return!(blocks, tokens, i)
+        # do we potentially have a paragraph break or something of the sorts
+        if process_line_return && opening == :LINE_RETURN
+            process_line_return!(blocks, tokens, i, is_active)
             continue
         elseif opening ∉ template_keys
             continue
         end
 
+        # template for the closing token
         template = templates[opening]
         closing  = template.closing
         nesting  = template.nesting
 
+        # short path for e.g. html entities
         if closing === NO_CLOSING
             push!(blocks, TokenBlock(tokens[i]))
             continue
         end
 
-        # Try to find the closing token
+        # try to find the closing token keeping potential nesting in mind
         closing_index = -1
         open_depth    = 1
         for j in i+1:n_tokens
@@ -158,29 +177,26 @@ function _find_blocks!(
             end
         end
 
+        # if the block isn't closed, complain unless this is tolerated.
         if (closing_index == -1)
-            # allow those to not be closed properly
-            if opening ∈ CAN_BE_LEFT_OPEN
-                continue
-            end
-            # otherwise complain
-            block_not_closed_exception(tokens[i])
+            opening ∈ CAN_BE_LEFT_OPEN || block_not_closed_exception(tokens[i])
         end
 
-        tokens_in_span = @view tokens[i:closing_index]
-        new_block = Block(template.name, tokens_in_span)
-        push!(blocks, new_block)
+        # otherwise, we have a well-formed block with opening+closing tokens
+        push!(blocks,
+            Block(
+                template.name,
+                @view tokens[i:closing_index]
+            )
+        )
 
         # for blocks that end with a line return, do not deactivate
         # that line return which might e.g. lead to the start of an item
         # see process_line_returns
-        last_token = tokens[closing_index]
-        if last_token.name == :LINE_RETURN
-            closing_index -= 1
-        end
+        last_token    = tokens[closing_index]
+        to_deactivate = 1:(closing_index - Int(last_token.name == :LINE_RETURN))
 
         # deactivate all tokens in the span of the block
-        to_deactivate = i:closing_index
         is_active[to_deactivate] .= false
         append!(deactivated_tokens, collect(to_deactivate))
     end
@@ -207,87 +223,113 @@ We disambiguate the different cases based on the **two** characters after the
 whitespaces of the line return (the line return token captures `\n[ \t]*`).
 """
 function process_line_return!(
-            b::Vector{Block},
-            tv::SubVector{Token},
-            i::Int
+            blocks::Vector{Block},
+            tokens::Vector{Token},
+            i::Int,
+            is_active::Vector{Bool}
         )::Nothing
 
-    t = tv[i]
-    # start of string (SOS) is a "virtual" line return.
-    if t.name == :SOS
-        c = [first(t.ss), next_chars(t, 1)...]
+    t = tokens[i]
+
+    #
+    # We base the analysis on the two chars immediately following the token
+    # (ignoring whitespaces) with one special cases: if t is near EOS; in that
+    # case there may not be two chars (`c` below will be empty in that
+    # situation).
+    #
+    c = next_chars(t, 2)
+
+    #
+    # If there isn't two chars beyond the token, `c` will be empty.
+    # This is the case if we're at the end of the string so there's nothing
+    # to do. Likewise, if the second character is EOS, then we don't care
+    # and skip (and deactivate all tokens in range).
+    #
+    if (length(c) < 2) || c[2] == EOS
+        is_active[i:end] .= false
+
+    #
+    # If the immediate next character is a line return, then we have a
+    # double \n\n -> line skip; this also means that the immediate next
+    # token is a LINE_RETURN which we can deactivate.
+    #
+    elseif c[1] == '\n'
+        push!(blocks,
+            Block(
+                :P_BREAK,
+                t => tokens[i+1]
+            )
+        )
+        # we only mark the base line return as inactive as the next one may
+        # trigger something else such as an item (e.g. \n\n* foo\n)
+        is_active[i] = false
+
     else
-        c = next_chars(t, 2)
-    end
+        # 
+        # We're now in a situation where the span between the token and
+        # the next LINE_RETURN (or EOS) will form the block.
+        #
+        #   - hrule (---, ***, ___)
+        #   - item starter (+ ..., - ..., * ...)
+        #   - table row ( | ... )
+        #   - block quote 
+        #
+        # if this is validated, we mark all tokens between the first line
+        # return (included) and the next one (not-included *) as inactive.
+        # (*) see comment above with only marking token[i] is inactive.
+        # 
+        j = i+1
+        while tokens[j].name ∉ (:LINE_RETURN, :EOS)
+            j += 1
+        end
+        next_line_return = tokens[j]
+        # in the standard case of a line return, take string until the char
+        # that precedes it. However, in the case of EOS, need to take the
+        # string until the end.
+        eol = ifelse(
+            next_line_return.name == :EOS,
+            from(next_line_return),
+            prev_index(next_line_return)
+        )
+        line = subs(parent_string(t), next_index(t):eol)
 
-    if isempty(c) || c[1] ∈ ('\n', EOS)
-        # P_BREAK; if there's not two chars beyond `c` will be empty
-        # otherwise if there's `\n` or `EOS` then it's a line skip
-        push!(b, Block(:P_BREAK, t.ss))
-
-    # ------------------------------------------------------------------------
-    # Hrules
-    # NOTE the line MUST start with a triple followed only by
-    # the same character, whitespaces and the eventual line return.
-    elseif c[1] == c[2] == '-'
-        _hrule!(b, t, HR1_PAT)
-
-    elseif c[1] == c[2] == '_'
-        _hrule!(b, t, HR2_PAT)
-
-    elseif c[1] == c[2] == '*'
-        _hrule!(b, t, HR3_PAT)
-
-    # ------------------------------------------------------------------------
-    # List items
-    # NOTE for an item candidate, the candidate might not capture
-    # the full item if the full item is on several lines, this has to
-    # be post-processed when assembling ITEM_x_CAND into lists.
-    elseif c[1] in ('+', '-', '*') && c[2] in (' ', '\t')
-        cand = until_next_line_return(t)
-        ps   = parent_string(cand)
-        push!(b, Block(:ITEM_U_CAND, subs(ps, from(t), to(cand))))
-
-    elseif c[1] ∈ NUM_CHAR && c[2] in vcat(NUM_CHAR, ['.', ')'])
-        cand = until_next_line_return(t)
-        if match(OL_ITEM_PAT, cand) !== nothing
-            ps   = parent_string(cand)
-            push!(b, Block(:ITEM_O_CAND, subs(ps, from(t), to(cand))))
+        pre_block = Block(
+            :NO_NAME_YET,
+            EMPTY_TOKEN,
+            next_line_return,
+            line,
+            @view tokens[i+1:j-1]
+        )
+        bpush! = name -> begin
+            pre_block.name = name
+            push!(blocks, pre_block)
+            is_active[i:j-1] .= false
         end
 
-    # ------------------------------------------------------------------------
-    # Table Rows
-    # NOTE we're stricter here than usual GFM, every row must start and end
-    # with a pipe, every row must be on a single line.
-    elseif c[1] == '|'
-        # TABLE_ROW_CAND
-        cand = until_next_line_return(t)
-        if strip(cand)[end] == '|'
-            ps = parent_string(cand)
-            push!(b, Block(:TABLE_ROW_CAND, subs(ps, from(t), to(cand))))
+        # HRULE
+        if c[1] == c[2] && c[1] ∈ ('-', '_', '*')
+            check = match(HR_PAT, line)
+            isnothing(check) || bpush!(:HRULE)
+
+        # ITEM STARTER (UN-ORDERED)
+        elseif (c[1] in ('+', '-', '*')) && (c[2] in (' ', '\t'))
+            bpush!(:ITEM_U_CAND)
+
+        # ITEM STARTER (ORDERED)
+        elseif (c[1] ∈ NUM_CHAR) && (c[2] in vcat(NUM_CHAR, ['.', ')']))
+            check = match(OL_ITEM_PAT, line)
+            isnothing(check) || bpush!(:ITEM_O_CAND)
+ 
+        # BLOCKQUOTE
+        elseif c[1] == '>'
+            bpush!(:BLOCKQUOTE_LINE)
+
+        # TABLE ROW (must be last because requires a check in the if)
+        elseif !isnothing(match(ROW_CAND_PAT, line))
+            bpush!(:TABLE_ROW_CAND)
+
         end
-
-    # ------------------------------------------------------------------------
-    # Blockquote
-    elseif c[1] == '>'
-        # Blockquote
-        cand = until_next_line_return(t)
-        ps   = parent_string(cand)
-        push!(b, Block(:BLOCKQUOTE_LINE, subs(ps, from(t), to(cand))))
     end
-    return
-end
-
-"""
-    _hrule!(blocks, token, regex)
-
-Helper function to match and process a hrule.
-"""
-function _hrule!(b, t, r)
-    cand  = until_next_line_return(t)
-    check = match(r, cand)
-    ps    = parent_string(cand)
-    isnothing(check) || push!(b, Block(:HRULE, subs(ps, from(t), to(cand))))
     return
 end
 
@@ -494,7 +536,7 @@ end
 
 function _find_env_blocks!(
             blocks::Vector{Block},
-            tokens::SubVector{Token},
+            tokens::Vector{Token},
             is_active::Vector{Bool}
         )::Nothing
 

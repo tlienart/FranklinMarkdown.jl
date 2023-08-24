@@ -1,11 +1,9 @@
 """
-    HR*_PAT
+    HR_PAT
 
 Pattern to match horizontal rule indicators.
 """
-const HR1_PAT = r"\-{3}[ \t\-]*$"
-const HR2_PAT = r"\_{3}[ \t\_]*$"
-const HR3_PAT = r"\*{3}[ \t\*]*$"
+const HR_PAT = r"^([\-\_\*]){3}(?:\s|\1)*$"
 
 
 """
@@ -59,4 +57,9 @@ const EMOJI_PAT = r"^\:[a-zA-Z0-9+-_]+\:$"
 
 const FOOTNOTE_PAT = r"^\[\^[\p{L}0-9][\p{L}0-9_]*\](:)?$"
 
-const OL_ITEM_PAT = r"^[0-9]{1,9}(?:[\.\)])[ \t]"
+const OL_ITEM_PAT = r"^\s*[0-9]{1,9}(?:[\.\)])[ \t]"
+
+# we're stricter here than usual Github-flavored-markdown in that
+# rows *must* start and end with a pipe, every row must be on a
+# single line (we allow spaces before and after first and final pipe)
+const ROW_CAND_PAT = r"^\s*\|.+\|\s*$"
