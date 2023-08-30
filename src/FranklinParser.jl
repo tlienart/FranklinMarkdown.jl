@@ -2,8 +2,6 @@ module FranklinParser
 
 import REPL.REPLCompletions: emoji_symbols
 import Base.isempty
-import Random
-import PrecompileTools
 
 using TimerOutputs
 const TIMER = TimerOutput()

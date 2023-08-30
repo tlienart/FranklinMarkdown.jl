@@ -1,8 +1,4 @@
-using Test, FranklinParser, Pkg
-FP = FranklinParser
-FPE = FP.FranklinParserException
-
-include("testutils.jl")
+using Test
 
 @testset "utils" begin
     include("utils/strings.jl")
@@ -16,14 +12,16 @@ end
 end
 
 @testset "blocks" begin
+    include("blocks/p1.jl")
     include("blocks/line_returns.jl")
+    include("blocks/content+inner.jl")
     include("blocks/md_blocks.jl")
     include("blocks/html_blocks.jl")
     include("blocks/utils.jl")
 end
 
 @testset "partition" begin
-    include("partition/md_partition.jl") # depr
+    include("partition/md_partition.jl")
     include("partition/md_specs.jl")
     include("partition/html_partition.jl")
     include("partition/math_partition.jl")
@@ -51,3 +49,4 @@ end
 @testset "errors" begin
     include("errors.jl")
 end
+

@@ -5,8 +5,9 @@
         GHI
         """ |> md_blockifier
     div = blocks[1]
-    @test typeof(div) == FP.Block
-    @test div.name == :DIV
+
+    @test FP.content(div) == "DEF"
+    @test typeof(div) == FP.Block{:DIV}
     @test FP.get_classes(div) == "c1 c2"
 end
 
@@ -30,9 +31,9 @@ end
     p = s |> FP.md_partition
 
     @test eltype(p) == FP.Block
-    @test p[1].name == :TEXT
-    @test p[2].name == :HRULE
-    @test p[3].name == :LINEBREAK
+    @test FP.name(p[1]) == :TEXT
+    @test FP.name(p[2]) == :HRULE
+    @test FP.name(p[3]) == :LINEBREAK
     @test isapproxstr(s, prod(pp.ss for pp in p))
 
     # # no clash with tables
@@ -41,7 +42,7 @@ end
     # | --- | --- |
     # | 0 | 1 |
     # """ |> FP.md_partition
-    # @test p[1].name == :TEXT
+    # @test FP.name(p[1]) == :TEXT
     # @test length(p) == 1
 
     s = raw"""
@@ -50,10 +51,10 @@ end
         &#60;
         """
     p = s |> FP.md_partition
-    @test p[1].name == :TEXT
-    @test p[2].name == :LINEBREAK
-    @test p[3].name == :HRULE
-    @test p[4].name == :TEXT
+    @test FP.name(p[1]) == :TEXT
+    @test FP.name(p[2]) == :LINEBREAK
+    @test FP.name(p[3]) == :HRULE
+    @test FP.name(p[4]) == :TEXT
     @test FP.prepare_md_text(p[4]) == "&#60;"
     @test isapproxstr(s, prod(pp.ss for pp in p))
 

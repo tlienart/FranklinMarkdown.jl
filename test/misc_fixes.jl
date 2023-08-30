@@ -6,19 +6,19 @@ md = """
     * i2
     """
 g = FP.md_partition(md)
-@test g[1].name == :H1
+@test FP.name(g[1]) == :H1
 @test g[1].ss == "# abc\n"
 @test FP.content(g[1]) == " abc"
-@test g[2].name == :LIST
-@test g[2].ss == "\n* i1\n* i2"
-@test g[3].name == :P_BREAK
+@test FP.name(g[2]) == :LIST
+@test g[2].ss // "* i1\n* i2"
+
 md = """
     @def v = 5
     * i1
     * i2
     """
 g = FP.md_partition(md)
-@test g[2].ss == "\n* i1\n* i2"
+@test g[2].ss // "\n* i1\n* i2"
 # Dec9'22 | remove_inner! when last block has from=to
 md = """
     * abc
@@ -77,7 +77,7 @@ md = """
     1. B
     """
 g = FP.md_partition(md) |> FP.md_grouper
-@test g[1].role == :LIST
+@test FP.name(g[1]) == :LIST
 @test g[1] // md
 md = """
     * A **B** `C`
@@ -94,5 +94,5 @@ md = """
     """
 mdss = FP.subs(md, 4, 5)
 p = FP.md_partition(mdss)
-@test p[1].name == :TEXT
+@test FP.name(p[1]) == :TEXT
 @test p[1] // "A"

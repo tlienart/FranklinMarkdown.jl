@@ -1,3 +1,5 @@
+include("../testutils.jl")
+
 @testset "subs" begin
     @test FP.subs("abc") == "abc"
     @test FP.subs("abc") !== "abc"

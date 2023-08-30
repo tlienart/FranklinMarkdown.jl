@@ -28,7 +28,7 @@
         < http://foo.bar.baz?q=hello&id=22&boolean >
         """
     b = s |> md_blockifier
-    a = filter!(e -> e.name == :AUTOLINK, b)
+    a = filter!(e -> FP.name(e) == :AUTOLINK, b)
     @test a[1] // "<ftp://1.2.3.4:21/path/foo>"
     @test a[2] // "<http://foo.bar.baz?q=hello&id=22&boolean>"
     @test a[3] // "<http://veeeeeeeeeeeeeeeeeeery.loooooooooooooooooooooooooooooooong.autolink/>"
@@ -128,7 +128,7 @@ end
         &qwertyuioppoiuytrewqwer; &oiuytrewqwertyuioiuytrewqwertyuioytrewqwertyuiiuytri;
         """
     t = s |> toks |> collect
-    filter!(t -> t.name ∉ FP.MD_IGNORE, t)
+    filter!(t -> FP.name(t) ∉ FP.MD_IGNORE, t)
 
     gt = ["&nbsp;", "&amp;", "&copy;", "&AElig;", "&Dcaron;", "&frac34;",
           "&HilbertSpace;", "&DifferentialD;", "&ClockwiseContourIntegral;",
@@ -171,13 +171,13 @@ end
         -->
         """
     b = s |> slice
-    for (t, gt) in zip(filter(t -> t.name ∉ FP.MD_IGNORE, b[1].inner_tokens), [
+    for (t, gt) in zip(filter(t -> FP.name(t) ∉ FP.MD_IGNORE, FP.content_tokens(b[1])), [
                         raw"\!", raw"\#", raw"\$", raw"\%", raw"\&",
                         raw"\'", raw"\*", raw"\+", raw"\,", raw"\.",
                         raw"\/", raw"\:", raw"\;", raw"\<", raw"\=", raw"\>", raw"\?"])
         @test t // gt
     end
-    for (t, gt) in zip(filter(t -> t.name ∉ FP.MD_IGNORE, b[4].inner_tokens), [
+    for (t, gt) in zip(filter(t -> FP.name(t) ∉ FP.MD_IGNORE, FP.content_tokens(b[4])), [
                         raw"\@", raw"\^", raw"\_", raw"\`", raw"\{",
                         raw"\|", raw"\}", raw"\~", raw"\-", raw"\'"])
         @test t // gt

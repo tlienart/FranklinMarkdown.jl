@@ -48,6 +48,8 @@
 # f15 div block
 # f16 html block
 
+include("../testutils.jl")
+
 @testset "0>paragraphs" begin
     p = """
         abc
@@ -59,7 +61,7 @@
     @test ct(p[1]) // "abc"
     @test ct(p[2]) // "def"
     @test ct(p[3]) // "ghi"
-    @test all(p_i.role == :PARAGRAPH for p_i in p)
+    @test all(FP.name(p_i) == :PARAGRAPH for p_i in p)
 
     p = """
         abc
@@ -69,9 +71,9 @@
         ghi
         """ |> grouper
     @test ct(p[1]) // "abc"
-    @test p[2].role == :CODE_BLOCK
+    @test FP.name(p[2]) == :CODE_BLOCK
     @test ctf(p[2]) // "def"
-    @test p[3].role == :PARAGRAPH
+    @test FP.name(p[3]) == :PARAGRAPH
     @test ct(p[3]) // "ghi"
 
     p = raw"""
@@ -183,9 +185,9 @@ end
         ```
         ghi
         """ |> grouper
-    @test p[1].role == :PARAGRAPH
+    @test FP.name(p[1]) == :PARAGRAPH
     @test ctf(p[2]) // "def"
-    @test p[3].role == :PARAGRAPH
+    @test FP.name(p[3]) == :PARAGRAPH
 
     p = """
         abc
@@ -310,20 +312,20 @@ end
 
         **b _c_ d**
         """ |> md_blockifier
-    @test p[1].name == :EMPH_EM
+    @test FP.name(p[1]) == :EMPH_EM
     @test ct(p[1]) == "b"
-    @test p[2].name == :EMPH_EM
+    @test FP.name(p[2]) == :EMPH_EM
     @test ct(p[2]) == "c"
-    @test p[3].name == :EMPH_STRONG
+    @test FP.name(p[3]) == :EMPH_STRONG
     @test ct(p[3]) == "d"
-    @test p[4].name == :EMPH_STRONG
+    @test FP.name(p[4]) == :EMPH_STRONG
     @test ct(p[4]) == "e"
-    @test p[5].name == :EMPH_EM_STRONG
+    @test FP.name(p[5]) == :EMPH_EM_STRONG
     @test ct(p[5]) == "f"
-    @test p[6].name == :EMPH_EM_STRONG
+    @test FP.name(p[6]) == :EMPH_EM_STRONG
     @test ct(p[6]) == "g"
-    @test p[end-1].name == :EMPH_STRONG
-    @test ct(p[end-1]) == "b _c_ d"
+    @test FP.name(p[end]) == :EMPH_STRONG
+    @test ct(p[end]) == "b _c_ d"
 
     s = "a*b*c*"
     t = s |> toks
@@ -341,11 +343,10 @@ end
     p = """
         a <bc> def <http://example.com> and < done >>.
         """ |> md_blockifier
-    @test p[1].name == :AUTOLINK
+    @test FP.name(p[1]) == :AUTOLINK
     @test ct(p[1]) == "bc"
-    @test p[2].name == :AUTOLINK
+    @test FP.name(p[2]) == :AUTOLINK
     @test ct(p[2]) == "http://example.com"
-    @test p[3].name == :P_BREAK
 end
 
 
@@ -358,7 +359,7 @@ end
     p = """
         abc & def &amp; but &amp. &#42;
         """ |> grouper
-    @test ctf(p[1]) == "abc & def &amp; but &amp. &#42;"
+    @test ctf(p[1]) // "abc & def &amp; but &amp. &#42;"
 end
 
 
@@ -393,15 +394,15 @@ end
         [ref]: aaa
         """
     b = s |> md_blockifier
-    @test b[1].name == :LINK_A
+    @test FP.name(b[1]) == :LINK_A
     @test b[1] // "[abc]"
-    @test b[2].name == :LINK_AB
+    @test FP.name(b[2]) == :LINK_AB
     @test b[2] // "[def](ghi)"
-    @test b[3].name == :IMG_A
+    @test FP.name(b[3]) == :IMG_A
     @test b[3] // "![jkl]"
-    @test b[4].name == :IMG_AB
+    @test FP.name(b[4]) == :IMG_AB
     @test b[4] // "![mno](pqr)"
-    @test b[5].name == :REF
+    @test FP.name(b[5]) == :REF
     @test b[5] // "[ref]:"
 
     # not ok because not at the start of a line bar spaces
@@ -427,16 +428,16 @@ end
         [A][B] ![C][D] ![E][F]:
         """ |> grouper
     @test p[1].blocks[1] // "[A][B]"
-    @test p[1].blocks[3] // "![C][D]"
-    @test p[1].blocks[5] // "![E][F]" # precedence of the img
-    @test p[1].blocks[6] // ":"
+    @test p[1].blocks[2] // "![C][D]"
+    @test p[1].blocks[3] // "![E][F]" # precedence of the img
+    @test p[1].blocks[4] // ":"
 
     # final img
     p = """
         [A][B] ![C]
         """ |> grouper
     @test p[1].blocks[1] // "[A][B]"
-    @test p[1].blocks[3] // "![C]"
+    @test p[1].blocks[2] // "![C]"
 end
 
 
@@ -489,9 +490,9 @@ end
     p = "abc | def" |> md_blockifier
     @test length(p) == 0
     p = "| abc | def |" |> md_blockifier
-    @test p[1].name == :TABLE_ROW_CAND
+    @test FP.name(p[1]) == :TABLE_ROW_CAND
     p = "|abc|def|" |> md_blockifier
-    @test p[1].name == :TABLE_ROW_CAND
+    @test FP.name(p[1]) == :TABLE_ROW_CAND
     p = "|abc|def" |> md_blockifier   # doesn't end with '|'
     @test length(p) == 0
 end
@@ -526,7 +527,7 @@ end
     # disable math
     s = raw"foo $800"
     p = FP.md_partition(s, disable=[:MATH_INLINE])
-    @test p[1].name == :TEXT
+    @test FP.name(p[1]) == :TEXT
     @test ct(p[1]) == s
 end
 
@@ -564,18 +565,15 @@ end
     @test p[1].blocks[1] // raw"\newcommand"
     @test p[1].blocks[2] // raw"{\foo}"
     @test p[1].blocks[3] // raw"{abc}"
-    @test p[1].blocks[4] // "\n"
-    @test p[1].blocks[5] // raw"\newcommand"
-    @test p[1].blocks[6] // raw"{\bar}"
-    @test p[1].blocks[7] // raw"[1]"
-    @test p[1].blocks[8] // raw"{abc#1}"
+    @test p[1].blocks[4] // raw"\newcommand"
+    @test p[1].blocks[5] // raw"{\bar}"
+    @test p[1].blocks[6] // raw"[1]"
+    @test p[1].blocks[7] // raw"{abc#1}"
 
     p = raw"\newcommand{\foo}  [1 ] {abc}" |> grouper
     @test p[1].blocks[2] // raw"{\foo}"
-    @test p[1].blocks[3].ss == "  "
-    @test p[1].blocks[4] // "[1 ]"
-    @test p[1].blocks[5].ss == " "
-    @test p[1].blocks[6] // "{abc}"
+    @test p[1].blocks[3] // "[1 ]"
+    @test p[1].blocks[4] // "{abc}"
 end
 
 
@@ -595,7 +593,7 @@ end
 @testset "f11>dbb" begin
     p = "abc {{def}} ghi" |> grouper
     @test length(p) == 1
-    @test p[1].blocks[2].name == :DBB
+    @test FP.name(p[1].blocks[2]) == :DBB
     @test ct(p[1].blocks[2]) // "def"
 end
 

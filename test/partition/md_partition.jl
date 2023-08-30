@@ -1,28 +1,30 @@
+include("../testutils.jl")
+
 @testset "basic" begin
     s = "ABC"
     parts = FP.md_partition(s)
     @test length(parts) == 1
-    @test parts[1].name == :TEXT
+    @test FP.name(parts[1]) == :TEXT
     @test parts[1].ss == s
     s = "ABC<!--DEF-->"
     parts = FP.md_partition(s)
     @test length(parts) == 2
-    @test parts[1].name == :TEXT
-    @test parts[2].name == :COMMENT
+    @test FP.name(parts[1]) == :TEXT
+    @test FP.name(parts[2]) == :COMMENT
     s = "ABC<!--DEF-->GHI"
     parts = FP.md_partition(s)
     @test length(parts) == 3
-    @test all(parts[i].name == :TEXT for i in (1, 3))
+    @test all(FP.name(parts[i]) == :TEXT for i in (1, 3))
     s = "ABC<!--DEF-->GHI<!--JKL-->MNO"
     parts = FP.md_partition(s)
-    @test all(parts[i].name == :COMMENT for i in (2, 4))
+    @test all(FP.name(parts[i]) == :COMMENT for i in (2, 4))
 end
 
 @testset "cov" begin
     s = "abc"
     p = FP.md_partition(s)
     @test length(p) == 1
-    @test p[1].name == :TEXT
+    @test FP.name(p[1]) == :TEXT
 
     p = "abc @@d ef *AA* g @@ end" |> FP.md_partition
     @test p[2] isa FP.Block
@@ -36,18 +38,18 @@ end
     g = """
         abc *def* ghi
         | a | b | c |""" |> grouper
-    @test g[1].role == :PARAGRAPH
-    @test g[2].role == :TABLE
+    @test FP.name(g[1]) == :PARAGRAPH
+    @test FP.name(g[2]) == :TABLE
     g = """
         abc *def* ghi
         @@d klm @@""" |> grouper
-    @test g[1].role == :PARAGRAPH
-    @test g[2].role == :DIV
+    @test FP.name(g[1]) == :PARAGRAPH
+    @test FP.name(g[2]) == :DIV
     g = """
         @@d klm @@
         abc *def* ghi""" |> grouper
-    @test g[2].role == :PARAGRAPH
-    @test g[1].role == :DIV
+    @test FP.name(g[2]) == :PARAGRAPH
+    @test FP.name(g[1]) == :DIV
 end
 
 @testset "environment" begin
@@ -85,9 +87,10 @@ end
         {{foo}}
 
         """
+    pass1blocks(s)
     g = s |> grouper
     @test g[1] // s
-    @test g[1].role == :PARAGRAPH_NOP
+    @test FP.name(g[1]) == :PARAGRAPH_NOP
     s = """
         ABC ~~~foo~~~
 
@@ -98,10 +101,10 @@ end
         <!--bar-->
         """
     g = s |> grouper
-    @test g[1].role == :PARAGRAPH
-    @test g[2].role == :PARAGRAPH_NOP
-    @test g[3].role == :PARAGRAPH
-    @test g[4].role == :PARAGRAPH_NOP
+    @test FP.name(g[1]) == :PARAGRAPH
+    @test FP.name(g[2]) == :PARAGRAPH_NOP
+    @test FP.name(g[3]) == :PARAGRAPH
+    @test FP.name(g[4]) == :PARAGRAPH_NOP
 
     # from franklin docs
 
@@ -119,10 +122,10 @@ end
         ABC
         """
     g = s |> grouper
-    @test g[1].role == :MD_DEF_BLOCK
-    @test g[2].role == :PARAGRAPH_NOP
-    @test g[3].role == :PARAGRAPH_NOP
-    @test g[4].role == :PARAGRAPH
+    @test FP.name(g[1]) == :MD_DEF_BLOCK
+    @test FP.name(g[2]) == :PARAGRAPH_NOP
+    @test FP.name(g[3]) == :PARAGRAPH_NOP
+    @test FP.name(g[4]) == :PARAGRAPH
     @test g[4] // "ABC"
 
     s = raw"""
@@ -138,8 +141,8 @@ end
         ABC
         """
     g = s |> grouper
-    @test g[1].role == :MD_DEF_BLOCK
-    @test g[2].role == :PARAGRAPH_NOP
-    @test g[3].role == :PARAGRAPH
+    @test FP.name(g[1]) == :MD_DEF_BLOCK
+    @test FP.name(g[2]) == :PARAGRAPH_NOP
+    @test FP.name(g[3]) == :PARAGRAPH
     @test g[3] // "ABC"
 end

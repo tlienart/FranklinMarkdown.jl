@@ -50,7 +50,7 @@ Ref: https://dev.w3.org/html5/html-author/charref.
 Note: longest entity is &CounterClockwiseContourIntegral; so capping the max
 number of characters to 32.
 """
-const HTML_ENTITY_PAT = r"^&(?:[a-zA-Z]{1,32}[0-9]{0,2}|#[0-9]{1,6}|#x[0-9a-f]{1,6});$"
+const HTML_ENTITY_PAT = r"&(?:[a-zA-Z]{1,32}[0-9]{0,2}|#[0-9]{1,6}|#x[0-9a-f]{1,6});"
 
 
 const EMOJI_PAT = r"^\:[a-zA-Z0-9+-_]+\:$"

@@ -151,7 +151,9 @@ function find_tokens(
                 while greedy_lookahead(tf, nchars, probe_char)
                     tail_idx   = probe_idx
                     probe_idx  = nextind(s, probe_idx)
-                    (probe_idx > end_idx) && break
+                    if ((head_char == '&') & (probe_char == ';')) | (probe_idx > end_idx)
+                        break
+                    end
                     probe_char = s[probe_idx]
                     nchars    += 1
                 end
@@ -212,7 +214,7 @@ function process_header_tokens!(
 
     remove = Int[]
     @inbounds for (i, t) in enumerate(tokens)
-        if t.name in MD_HEADERS
+        if name(t) in MD_HEADERS
             ss = until_previous_line_return(t)
             isempty(strip(ss)) || push!(remove, i)
         end
@@ -238,7 +240,7 @@ function process_emphasis_tokens!(
 
     remove = Int[]
     @inbounds for (i, t) in enumerate(tokens)
-        if t.name in (:EM, :STRONG, :EM_STRONG)
+        if name(t) in (:EM, :STRONG, :EM_STRONG)
             prev_char = previous_chars(t)
             next_char = next_chars(t)
             # if the token is surrounded by spaces, discard it
@@ -249,14 +251,14 @@ function process_emphasis_tokens!(
                 push!(remove, i)
             # Tx or sTx
             elseif isempty(prev_char) || first(prev_char) in SPACE_CHAR
-                n = Symbol(string(t.name) * "_OPEN")
+                n = Symbol(string(name(t)) * "_OPEN")
                 tokens[i] = Token(n, t.ss)
             # xT or xTs
             elseif isempty(next_char) || first(next_char) in SPACE_CHAR
-                n = Symbol(string(t.name) * "_CLOSE")
+                n = Symbol(string(name(t)) * "_CLOSE")
                 tokens[i] = Token(n, t.ss)
             else # xTy
-                n = Symbol(string(t.name) * "_MX")
+                n = Symbol(string(name(t)) * "_MX")
                 tokens[i] = Token(n, t.ss)
             end
         end
@@ -275,7 +277,7 @@ function process_autolink_close_tokens!(
 
     remove = Int[]
     @inbounds for (i, t) in enumerate(tokens)
-        if t.name == :AUTOLINK_CLOSE
+        if name(t) == :AUTOLINK_CLOSE
             c = previous_chars(t)
             (isempty(c) || first(c) ∈ SPACE_CHAR) && push!(remove, i)
         end

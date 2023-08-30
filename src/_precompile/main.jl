@@ -1,3 +1,5 @@
+import PrecompileTools
+
 PrecompileTools.@setup_workload begin
     pgs = [
         read(joinpath(@__DIR__, "expages", pg), String)

@@ -1,3 +1,7 @@
+using Test, FranklinParser, Pkg
+FP = FranklinParser
+FPE = FP.FranklinParserException
+
 using Test
 import Base.//
 
@@ -15,9 +19,9 @@ len1(o) = length(o) == 1
 md_blockifier = s -> FP.default_md_tokenizer(s) |> FP.default_md_blockifier
 
 function check_tokens(tokens, idx, name)
-    @test all([t.name for t in tokens[idx]] .== name)
+    @test all([FP.name(t) for t in tokens[idx]] .== name)
     compl = [i for i in eachindex(tokens) if i ∉ idx]
-    @test all([t.name for t in tokens[compl]] .!= name)
+    @test all([FP.name(t) for t in tokens[compl]] .!= name)
 end
 
 toks    = FP.default_md_tokenizer
@@ -26,7 +30,7 @@ text(b) = FP.prepare_md_text(b)
 ct(b)   = FP.content(b)
 ctf(b::FP.Group) = FP.content(first(b.blocks))
 grouper = FP.md_grouper ∘ slice
-isp(g)  = g.role == :PARAGRAPH
+isp(g)  = FP.name(g) == :PARAGRAPH
 printel(bv) = foreach(e -> println(strip(e.ss)), bv)
 
 
@@ -37,3 +41,22 @@ pass1blocks = s -> begin
     FP._find_blocks!(blocks, tokens, FP.MD_PASS1_TEMPLATES, is_active, process_line_return=true)
     return blocks
 end
+
+pass2blocks = s -> begin
+    tokens = FP.default_md_tokenizer(s)
+    blocks = FP.Block[]
+    is_active = ones(Bool, length(tokens))
+    FP._find_blocks!(blocks, tokens, FP.MD_PASS2_TEMPLATES, is_active, process_line_return=false)
+    FP.form_links!(blocks)
+    return blocks
+end
+
+function tnames(b::FP.Block)
+    [FP.name(e) for e in b.tokens]
+end
+function tnames(v::FP.SubVector)
+    [FP.name(e) for e in v]
+end
+
+
+signames(t) = FP.name.(filter(ti -> FP.name(ti) ∉ (:EOS,:SOS,:LINE_RETURN), t))

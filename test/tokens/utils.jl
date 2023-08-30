@@ -1,3 +1,5 @@
+include("../testutils.jl")
+
 @testset "Chars" begin
     @test FP.EOS == '\0'
     @test all(e -> e in FP.SPACE_CHAR, (' ', '\n', '\t', FP.EOS))

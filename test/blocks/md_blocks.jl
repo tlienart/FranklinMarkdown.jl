@@ -1,3 +1,5 @@
+include("../testutils.jl")
+
 @testset "Not closed error"  begin
     s = "<!--"
     @test_throws FP.FranklinParserException md_blockifier(s)
@@ -9,12 +11,12 @@ end
         """
     blocks = s |> md_blockifier
     @test FP.content(blocks[1]) == "ABC"
-    @test isempty(blocks[1].inner_tokens)
+    @test isempty(FP.content_tokens(blocks[1]))
     s = """
         <!--A<!--B-->
         """
     blocks = s |> md_blockifier
-    @test blocks[1].inner_tokens[1].name == :COMMENT_OPEN
+    @test FP.name(blocks[1].tokens[1]) == :COMMENT_OPEN
     @test FP.content(blocks[1]) == "A<!--B"
     s = """
         <!--A<!--B-->C-->
@@ -150,31 +152,32 @@ end
     @test isapproxstr(FP.content(b[1]), "@@def ```julia hello```@@ {ABC}")
 end
 
+
 @testset "maths" begin
     b = raw"""
         A $B$ C
         """ |> md_blockifier
-    @test b[1].name == :MATH_INLINE
+    @test FP.name(b[1]) == :MATH_INLINE
     @test FP.content(b[1]) == "B"
     b = raw"""
         A $$B$$ C
         """ |> md_blockifier
-    @test b[1].name == :MATH_DISPL_A
+    @test FP.name(b[1]) == :MATH_DISPL_A
     @test FP.content(b[1]) == "B"
     b = raw"""
         A \[B\] C
         """ |> md_blockifier
-    @test b[1].name == :MATH_DISPL_B
+    @test FP.name(b[1]) == :MATH_DISPL_B
     @test FP.content(b[1]) == "B"
     # b = raw"""
     #     A _$>_B_$<_ C
     #     """ |> md_blockifier
-    # @test b[1].name == :MATH_I
+    # @test FP.name(b[1]) == :MATH_I
     b = raw"""
         A $$B$$ C $D$
         """ |> md_blockifier
-    @test b[1].name == :MATH_DISPL_A
-    @test b[2].name == :MATH_INLINE
+    @test FP.name(b[1]) == :MATH_DISPL_A
+    @test FP.name(b[2]) == :MATH_INLINE
 end
 
 # -----------------------------
@@ -185,9 +188,9 @@ end
     b = """
         a *b* c _d_ e _ f g * h
         """ |> md_blockifier
-    @test b[1].name == :EMPH_EM
+    @test FP.name(b[1]) == :EMPH_EM
     @test FP.content(b[1]) == "b"
-    @test b[2].name == :EMPH_EM
+    @test FP.name(b[2]) == :EMPH_EM
     @test FP.content(b[2]) == "d"
     @test length(b) == 2
 
@@ -195,7 +198,7 @@ end
     b = """
         **abc_def_ghi**
         """ |> md_blockifier
-    @test b[1].name == :EMPH_STRONG
+    @test FP.name(b[1]) == :EMPH_STRONG
     @test FP.content(b[1]) == "abc_def_ghi"
     @test len1(b)
 end
@@ -237,6 +240,7 @@ end
         """
     t = s |> toks
     b = FP.find_blocks(t)
+    @test b[1].ss // replace(s, "def"=>"")
 
     s = raw"""
         \newenvironment{foo}{bar:}{:baz}
@@ -248,7 +252,6 @@ end
     t = s |> toks
     b = FP.find_blocks(t)
     @test b[5].ss // "\\begin{foo}\nabc\n\\end{foo}"
-    @test b[5].inner_tokens[end].name == :CU_BRACKET_CLOSE
 end
 
 @testset "env issue" begin

@@ -23,29 +23,32 @@ function partition(
 
     reset_timer!(TIMER)
 
+    parts = Block[]
     isempty(s) && return parts
+
     if isempty(pre_tokens)
         @timeit_debug TIMER "tokenizer" begin
             tokens = tokenizer(s)::Vector{Token}
         end
     else
-        tokens = collect(pre_tokens)
+        tokens = collect(pre_tokens)::Vector{Token}
     end
 
     # disable tokens as requested
-    isempty(disable) || filter!(t -> t.name ∉ disable, tokens)
+    isempty(disable) || filter!(t -> name(t) ∉ disable, tokens)
 
     # [Final line return] we need to be explicit here. Indeed, in the recursive
     # case, when partitioning a block, there will not be a LR and EOS token.
     # We'll just get the blocks' inner tokens.
-    if length(tokens) == 2 && (getfield.(tokens, :name) == [:LINE_RETURN, :EOS])
+    if length(tokens) == 2 && (name.(tokens) == [:LINE_RETURN, :EOS])
         return [Block(:TEXT, s)]
     end
 
     # form Blocks based on the tokens
     @timeit_debug TIMER "blockifier" begin
-        blocks = blockifier(tokens)
+        blocks = blockifier(tokens)::Vector{Block}
     end
+
     # discard first block if it's a 0-length P_BREAK
     if !isempty(blocks) && iszero(to(blocks[1]))
         deleteat!(blocks, 1)
@@ -53,16 +56,14 @@ function partition(
     isempty(blocks) && return [Block(:TEXT, s, subv(tokens))]
 
     # disable additional blocks if desired
-    isempty(disable) || filter!(t -> t.name ∉ disable, blocks)
+    isempty(disable) || filter!(b -> name(b) ∉ disable, blocks)
 
-    # here the tokens are active, and sorted, we can form the map
-    # map token UID -> token index so that we can map from a block
-    # to the tokens in span of that block
-    tok_map = Dict(tok.id => idx for (idx, tok) in enumerate(tokens))
-    
-    parts = Block[]
+    head_token_idx  = 2 # (1 is SOS so we don't care)
+    _prev_token_idx = b -> prev_token_idx(b)
+    _head_increment = b -> length(b.tokens) + 1
+
     @timeit_debug TIMER "partitioning" begin
-        @timeit_debug TIMER "init" begin
+        @timeit_debug TIMER "1/init" begin
     
             # Form a full partition with text blocks and blocks.
             first_block = blocks[1]
@@ -70,27 +71,27 @@ function partition(
 
             # add Text at beginning if first block is not there
             if from(s) < from(first_block)
-                _to     = tok_map[first_token_id(first_block)]-1
                 content = strip(
                     subs(
                         parent_string(s),
-                        1,
+                        from(s),
                         prev_index(first_block)
                     )
                 )
                 if !isempty(content)
-                    txtb = Block(
+                    _to   = _prev_token_idx(first_block)
+                    txtb  = Block(
                         :TEXT,
-                        strip(subs(parent_string(s), 1, prev_index(first_block))),
-                        @view tokens[1:_to]
+                        content,
+                        @view tokens[head_token_idx:_to]
                     )
                     push!(parts, txtb)
+                    head_token_idx = _to + _head_increment(first_block)
                 end
             end
-   
         end
-        @timeit_debug TIMER "loop" begin
 
+        @timeit_debug TIMER "2/loop" begin
             # Go through blocks and add text with what's between them
             bi = blocks[1]
             for i in 1:length(blocks)-1
@@ -104,16 +105,15 @@ function partition(
                         prev_index(bip1)
                     )
                 )
-
                 if !isempty(content)
-                    _from = tok_map[bi.close.id]+1
-                    _to   = tok_map[first_token_id(bip1)]-1
+                    _to  = _prev_token_idx(bip1)
                     txtb = Block(
                         :TEXT,
-                        cand,
-                        @view tokens[_from:_to]
+                        content,
+                        @view tokens[head_token_idx:_to]
                     )
                     push!(parts, txtb)
+                    head_token_idx = _to + _head_increment(bip1)
                 end
 
                 bi = bip1
@@ -121,22 +121,23 @@ function partition(
             push!(parts, bi)
 
         end
-        @timeit_debug TIMER "end" begin
+        @timeit_debug TIMER "3/end" begin
             # add Text at the end if last block is not there
+
             if to(s) > to(last_block)
-                _from = tok_map[last_block.close.id]
                 content = strip(
                     subs(
                         parent_string(s),
                         next_index(last_block),
-                        lastindex(parent_string(s))
+                        to(s)
                     )
                 )
                 if !isempty(content)
+                    # note: last token is EOS so end-1
                     txtb = Block(
                         :TEXT,
                         content,
-                        @view tokens[_from:end]
+                        @view tokens[head_token_idx:end-1]
                     )
                     push!(parts, txtb)
                 end
@@ -153,8 +154,10 @@ function partition(
 
     return pp
 end
-partition(s::String, a...; kw...) = partition(subs(s), a...; kw...)
-partition(b::Block, a...; kw...)  = partition(content(b), a...; tokens=b.inner_tokens)
+partition(s::String, a...; kw...) =
+    partition(subs(s), a...; kw...)
+partition(b::Block, a...; kw...)  =
+    partition(content(b), a...; pre_tokens=content_tokens(b))
 
 
 """
@@ -191,8 +194,8 @@ default_html_tokenizer = tokenizer_factory(
     templates_rx        = HTML_TOKENS_RX
 )
 
-default_md_blockifier   = t -> find_blocks(t, is_md=true)
-default_html_blockifier = t -> find_blocks(t, is_md=false)
+default_md_blockifier   = t -> find_blocks(t; is_md=true)
+default_html_blockifier = t -> find_blocks(t; is_md=false)
 
 function md_partition(e; kw...)
     partition(e, default_md_tokenizer, default_md_blockifier;
@@ -234,11 +237,11 @@ function md_grouper(blocks::Vector{Block})::Vector{Group}
 
     @inbounds while i <= n_blocks
         bi = blocks[i]
-        br = ifelse(bi.name in INLINE_BLOCKS, :PARAGRAPH, bi.name)
+        br = ifelse(name(bi) in INLINE_BLOCKS, :PARAGRAPH, name(bi))
 
         if br != :PARAGRAPH
             _close_open_paragraph!(groups, blocks, cur_head, i)
-            push!(groups, Group(bi; role=br))
+            push!(groups, Group(br, bi))
             cur_head = 0
             cur_role = br
 
@@ -253,7 +256,7 @@ function md_grouper(blocks::Vector{Block})::Vector{Group}
     end
 
     # finalise by removing P_BREAK
-    filter!(g -> g.role != :P_BREAK, groups)
+    filter!(g -> name(g) != :P_BREAK, groups)
     return groups
 end
 
@@ -263,13 +266,13 @@ function _close_open_paragraph!(groups, blocks, cur_head, i)
     # blocks in the paragraph
     par_blocks = blocks[cur_head:i-1]
     strict_p   = any(
-        b -> b.name ∉ INLINE_BLOCKS_CHECKP && !isempty(strip(content(b))),
+        b -> name(b) ∉ INLINE_BLOCKS_CHECKP && !isempty(strip(content(b))),
         par_blocks
     )
     if strict_p
-        push!(groups, Group(par_blocks; role=:PARAGRAPH))
+        push!(groups, Group(:PARAGRAPH, par_blocks))
     else
-        push!(groups, Group(par_blocks; role=:PARAGRAPH_NOP))
+        push!(groups, Group(:PARAGRAPH_NOP, par_blocks))
     end
     return
 end
@@ -305,13 +308,14 @@ function split_args(s::SS)::Vector{String}
     insert  = "|__STR__|"
     strings = String[]
     for p in parts
-        if p.name == :TEXT
+        if name(p) == :TEXT
             write(dummy, content(p))
         else
-            write(dummy, insert)
+            write(dummy, " $insert ")
             push!(strings, content(p))
         end
     end
+
     # split the dummy string along white spaces
     splits = split(String(take!(dummy)))
 
@@ -326,6 +330,7 @@ function split_args(s::SS)::Vector{String}
             push!(args, sp)
         end
     end
+
     return args
 end
 split_args(s::String) = split_args(subs(s))

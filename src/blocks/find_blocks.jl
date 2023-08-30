@@ -57,7 +57,7 @@ function find_blocks(
         form_links!(blocks)
         # here there may be brackets that are not part of links which
         # should have their content re-inspected
-        @inbounds for b in filter(b_ -> b_.name == :BRACKETS, blocks)
+        @inbounds for b in filter(b_ -> name(b_) == :BRACKETS, blocks)
             fromb, tob = from(b), to(b)
             react_tokens = Token[]
             for i in deact_tokens
@@ -71,7 +71,7 @@ function find_blocks(
             append!(blocks, find_blocks(react_tokens, is_md=true))
         end
         # discard leftover bracket blocks
-        filter!(b -> b.name != :BRACKETS, blocks)
+        filter!(b -> name(b) != :BRACKETS, blocks)
 
         ##########
         # PASS 3 #
@@ -114,7 +114,7 @@ function _find_blocks!(
             blocks::Vector{Block},
             tokens::Vector{Token},
             templates::Dict{Symbol, BlockTemplate},
-            is_active::Vector{Bool};
+            is_active::Vector{Bool} = ones(Bool, length(tokens));
             # kwargs
             process_line_return::Bool=false
         )::Vector{Int}
@@ -137,10 +137,11 @@ function _find_blocks!(
         # skip inactive
         is_active[i] || continue
 
-        opening = tokens[i].name
+        opening = name(tokens[i])
 
-        # do we potentially have a paragraph break or something of the sorts
-        if process_line_return && opening == :LINE_RETURN
+        # do we potentially have a paragraph break or something that may
+        # start a line-block (blockquote candidate etc)
+        if process_line_return && opening ∈ (:LINE_RETURN, :SOS)
             process_line_return!(blocks, tokens, i, is_active)
             continue
         elseif opening ∉ template_keys
@@ -154,7 +155,7 @@ function _find_blocks!(
 
         # short path for e.g. html entities
         if closing === NO_CLOSING
-            push!(blocks, TokenBlock(tokens[i]))
+            push!(blocks, TokenBlock(tokens, i))
             continue
         end
 
@@ -164,7 +165,7 @@ function _find_blocks!(
         for j in i+1:n_tokens
             # the tokens ahead might be inactive due to first pass
             is_active[j] || continue
-            candidate = tokens[j].name
+            candidate = name(tokens[j])
             # has to happen before opener to avoid ambiguity in emphasis tokens
             if candidate in closing
                 open_depth -= 1
@@ -180,9 +181,11 @@ function _find_blocks!(
         # if the block isn't closed, complain unless this is tolerated.
         if (closing_index == -1)
             opening ∈ CAN_BE_LEFT_OPEN || block_not_closed_exception(tokens[i])
+            continue
         end
 
-        # otherwise, we have a well-formed block with opening+closing tokens
+        # now we have a block that is properly closed, push it on the stack
+        # and deactivate relevant tokens
         push!(blocks,
             Block(
                 template.name,
@@ -194,7 +197,7 @@ function _find_blocks!(
         # that line return which might e.g. lead to the start of an item
         # see process_line_returns
         last_token    = tokens[closing_index]
-        to_deactivate = 1:(closing_index - Int(last_token.name == :LINE_RETURN))
+        to_deactivate = i:(closing_index - Int(name(last_token) == :LINE_RETURN))
 
         # deactivate all tokens in the span of the block
         is_active[to_deactivate] .= false
@@ -237,7 +240,18 @@ function process_line_return!(
     # case there may not be two chars (`c` below will be empty in that
     # situation).
     #
-    c = next_chars(t, 2)
+    t_is_sos        = is_sos(t)
+    t_is_sos_and_lr = false
+    if t_is_sos
+        if first(t.ss) == '\n'
+            c = next_chars(t, 2)
+            t_is_sos_and_lr = true
+        else
+            c = [first(t.ss), next_chars(t, 1)...]
+        end
+    else
+        c = next_chars(t, 2)
+    end
 
     #
     # If there isn't two chars beyond the token, `c` will be empty.
@@ -257,12 +271,13 @@ function process_line_return!(
         push!(blocks,
             Block(
                 :P_BREAK,
-                t => tokens[i+1]
+                @view tokens[i:i+1]
             )
         )
         # we only mark the base line return as inactive as the next one may
         # trigger something else such as an item (e.g. \n\n* foo\n)
         is_active[i] = false
+        t_is_sos && (is_active[i+1] = false)
 
     else
         # 
@@ -278,8 +293,8 @@ function process_line_return!(
         # return (included) and the next one (not-included *) as inactive.
         # (*) see comment above with only marking token[i] is inactive.
         # 
-        j = i+1
-        while tokens[j].name ∉ (:LINE_RETURN, :EOS)
+        j = i+1+Int(t_is_sos_and_lr)
+        while name(tokens[j]) ∉ (:LINE_RETURN, :EOS)
             j += 1
         end
         next_line_return = tokens[j]
@@ -287,22 +302,19 @@ function process_line_return!(
         # that precedes it. However, in the case of EOS, need to take the
         # string until the end.
         eol = ifelse(
-            next_line_return.name == :EOS,
+            is_eos(next_line_return),
             from(next_line_return),
             prev_index(next_line_return)
         )
-        line = subs(parent_string(t), next_index(t):eol)
+        rge  = ifelse(t_is_sos, from(t):eol, next_index(t):eol)
+        line = subs(parent_string(t), rge)
 
-        pre_block = Block(
-            :NO_NAME_YET,
-            EMPTY_TOKEN,
-            next_line_return,
-            line,
-            @view tokens[i+1:j-1]
-        )
         bpush! = name -> begin
-            pre_block.name = name
-            push!(blocks, pre_block)
+            push!(blocks, Block(
+                name,
+                line,
+                @view tokens[i+1:j]
+            ))
             is_active[i:j-1] .= false
         end
 
@@ -343,6 +355,7 @@ Here we catch the following:
     * [A][B]  LINK_AR  for <a href="ref(B)">html(A)</a>
     * [A](B)  LINK_AB  for <a href="escape(B)">html(A)</a>
     * ![A]    IMG_A    <img src="ref(A)" alt="esc(A)" />
+    # ![A][B] IMG_AR   <img src="ref(B)" alt="esc(A)" />
     * ![A](B) IMG_AB   <img src="escape(B)" alt="esc(A)" />
     * [A]: B  REF      (--> aggregate B, will need to distinguish later)
 
@@ -373,11 +386,19 @@ function form_links!(
     nb      = blocks[i]
     ps      = parent_string(nb)
 
+    # retrieve the range of tokens between the blocks
+    tok_rge = (b, nb) -> begin
+        tokens = b.tokens.parent
+        return @view tokens[
+            b.tokens.indices[1][1]:nb.tokens.indices[1][end]
+        ]
+    end
+
     while i < nblocks
         b  = nb
         nb = blocks[i+1]
 
-        if b.name == :SQ_BRACKETS
+        if name(b) == :SQ_BRACKETS
             pchar = previous_chars(b)
             nchar = next_chars(b)
 
@@ -385,57 +406,92 @@ function form_links!(
             # img: is it preceded by '!'?
             # ref: is it followed by ':'?
             # lnk: is the next char '('
-            img = false
-            if !isempty(pchar)
-                img = pchar[1] == '!'
-            end
+            img = !isempty(pchar) && pchar[1] == '!'
             ref = false
             lab = false
             lar = false
             if !isempty(nchar)
                 ref = !img && nchar[1] == ':'
-                lab = nchar[1] == '(' && nb.name == :BRACKETS
-                lar = nchar[1] == '[' && nb.name == :SQ_BRACKETS
+                lab = nchar[1] == '(' && name(nb) == :BRACKETS
+                lar = nchar[1] == '[' && name(nb) == :SQ_BRACKETS
             end
             lnk = lab | lar
 
-            # ref ==> REF, stop
+            # ref ==> REF, stop         []:
             #
-            # img  & !lnk => IMG_A
-            # img  & lab  => IMG_AB
-            # img  & lar  => IMG_AR
-            # !img & !lnk => LINK_A
-            # !img & lab  => LINK_AB
-            # !img & lar  => LINK_AR
+            # img  & !lnk => IMG_A      ![]
+            # img  & lab  => IMG_AB     ![]()
+            # img  & lar  => IMG_AR     ![][]
+            # !img & !lnk => LINK_A     []
+            # !img & lab  => LINK_AB    []()
+            # !img & lar  => LINK_AR    [][]
 
             if ref
-                # [...]: block
+                #
+                #   [abc]:
+                #
                 # check if the block is at the start of line, otherwise discard
+                #
                 ss = until_previous_line_return(b)
                 if isempty(strip(ss))
-                    blocks[i] = Block(:REF, subs(ps, from(b), next_index(b)))
+                    blocks[i] = Block(
+                        :REF,
+                        subs(ps, from(b), next_index(b)),
+                        b.tokens
+                    )
                 else
                     push!(remove, i)
                 end
+
             else
                 if img
                     if !lnk
-                        blocks[i] = Block(:IMG_A, subs(ps, prev_index(b), to(b)))
+                        # ![]
+                        blocks[i] = Block(
+                            :IMG_A,
+                            subs(ps, prev_index(b), to(b)),
+                            b.tokens
+                        )
                     elseif lab
-                        blocks[i] = Block(:IMG_AB, subs(ps, prev_index(b), to(nb)))
+                        # ![]()
+                        blocks[i] = Block(
+                            :IMG_AB,
+                            subs(ps, prev_index(b), to(nb)),
+                            tok_rge(b, nb)
+                        )
                         push!(remove, i+1)
                     else
-                        blocks[i] = Block(:IMG_AR, subs(ps, prev_index(b), to(nb)))
+                        # ![][]
+                        blocks[i] = Block(
+                            :IMG_AR,
+                            subs(ps, prev_index(b), to(nb)),
+                            tok_rge(b, nb)
+                        )
                         push!(remove, i+1)
                     end
                 else
                     if !lnk
-                        blocks[i] = Block(:LINK_A, subs(ps, from(b), to(b)))
+                        # []
+                        blocks[i] = Block(
+                            :LINK_A,
+                            subs(ps, from(b), to(b)),
+                            b.tokens
+                        )
                     elseif lab
-                        blocks[i] = Block(:LINK_AB, subs(ps, from(b), to(nb)))
+                        # []()
+                        blocks[i] = Block(
+                            :LINK_AB,
+                            subs(ps, from(b), to(nb)),
+                            tok_rge(b, nb)
+                        )
                         push!(remove, i+1)
                     else
-                        blocks[i] = Block(:LINK_AR, subs(ps, from(b), to(nb)))
+                        # [][]
+                        blocks[i] = Block(
+                            :LINK_AR,
+                            subs(ps, from(b), to(nb)),
+                            tok_rge(b, nb)
+                        )
                         push!(remove, i+1)
                     end
                 end
@@ -447,7 +503,7 @@ function form_links!(
     # check if the last block is maybe a standalone `(!)[...](:)`.
     i = nblocks
     b = blocks[i]
-    if i ∉ remove && b.name == :SQ_BRACKETS
+    if i ∉ remove && name(b) == :SQ_BRACKETS
         pchar = previous_chars(b)
         nchar = next_chars(b)
         if isempty(pchar)
@@ -464,14 +520,26 @@ function form_links!(
         if ref
             ss = until_previous_line_return(b)
             if isempty(strip(ss))
-                blocks[i] = Block(:REF, subs(ps, from(b), next_index(b)))
+                blocks[i] = Block(
+                    :REF,
+                    subs(ps, from(b), next_index(b)),
+                    b.tokens
+                )
             else
                 push!(remove, i)
             end
         elseif img
-            blocks[i] = Block(:IMG_A, subs(ps, prev_index(b), to(b)))
+            blocks[i] = Block(
+                :IMG_A,
+                subs(ps, prev_index(b), to(b)),
+                b.tokens
+            )
         else
-            blocks[i] = Block(:LINK_A, subs(ps, from(b), to(b)))
+            blocks[i] = Block(
+                :LINK_A,
+                subs(ps, from(b), to(b)),
+                b.tokens
+            )
         end
     end
     deleteat!(blocks, remove)
@@ -521,19 +589,26 @@ Find CU_BRACKETS blocks that start with `{{` and and with `}}` and mark them as
 """
 function form_dbb!(b::Vector{Block})
     @inbounds for i in eachindex(b)
-        b[i].name === :CU_BRACKETS || continue
+        name(b[i]) === :CU_BRACKETS || continue
         ss = b[i].ss
         (startswith(ss, "{{") && endswith(ss, "}}")) || continue
-
-        open  = Token(:DBB_OPEN, subs(ss, 1:2))
-        li    = lastindex(ss)
-        close = Token(:DBB_CLOSE, subs(ss, li-1:li))
-        it    = @view b[i].inner_tokens[2:end-1]
-        b[i]  = Block(:DBB, open => close, it)
+        b[i] = Block(
+            :DBB,
+            b[i].tokens
+        )
     end
 end
 
 
+"""
+    \\begin{ 1 } 2 \\end{ 1 }
+
+    \\begin --> LX_BEGIN
+    { 1 }   --> CU_BRACKETS
+    2       --> content + inner tokens
+    \\end   --> LX_END
+    { 1 }   --> CU_BRACKETS
+"""
 function _find_env_blocks!(
             blocks::Vector{Block},
             tokens::Vector{Token},
@@ -548,11 +623,13 @@ function _find_env_blocks!(
     n_blocks = length(blocks)
     curb     = blocks[i]
 
+    check_probe(p, ename) = (name(p) == :CU_BRACKETS) && (ename == content(p) |> strip)
+
     @inbounds while i < n_blocks
         nxtb = blocks[i+1]
         j    = i
 
-        if curb.name == :LX_BEGIN
+        if name(curb) == :LX_BEGIN
             # Note that the next block here is **necessarily** a CU_BRACKETS
             # indeed, LX_BEGIN is detected only if it's followed by `{` which
             # at this point, must have been closed (otherwise an error would
@@ -566,21 +643,13 @@ function _find_env_blocks!(
             j            += 1
 
             while j < n_blocks && open_depth != 0
-                cand  = probe.name
+                cand  = name(probe)
                 probe = blocks[j + 1]
 
-                closer = (cand == :LX_END) &&
-                         (probe.name == :CU_BRACKETS) &&
-                         (env_name == content(probe) |> strip)
-
-                opener = (cand == :LX_BEGIN) &&
-                         (probe.name == :CU_BRACKETS) &&
-                         (env_name == content(probe) |> strip)
-
-                if closer
-                    open_depth -= 1
-                elseif opener
+                if cand == :LX_BEGIN && check_probe(probe, env_name)
                     open_depth += 1
+                elseif cand == :LX_END && check_probe(probe, env_name)
+                    open_depth -= 1
                 end
 
                 j += 1
@@ -589,24 +658,19 @@ function _find_env_blocks!(
             closing_index = j
 
             # tokens in span (there is always at least LX_BEGIN and END)
-            env_from = from(curb)
-            env_to   = to(blocks[closing_index])
-
-            toks_1   = findfirst(t -> from(t) >= env_from, tokens)
-            toks_n   = findlast(t -> to(t) <= env_to, tokens)
-            toks_r   = toks_1:toks_n
+            opening_token_idx = parentindices(curb.tokens)[1][1]
+            closing_token_idx = parentindices(blocks[closing_index].tokens)[1][end]
 
             # deactivate them all
-            is_active[toks_r] .= false
+            is_active[opening_token_idx:closing_token_idx] .= false
 
             # mark all blocks in the range as to be discarded
             append!(discard, i:closing_index)
 
             # keep track of the block and its tokens
             b = Block(
-                Symbol("ENV_$(env_name)"),
-                tokens[toks_1] => tokens[toks_n],
-                @view tokens[toks_r]
+                :ENV,
+                @view tokens[opening_token_idx:closing_token_idx]
             )
             push!(envs, b)
         end
@@ -614,7 +678,7 @@ function _find_env_blocks!(
         curb = nxtb
         i    = j + 1
     end
-    # discard all blocks within the env
+    # discard all blocks within the env and append the env block
     deleteat!(blocks, discard)
     append!(blocks, envs)
     return

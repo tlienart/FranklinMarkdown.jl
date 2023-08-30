@@ -1,139 +1,243 @@
 """
     AbstractSpan
 
-Section of a parent String with a specific meaning for Franklin. All subtypes of
-`AbstractBlock` must have an `ss` field corresponding to the substring associated to the
-block. This field is necessarily of type `SubString{String}`.
+Section of a parent String with a specific meaning. All subtypes of
+`AbstractSpan` must have an `ss` field corresponding to the substring
+associated to the block. This field is necessarily of type `SubString{String}`.
 """
 abstract type AbstractSpan end
 
+parent_string(s::AbstractSpan)::String = parent_string(s.ss::SS)
+
 from(s::AbstractSpan)::Int             = from(s.ss::SS)
 to(s::AbstractSpan)::Int               = to(s.ss::SS)
-parent_string(s::AbstractSpan)::String = parent_string(s.ss::SS)
+
 content(s::AbstractSpan)::SS           = s.ss
 content(s::SS)::SS                     = s
 content(s::String)::SS                 = subs(s)
+
 Base.isempty(o::AbstractSpan)::Bool    = isempty(strip(o.ss))
 
 
 """
-    Token <: AbstractSpan
+    Token{N} <: AbstractSpan
 
-A token is a subtype of `AbstractSpan` which typically determines the start or end of
-a block. It can also be used for special characters.
+A token is a small span typically determining the start or end of a block.
+It can also be used for special characters.
 """
-struct Token <: AbstractSpan
-    name::Symbol
+struct Token{N} <: AbstractSpan
     ss::SS
-    id::UInt32
 end
-Token(n, ss) = Token(n, ss, Random.rand(UInt32))
+Token(n, ss) = Token{n}(ss)
 
-is_eos(t::Token) = (t.name == :EOS)
-to(t::Token)     = ifelse(is_eos(t), from(t.ss), to(t.ss))
-
-const EMPTY_TOKEN      = Token(:NONE, subs(""), zero(UInt32))
-Base.isempty(t::Token) = iszero(t.id)
+is_sos(t::Token)       = false
+is_sos(t::Token{:SOS}) = true
+is_eos(t::Token)       = false
+is_eos(t::Token{:EOS}) = true
+to(t::Token{:EOS})     = from(t.ss)
 
 const EMPTY_TOKEN_SVEC = @view (Token[])[1:0] # always valid, always empty
 
+name(::Token{N}) where N = N
+
 
 """
-    Block <: AbstractSpan
+    Block{N} <: AbstractSpan
 
-Blocks are defined by a single opening and a single closing `Token`.
-They may be nested. For instance braces block are formed of an opening `{` and
-a closing `}`.
+Blocks are a span covering one or more tokens.
 """
-mutable struct Block <: AbstractSpan
-    name::Symbol
-    open::Token
-    close::Token
-    ss::SS
-    inner_tokens::SubVector{Token}
+struct Block{N} <: AbstractSpan
+    ss    ::SS
+    tokens::SubVector{Token}
+end
+Block(name, ss, tokens=EMPTY_TOKEN_SVEC) = Block{name}(ss, tokens)
+
+"""
+    Block(name, tokens)
+
+Constructor where the span is implicitly `from(tokens[1])` to `to(tokens[end])`.
+"""
+function Block(
+            name::Symbol,
+            tokens::SubVector{Token}
+        )
+    ps = parent_string(tokens[1])
+    return Block(
+        name,
+        subs(ps, from(tokens[1]), to(tokens[end])),
+        tokens
+    )
 end
 
-function Block(n::Symbol, p::Pair{Token, Token}, it=EMPTY_TOKEN_SVEC)
-    o, c = p.first, p.second
-    ss = subs(parent_string(o), from(o), to(c))
-    return Block(n, o, c, ss, it)
+"""
+    TokenBlock(tokens, i)
+
+Constructor where the span is implicitly `from(tokens[i])` to `to(tokens[i])`
+and the name is that of the token. There's never any metadata for token blocks.
+"""
+function TokenBlock(
+            tokens::Vector{Token},
+            i::Int
+        )
+    return Block(
+        name(tokens[i]),
+        tokens[i].ss,
+        @view tokens[i:i]
+    )
 end
 
-function Block(n::Symbol, s::SubVector{Token})
-    it = @view s[2:end-1]
-    return Block(n, s[1] => s[end], it)
-end
+name(::Block{N}) where N = N
 
-function Block(n::Symbol, ss::SS, it=EMPTY_TOKEN_SVEC)
-    return Block(n, EMPTY_TOKEN, EMPTY_TOKEN, ss, it)
-end
+"""
+    span_between(b, i, j)
 
-TokenBlock(t::Token) = Block(t.name, t, t, t.ss, EMPTY_TOKEN_SVEC)
+Span (substring) between token `i` and `j` of the block `b`.
+"""
+function span_between(b::Block, i::Int, j::Int)::SS
+    s = parent_string(b.ss)
+    if j <= 0
+        return subs(s,
+            nextind(s, to(b.tokens[i])),
+            prevind(s, from(b.tokens[end + j]))
+        )
+    end
+    return subs(s,
+            nextind(s, to(b.tokens[i])),
+            prevind(s, from(b.tokens[j]))
+        )
+end
 
 """
     content(block)
 
-Return the content of a `Block`, for instance the content of a `{...}` block would be
-`...`. Note EOS is a special '0 length' case to  deal with the fact that a text can end
-with a token (which would then be an overlapping token and an EOS).
+Return the relevant content of a `Block`, for instance the content of a `{...}`
+block would be `...`. Note EOS is a special '0 length' case to  deal with the
+fact that a text can end with a token (which would then be an overlapping token
+and an EOS).
 """
 function content(b::Block)::SS
-    b.name == :TEXT       && return b.ss
-    b.name == :BLOCKQUOTE && return replace(b.ss,
-        r"(?:(?:^>)|(?:\n>))[ \t]*" => "\n") |> strip
-    # find the relevant range of the parent string
-    s = parent_string(b.ss)
-    t = from(b.close)
-    idxo = nextind(s, to(b.open))
-    idxc = ifelse(is_eos(b.close), t, prevind(s, t))
-    # return the substring corresponding to the range
+    # General case from opening to closing token
+    s    = parent_string(b.ss)
+    idxo = nextind(s, to(b.tokens[1]))
+    c    = b.tokens[end]
+    t    = from(c)
+    idxc = ifelse(is_eos(c), t, prevind(s, t))
     return subs(s, idxo, idxc)
 end
+
+function content(b::Block{:TEXT})::SS
+    return b.ss
+end
+
+function content(b::Block{:DIV})::SS
+    return lstrip(span_between(b, 1, 0))
+end
+
+function content(b::Block{:BLOCKQUOTE})::SS
+    return strip(replace(
+            b.ss,
+            r"(?:(?:^>)|(?:\n>))[ \t]*" => "\n")
+        ) 
+end
+
+content(b::Block{:ENV}) = span_between(b, 3, -2)
+
+function content(b::Block{:DBB})
+    if name(b.tokens[1]) == :DBB_OPEN # html case
+        span_between(b, 1, 0)
+    else
+        span_between(b, 2, -1)
+    end
+end
+
+function content(b::Block{:REF})::SS
+    ps = parent_string(b)
+    return subs(ps, 
+        nextind(ps, next_index(b.tokens[2]), 2), # skip the `:⎵`
+        to(b.ss)
+    )
+end
+
+"""
+    content_tokens(block)
+
+Return the view of tokens corresponding to `content(block)`.
+"""
+function content_tokens(b::Block)::SubVector{Token}
+    # general case from opening to closing token
+    return @view b.tokens[2:end-1]
+end
+
+content_tokens(b::Block{:ENV}) = @view b.tokens[4:end-3]
+content_tokens(b::Block{:DBB}) = @view b.tokens[3:end-2]
+content_tokens(b::Block{:REF}) = @view b.tokens[3:end]
+
+content_tokens(b::Union{
+    Block{:TEXT},
+    Block{:LIST},
+    Block{:BLOCKQUOTE},
+    Block{:TABLE},
+    Block{:REF}
+    }) = b.tokens
+
+env_name(b::Block{:ENV}) = span_between(b, 2, 3)
+
+link_a(b::Union{
+    Block{:LINK_A}, Block{:LINK_AR}, Block{:LINK_AB},
+    Block{:IMG_A}, Block{:IMG_AR}, Block{:IMG_AB},
+    Block{:REF}
+    }) = span_between(b, 1, 2)
+
+link_b(b::Union{
+    Block{:LINK_AR}, Block{:LINK_AB},
+    Block{:IMG_AR}, Block{:IMG_AB}
+    }) = span_between(b, 3, 4)
 
 
 """
     BlockTemplate
 
-Template for a block to find. A block goes from a token with a given `opening` name to
-one of several possible `closing` names. Blocks can allow or disallow nesting. For
-instance brace blocks can be nested `{.{.}.}` but not comments.
-When nesting is enabled, Franklin will try to find the closing token taking into account
-the balance in opening-closing tokens.
+Template for a block to find for the general case where a block goes from an
+opening token to one of several possible closing tokens.
+Blocks can allow or disallow nesting. For instance brace blocks can be nested
+`{.{.}.}` but not comments.
+When nesting is enabled, Franklin will try to find the closing token taking
+into account the balance in opening-closing tokens.
 """
 struct BlockTemplate
-    name::Symbol
-    opening::Symbol
-    closing::NTuple{N, Symbol} where N
-    nesting::Bool
+    name    ::Symbol
+    opening ::Symbol
+    closing ::NTuple{N, Symbol} where N
+    nesting ::Bool
 end
 
 BlockTemplate(n, o, c::Symbol, ne) = BlockTemplate(n, o, (c,), ne)
 BlockTemplate(a...; nesting=false) = BlockTemplate(a..., nesting)
 
-const NO_CLOSING = (:NONE,)
+const NO_CLOSING = (:NONE,) # is also used in find_blocks
 
-SingleTokenBlockTemplate(name::Symbol) = BlockTemplate(name, name, NO_CLOSING, false)
+SingleTokenBlockTemplate(n::Symbol) = BlockTemplate(n, n, NO_CLOSING, false)
 
 
 """
-    Group <: AbstractSpan
+    Group{N} <: AbstractSpan
 
 A Group contains 1 or more more Blocks and will map to either a Paragraph or
 something else like a code block.
 """
-struct Group <: AbstractSpan
-    role::Symbol
-    blocks::Vector{Block}
-    ss::SS
+struct Group{N} <: AbstractSpan
+    blocks  ::Vector
+    ss      ::SS
 end
 
-function Group(blocks::Vector{Block}; role::Symbol=:none)
-    ps = parent_string(first(blocks))
-    return Group(
-        role,
+function Group(role::Symbol, blocks::Vector)
+    ps = parent_string(blocks[1])
+    return Group{role}(
         blocks,
-        subs(ps, from(first(blocks)), to(last(blocks)))
+        subs(ps, from(blocks[1]), to(blocks[end]))
     )
 end
 
-Group(block::Block; kw...) = Group([block]; kw...)
+Group(role::Symbol, block::Block) = Group(role, [block])
+
+name(::Group{N}) where N = N

@@ -141,12 +141,12 @@ end
     @test g[2] // "### heading"
     @test g[3] // "##### heading"
 
-    @test g[5] // "# heading #"
-    @test g[6] // "### heading ###"
-    @test g[7] // raw"##### heading \#\#\#\#\######"
+    @test g[4] // "# heading #"
+    @test g[5] // "### heading ###"
+    @test g[6] // raw"##### heading \#\#\#\#\######"
 
-    @test g[8] // "\n############ not a heading"
-    @test isp(g[8])
+    @test g[7] // "\n############ not a heading"
+    @test isp(g[7])
 end
 
 # XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
@@ -169,15 +169,15 @@ end
     g = s |> grouper
     filter!(!isempty, g)
     @test g[1] // "* * * * *"
-    @test g[1].role == :LIST # NOTE: gets invalidated at Franklin level
+    @test FP.name(g[1]) == :LIST # NOTE: gets invalidated at Franklin level
     @test g[2] // "*** * *"
-    @test g[2].role == :HRULE
-    @test g[3].role == :LIST
+    @test FP.name(g[2]) == :HRULE
+    @test FP.name(g[3]) == :LIST
     @test g[3] // "-  -  -  -  -"
-    @test g[4].role == :HRULE
+    @test FP.name(g[4]) == :HRULE
     @test g[4] // "--- -"
     @test g[5] // "________"
-    @test g[5].role == :HRULE
+    @test FP.name(g[5]) == :HRULE
     @test g[6] // "************************* text"
     @test isp(g[6])
 end
@@ -272,7 +272,7 @@ end
         """
 
     # at most 9 chars
-    @test g[12].role == :PARAGRAPH
+    @test FP.name(g[12]) == :PARAGRAPH
 end
 
 # XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX XXX
@@ -376,9 +376,9 @@ end
      g = s |> grouper
      filter!(!isempty, g)
      @test g[1].blocks[1] // "[1]"
-     @test g[1].blocks[1].name == :LINK_A
-     @test g[2].blocks[2] // "[looooooooooooooooooooooooooooooooooooooooooooooooooong label]"
-     @test g[2].blocks[2].name == :LINK_A
+     @test FP.name(g[1].blocks[1]) == :LINK_A
+     @test g[2].blocks[1] // "[looooooooooooooooooooooooooooooooooooooooooooooooooong label]"
+     @test FP.name(g[2].blocks[1]) == :LINK_A
 
      @test g[3] // "[1]: <http://something.example.com/foo/bar>"
      @test g[4] // "[2]: http://something.example.com/foo/bar 'test'"

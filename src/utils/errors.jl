@@ -14,7 +14,7 @@ function block_not_closed_exception(ot::Token)
     message, context = _error_message(
         "Block not closed",
         """
-        A block starting with token "$(ot.ss)" ($(ot.name)) was left open.
+        A block starting with token "$(ot.ss)" ($(name(ot))) was left open.
         """,
         ot.ss
     )
