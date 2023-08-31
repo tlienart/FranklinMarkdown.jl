@@ -7,7 +7,6 @@
     div = blocks[1]
 
     @test FP.content(div) == "DEF"
-    @test typeof(div) == FP.Block{:DIV}
     @test FP.get_classes(div) == "c1 c2"
 end
 

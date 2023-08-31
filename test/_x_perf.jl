@@ -22,6 +22,17 @@ txt = read(joinpath(@__DIR__, "..", "src", "_precompile", "expages", "real1.md")
 #     - blockifier: ~0.7ms
 #     - partition:  ~0.6ms
 #
+
+
+FranklinParser.reset_timer!(FranklinParser.TIMER)
+
+@btime FranklinParser.default_md_tokenizer($txt);
+
+TimerOutputs.complement!(FranklinParser.TIMER)
+
+
+
+
 @btime FranklinParser.md_partition($txt);
 
 # NOTE: One thing that could still be attempted

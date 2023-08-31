@@ -26,19 +26,26 @@ function aggregate!(
     i, j   = 1, 1
     ps     = parent_string(blocks[1])
     tokens = parent(blocks[1].tokens)
+
     @inbounds while i ≤ length(blocks)
         bi = blocks[i]
         if name(bi) in items
-            # look ahead
             j = i + 1
+
             while j ≤ length(blocks)
                 if name(blocks[j]) ∉ acc
                     break
                 end
                 j += 1
             end
-            _from_idx = parentindices(bi.tokens)[1][1]
-            _to_idx   = parentindices(blocks[j-1].tokens)[1][end]
+
+            # now we have blocks from bi to blocks[j-1]; get the first
+            # and last token index
+            mask = [!isempty(blocks[k].tokens) for k in i:j-1]
+            b1 = blocks[i - 1 + findfirst(mask)::Int]
+            b2 = blocks[i - 1 + findlast(mask)::Int]
+            _from_idx = parentindices(b1.tokens)[1][1]
+            _to_idx   = parentindices(b2.tokens)[1][end]
 
             blocks[i] = Block(
                 case,

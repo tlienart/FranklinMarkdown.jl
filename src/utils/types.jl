@@ -9,14 +9,16 @@ abstract type AbstractSpan end
 
 parent_string(s::AbstractSpan)::String = parent_string(s.ss::SS)
 
-from(s::AbstractSpan)::Int             = from(s.ss::SS)
-to(s::AbstractSpan)::Int               = to(s.ss::SS)
+from(s::AbstractSpan)::Int = from(s.ss::SS)
+to(s::AbstractSpan)::Int   = to(s.ss::SS)
 
-content(s::AbstractSpan)::SS           = s.ss
-content(s::SS)::SS                     = s
-content(s::String)::SS                 = subs(s)
+content(s::AbstractSpan)::SS = s.ss
+content(s::SS)::SS           = s
+content(s::String)::SS       = subs(s)
 
-Base.isempty(o::AbstractSpan)::Bool    = isempty(strip(o.ss))
+name(o::AbstractSpan)::Symbol = o.name
+
+Base.isempty(o::AbstractSpan)::Bool = isempty(strip(o.ss))
 
 
 """
@@ -25,32 +27,30 @@ Base.isempty(o::AbstractSpan)::Bool    = isempty(strip(o.ss))
 A token is a small span typically determining the start or end of a block.
 It can also be used for special characters.
 """
-struct Token{N} <: AbstractSpan
+struct Token <: AbstractSpan
+    name::Symbol
     ss::SS
 end
-Token(n, ss) = Token{n}(ss)
 
-is_sos(t::Token)       = false
-is_sos(t::Token{:SOS}) = true
-is_eos(t::Token)       = false
-is_eos(t::Token{:EOS}) = true
-to(t::Token{:EOS})     = from(t.ss)
+is_sos(t::Token) = (name(t) == :SOS)
+is_eos(t::Token) = (name(t) == :EOS)
+to(t::Token)     = ifelse(is_eos(t), from(t.ss), to(t.ss))
 
 const EMPTY_TOKEN_SVEC = @view (Token[])[1:0] # always valid, always empty
 
-name(::Token{N}) where N = N
-
 
 """
-    Block{N} <: AbstractSpan
+    Block <: AbstractSpan
 
 Blocks are a span covering one or more tokens.
 """
-struct Block{N} <: AbstractSpan
+struct Block <: AbstractSpan
+    name  ::Symbol
     ss    ::SS
     tokens::SubVector{Token}
 end
-Block(name, ss, tokens=EMPTY_TOKEN_SVEC) = Block{name}(ss, tokens)
+Block(name, ss) = Block(name, ss, EMPTY_TOKEN_SVEC)
+
 
 """
     Block(name, tokens)
@@ -86,7 +86,6 @@ function TokenBlock(
     )
 end
 
-name(::Block{N}) where N = N
 
 """
     span_between(b, i, j)
@@ -116,6 +115,32 @@ fact that a text can end with a token (which would then be an overlapping token
 and an EOS).
 """
 function content(b::Block)::SS
+    nb = name(b)
+    if nb == :TEXT
+        return b.ss
+    elseif nb == :DIV
+        return lstrip(span_between(b, 1, 0))
+    elseif nb == :BLOCKQUOTE
+        return strip(replace(
+            b.ss,
+            r"(?:(?:^>)|(?:\n>))[ \t]*" => "\n")
+        )
+    elseif nb == :ENV
+        return span_between(b, 3, -2)
+    elseif nb == :DBB
+        # distinguish html case
+        if name(b.tokens[1]) == :DBB_OPEN 
+            return span_between(b, 1, 0)
+        else
+            return span_between(b, 2, -1)
+        end
+    elseif nb == :REF
+        ps = parent_string(b)
+        return subs(ps, 
+            nextind(ps, next_index(b.tokens[2]), 2), # skip the `:⎵`
+            to(b.ss)
+        )
+    end
     # General case from opening to closing token
     s    = parent_string(b.ss)
     idxo = nextind(s, to(b.tokens[1]))
@@ -125,38 +150,6 @@ function content(b::Block)::SS
     return subs(s, idxo, idxc)
 end
 
-function content(b::Block{:TEXT})::SS
-    return b.ss
-end
-
-function content(b::Block{:DIV})::SS
-    return lstrip(span_between(b, 1, 0))
-end
-
-function content(b::Block{:BLOCKQUOTE})::SS
-    return strip(replace(
-            b.ss,
-            r"(?:(?:^>)|(?:\n>))[ \t]*" => "\n")
-        ) 
-end
-
-content(b::Block{:ENV}) = span_between(b, 3, -2)
-
-function content(b::Block{:DBB})
-    if name(b.tokens[1]) == :DBB_OPEN # html case
-        span_between(b, 1, 0)
-    else
-        span_between(b, 2, -1)
-    end
-end
-
-function content(b::Block{:REF})::SS
-    ps = parent_string(b)
-    return subs(ps, 
-        nextind(ps, next_index(b.tokens[2]), 2), # skip the `:⎵`
-        to(b.ss)
-    )
-end
 
 """
     content_tokens(block)
@@ -164,34 +157,25 @@ end
 Return the view of tokens corresponding to `content(block)`.
 """
 function content_tokens(b::Block)::SubVector{Token}
+    nb = name(b)
+    if nb == :ENV
+        return @view b.tokens[4:end-3]
+    elseif nb == :DBB
+        return @view b.tokens[3:end-2]
+    elseif nb == :REF
+        return @view b.tokens[3:end]
+    elseif nb in (:TEXT, :LIST, :BLOCKQUOTE, :TABLE)
+        return b.tokens
+    end
     # general case from opening to closing token
     return @view b.tokens[2:end-1]
 end
 
-content_tokens(b::Block{:ENV}) = @view b.tokens[4:end-3]
-content_tokens(b::Block{:DBB}) = @view b.tokens[3:end-2]
-content_tokens(b::Block{:REF}) = @view b.tokens[3:end]
 
-content_tokens(b::Union{
-    Block{:TEXT},
-    Block{:LIST},
-    Block{:BLOCKQUOTE},
-    Block{:TABLE},
-    Block{:REF}
-    }) = b.tokens
+env_name(b::Block) = span_between(b, 2, 3)
 
-env_name(b::Block{:ENV}) = span_between(b, 2, 3)
-
-link_a(b::Union{
-    Block{:LINK_A}, Block{:LINK_AR}, Block{:LINK_AB},
-    Block{:IMG_A}, Block{:IMG_AR}, Block{:IMG_AB},
-    Block{:REF}
-    }) = span_between(b, 1, 2)
-
-link_b(b::Union{
-    Block{:LINK_AR}, Block{:LINK_AB},
-    Block{:IMG_AR}, Block{:IMG_AB}
-    }) = span_between(b, 3, 4)
+link_a(b) = span_between(b, 1, 2)
+link_b(b) = span_between(b, 3, 4)
 
 
 """
@@ -220,24 +204,24 @@ SingleTokenBlockTemplate(n::Symbol) = BlockTemplate(n, n, NO_CLOSING, false)
 
 
 """
-    Group{N} <: AbstractSpan
+    Group <: AbstractSpan
 
 A Group contains 1 or more more Blocks and will map to either a Paragraph or
 something else like a code block.
 """
-struct Group{N} <: AbstractSpan
+struct Group <: AbstractSpan
+    name    ::Symbol
     blocks  ::Vector
     ss      ::SS
 end
 
-function Group(role::Symbol, blocks::Vector)
+function Group(name::Symbol, blocks::Vector)
     ps = parent_string(blocks[1])
-    return Group{role}(
+    return Group(
+        name,
         blocks,
         subs(ps, from(blocks[1]), to(blocks[end]))
     )
 end
 
-Group(role::Symbol, block::Block) = Group(role, [block])
-
-name(::Group{N}) where N = N
+Group(name::Symbol, block::Block) = Group(name, [block])

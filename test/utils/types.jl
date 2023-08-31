@@ -4,7 +4,7 @@ include("../testutils.jl")
     s = "abcd"
     t = FP.Token(:ab, FP.subs(s, 2:3))
     @test typeof(t) <: FP.AbstractSpan
-    @test t isa FP.Token{:ab}
+    @test t isa FP.Token
     @test FP.from(t) == 2
     @test FP.to(t) == 3
     @test FP.parent_string(s) === s
@@ -19,7 +19,7 @@ end
     t2 = FP.Token(:cd, FP.subs(s, 4))
     ts = [t1, t2]
     b = FP.Block(:foo, @view ts[1:end])
-    @test typeof(b) == FP.Block{:foo}
+    @test typeof(b) == FP.Block
     @test b.ss == "abcd"
     @test b.tokens[1] === t1
     @test b.tokens[2] === t2
@@ -30,8 +30,8 @@ end
     @test isconcretetype(FP.SS)
     @test isconcretetype(FP.SubVector{FP.Token})
     @test isconcretetype(typeof(FP.EMPTY_TOKEN_SVEC))
-    @test isconcretetype(FP.Token{:abc})
-    @test isconcretetype(FP.Block{:abc})
+    @test isconcretetype(FP.Token)
+    @test isconcretetype(FP.Block)
     @test isconcretetype(Vector{FP.Block})
 end
 

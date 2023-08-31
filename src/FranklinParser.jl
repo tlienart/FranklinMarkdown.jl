@@ -34,6 +34,6 @@ include("blocks/utils.jl")
 
 include("partition.jl")
 
-# include("_precompile/main.jl")
+include("_precompile/main.jl")
 
 end

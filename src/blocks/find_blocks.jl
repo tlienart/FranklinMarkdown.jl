@@ -233,7 +233,7 @@ function process_line_return!(
         )::Nothing
 
     t = tokens[i]
-
+    N = length(tokens)
     #
     # We base the analysis on the two chars immediately following the token
     # (ignoring whitespaces) with one special cases: if t is near EOS; in that
@@ -294,10 +294,10 @@ function process_line_return!(
         # (*) see comment above with only marking token[i] is inactive.
         # 
         j = i+1+Int(t_is_sos_and_lr)
-        while name(tokens[j]) ∉ (:LINE_RETURN, :EOS)
+        while j < N && name(tokens[j]) ∉ (:LINE_RETURN, :EOS)
             j += 1
         end
-        next_line_return = tokens[j]
+        next_line_return = tokens[min(j, N)]
         # in the standard case of a line return, take string until the char
         # that precedes it. However, in the case of EOS, need to take the
         # string until the end.
