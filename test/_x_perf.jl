@@ -2,6 +2,7 @@ using FranklinParser
 using BenchmarkTools
 using TimerOutputs
 
+# TimerOutputs.disable_debug_timings(FranklinParser)
 TimerOutputs.enable_debug_timings(FranklinParser)
 
 txt = read(joinpath(@__DIR__, "..", "src", "_precompile", "expages", "real1.md"), String) *

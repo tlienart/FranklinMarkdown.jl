@@ -78,7 +78,7 @@ function find_tokens(
                     # captured within a token and should not be considered when
                     # looking for tokens in the next step
                     @timeit_debug TIMER "deadzone" begin
-                        union!(deactivated_char_index, start:finish)
+                        union!(deactivated_char_index, collect(start:finish))
                     end
                     # move the head to keep track of the span of the token
                     head_idx = finish + 1
